@@ -40,6 +40,6 @@ CREATE TABLE gas_prices (
 -- Indexes
 CREATE INDEX idx_road_reports_coords ON road_reports(lat, lng);
 CREATE INDEX idx_road_reports_type ON road_reports(type);
-CREATE INDEX idx_road_reports_expires ON road_reports(expires_at) WHERE expires_at > now();
+CREATE INDEX idx_road_reports_expires ON road_reports(expires_at);
 CREATE INDEX idx_gas_prices_station ON gas_prices(station_lat, station_lng);
 CREATE INDEX idx_gas_prices_recent ON gas_prices(reported_at DESC);
