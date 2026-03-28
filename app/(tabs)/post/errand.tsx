@@ -1,0 +1,356 @@
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { TextInput, Button } from '@/components/ui';
+import { LocationInput, DateInput, TimeInput } from '@/components/forms';
+import { Icon } from '@/components/icons';
+import { colors, typography, spacing, borderRadius } from '@/theme';
+import { useCreatePostMutation } from '@/store/api/postsApi';
+import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import type { RootState } from '@/store';
+import type { ErrandCategory } from '@/types/database';
+
+const ERRAND_CATEGORIES: { value: ErrandCategory; label: string }[] = [
+  { value: 'grocery', label: 'Grocery' },
+  { value: 'bill', label: 'Bill Payment' },
+  { value: 'pharmacy', label: 'Pharmacy' },
+  { value: 'document', label: 'Documents' },
+  { value: 'delivery', label: 'Delivery' },
+  { value: 'food', label: 'Food' },
+  { value: 'hardware', label: 'Hardware' },
+  { value: 'other', label: 'Other' },
+];
+
+export default function ErrandFormScreen() {
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const [createPost, { isLoading }] = useCreatePostMutation();
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<ErrandCategory | null>(null);
+  const [originAddress, setOriginAddress] = useState('');
+  const [destAddress, setDestAddress] = useState('');
+  const [errandFeeDollars, setErrandFeeDollars] = useState('');
+  const [itemCostDollars, setItemCostDollars] = useState('');
+  const [needByDate, setNeedByDate] = useState('');
+  const [needByTime, setNeedByTime] = useState('');
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = useCallback((): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!title.trim()) newErrors.title = 'Title is required';
+    if (!category) newErrors.category = 'Pick a category';
+    if (!originAddress.trim()) newErrors.originAddress = 'Pickup location is required';
+
+    // Errand fee
+    const feeNum = parseFloat(errandFeeDollars);
+    if (!errandFeeDollars.trim()) {
+      newErrors.errandFeeDollars = 'Errand fee is required';
+    } else if (isNaN(feeNum) || feeNum <= 0) {
+      newErrors.errandFeeDollars = 'Enter a valid fee';
+    } else if (Math.round(feeNum * 100) > MAX_PRICE_CENTS) {
+      newErrors.errandFeeDollars = 'Max $9,999 BZD';
+    }
+
+    // Item cost (optional but validate if entered)
+    if (itemCostDollars.trim()) {
+      const itemNum = parseFloat(itemCostDollars);
+      if (isNaN(itemNum) || itemNum < 0) {
+        newErrors.itemCostDollars = 'Enter a valid amount';
+      } else if (Math.round(itemNum * 100) > MAX_PRICE_CENTS) {
+        newErrors.itemCostDollars = 'Max $9,999 BZD';
+      }
+    }
+
+    if (description.length > MAX_DESCRIPTION_LENGTH) {
+      newErrors.description = `Max ${MAX_DESCRIPTION_LENGTH} characters`;
+    }
+
+    // Validate deadline if provided
+    if (needByDate.trim() && needByTime.trim()) {
+      const dt = new Date(`${needByDate}T${needByTime}`);
+      if (isNaN(dt.getTime())) {
+        newErrors.needByDate = 'Invalid date';
+      } else if (dt <= new Date()) {
+        newErrors.needByDate = 'Deadline must be in the future';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [title, category, originAddress, errandFeeDollars, itemCostDollars, description, needByDate, needByTime]);
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    if (!userId) {
+      Alert.alert('Error', 'You must be signed in to post');
+      return;
+    }
+    if (!category) {
+      Alert.alert('Error', 'Please select a category');
+      return;
+    }
+
+    const errandFeeCents = Math.round(parseFloat(errandFeeDollars) * 100);
+    const itemCostCents = itemCostDollars.trim()
+      ? Math.round(parseFloat(itemCostDollars) * 100)
+      : null;
+
+    const departureAt =
+      needByDate.trim() && needByTime.trim()
+        ? new Date(`${needByDate}T${needByTime}`).toISOString()
+        : null;
+
+    try {
+      await createPost({
+        author_id: userId,
+        type: 'errand',
+        title: title.trim(),
+        description: description.trim() || null,
+        origin_address: originAddress.trim(),
+        dest_address: destAddress.trim() || null,
+        departure_at: departureAt,
+        errand_category: category,
+        errand_fee_cents: errandFeeCents,
+        item_cost_cents: itemCostCents,
+      }).unwrap();
+
+      router.back();
+    } catch (err: unknown) {
+      console.error('Post save error:', err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'error' in err
+            ? String((err as Record<string, unknown>).error)
+            : 'Something went wrong';
+      Alert.alert('Error', message);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Post an Errand</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.formContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TextInput
+            label="Title"
+            placeholder="e.g. Grocery pickup from Brodies"
+            value={title}
+            onChangeText={setTitle}
+            error={errors.title}
+          />
+
+          {/* Category selector */}
+          <View>
+            <Text style={styles.fieldLabel}>Category</Text>
+            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+            <View style={styles.categoryGrid}>
+              {ERRAND_CATEGORIES.map((cat) => (
+                <Pressable
+                  key={cat.value}
+                  style={[
+                    styles.categoryChip,
+                    category === cat.value && styles.categoryChipSelected,
+                  ]}
+                  onPress={() => setCategory(cat.value)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      category === cat.value && styles.categoryTextSelected,
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <LocationInput
+            label="Pickup location"
+            placeholder="Where to pick up items"
+            value={originAddress}
+            onChangeText={setOriginAddress}
+            error={errors.originAddress}
+          />
+
+          <LocationInput
+            label="Deliver to (optional)"
+            placeholder="Drop-off address"
+            value={destAddress}
+            onChangeText={setDestAddress}
+          />
+
+          <View style={styles.row}>
+            <DateInput
+              label="Need by (date)"
+              value={needByDate}
+              onChangeText={setNeedByDate}
+              error={errors.needByDate}
+            />
+            <TimeInput
+              label="Time"
+              value={needByTime}
+              onChangeText={setNeedByTime}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <TextInput
+              label="Errand fee (BZD)"
+              placeholder="0.00"
+              value={errandFeeDollars}
+              onChangeText={setErrandFeeDollars}
+              keyboardType="decimal-pad"
+              containerStyle={styles.halfField}
+              error={errors.errandFeeDollars}
+            />
+            <TextInput
+              label="Item cost est. (BZD)"
+              placeholder="0.00"
+              value={itemCostDollars}
+              onChangeText={setItemCostDollars}
+              keyboardType="decimal-pad"
+              containerStyle={styles.halfField}
+              error={errors.itemCostDollars}
+            />
+          </View>
+
+          <TextInput
+            label="Description (optional)"
+            placeholder="What needs to be done..."
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+            style={styles.textArea}
+            error={errors.description}
+          />
+
+          <Text style={styles.charCount}>
+            {description.length}/{MAX_DESCRIPTION_LENGTH}
+          </Text>
+
+          <Button
+            title="Post Errand"
+            onPress={handleSubmit}
+            loading={isLoading}
+            disabled={isLoading}
+            style={styles.submitButton}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.neutral[50],
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.forest[900],
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.neutral[0],
+  },
+  formContent: {
+    padding: spacing.xl,
+    gap: spacing.lg,
+    paddingBottom: spacing.xxxl,
+  },
+  fieldLabel: {
+    ...typography.body2Bold,
+    color: colors.forest[900],
+    marginBottom: spacing.sm,
+  },
+  errorText: {
+    ...typography.caption,
+    color: colors.error,
+    marginBottom: spacing.xs,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  categoryChip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    backgroundColor: colors.neutral[0],
+  },
+  categoryChipSelected: {
+    borderColor: colors.accent.green,
+    backgroundColor: colors.accent.green,
+  },
+  categoryText: {
+    ...typography.body2,
+    color: colors.neutral[500],
+  },
+  categoryTextSelected: {
+    ...typography.body2Bold,
+    color: colors.neutral[0],
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  halfField: {
+    flex: 1,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  charCount: {
+    ...typography.caption,
+    color: colors.neutral[400],
+    textAlign: 'right',
+    marginTop: -spacing.md,
+  },
+  submitButton: {
+    marginTop: spacing.md,
+  },
+});

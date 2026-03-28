@@ -1,0 +1,109 @@
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
+
+import {
+  buildEkyashJwt,
+  getEkyashApiUrl,
+  getEkyashCredentials,
+} from '../_shared/ekyash.ts';
+import {
+  createServiceClient,
+  corsHeaders,
+  jsonResponse,
+  errorResponse,
+} from '../_shared/supabase.ts';
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const { orderId, amountCents, reason } = await req.json();
+    if (!orderId || !amountCents) return errorResponse('Missing required fields');
+
+    const supabase = createServiceClient();
+
+    // Get transaction
+    const { data: txn, error } = await supabase
+      .from('ekyash_transactions')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
+
+    if (error || !txn) return errorResponse('Transaction not found', 404);
+    if (txn.status !== 'approved') {
+      return errorResponse('Can only refund approved transactions');
+    }
+    if (!txn.transaction_id) {
+      return errorResponse('No transaction ID for refund');
+    }
+    if (amountCents > txn.amount_cents) {
+      return errorResponse('Refund amount exceeds original');
+    }
+
+    // Authorize
+    const { sid, pinHash, apiKey } = getEkyashCredentials();
+    const apiUrl = getEkyashApiUrl();
+    const authJwt = await buildEkyashJwt(apiKey, { mobile: '' });
+
+    const authRes = await fetch(`${apiUrl}/authorization`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authJwt}`,
+        'Accept-Language': 'En',
+        'The-Timezone-IANA': 'UTC',
+      },
+      body: JSON.stringify({ sid, pinHash, pushkey: '' }),
+    });
+
+    if (!authRes.ok) return errorResponse('E-Kyash auth failed', 502);
+    const { session } = await authRes.json();
+
+    // Refund
+    const refundJwt = await buildEkyashJwt(apiKey, { mobile: '' });
+    const refundRes = await fetch(`${apiUrl}/refund-transaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${refundJwt}`,
+        'Accept-Language': 'En',
+        'The-Timezone-IANA': 'UTC',
+      },
+      body: JSON.stringify({
+        session,
+        transactionId: txn.transaction_id,
+        amount: amountCents,
+        pinHash,
+        refundReason: reason || 'Refund requested',
+      }),
+    });
+
+    if (!refundRes.ok) return errorResponse('Refund failed', 502);
+
+    // Update our record
+    await supabase
+      .from('ekyash_transactions')
+      .update({
+        status: 'refunded',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('order_id', orderId);
+
+    // Notify payer
+    await supabase.from('notifications').insert({
+      user_id: txn.payer_id,
+      type: 'refund_processed',
+      title: 'Refund Processed',
+      body: `You received a refund of $${(amountCents / 100).toFixed(2)} BZD.`,
+      data: { orderId, contractId: txn.contract_id },
+    });
+
+    return jsonResponse({ success: true });
+  } catch (error) {
+    return errorResponse(
+      error instanceof Error ? error.message : 'Refund failed',
+      500,
+    );
+  }
+});

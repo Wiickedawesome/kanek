@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "kanek",
+    "slug": "kanek",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "kanek",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#142800"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "bz.kanek.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "kanek needs your location to show routes and posts near you.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "kanek needs your location to share your position during active trips.",
+        "NSCameraUsageDescription": "kanek needs camera access for ID verification photos.",
+        "NSPhotoLibraryUsageDescription": "kanek needs photo library access for ID verification uploads."
+      }
+    },
+    "android": {
+      "package": "bz.kanek.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#142800",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "kanek needs your location to share your position during active trips."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "kanek needs photo library access for ID verification uploads.",
+          "cameraPermission": "kanek needs camera access for ID verification photos."
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.placeholder"
+        }
+      ]
+    ]
+  }
+}

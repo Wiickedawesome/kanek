@@ -1,0 +1,187 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { Icon } from '@/components/icons';
+import { Button, TextInput } from '@/components/ui';
+import { colors, typography, spacing } from '@/theme';
+import { supabase } from '@/lib/supabase';
+import type { RootState } from '@/store';
+
+export default function ReportGasModal() {
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const location = useSelector((state: RootState) => state.location);
+
+  const [stationName, setStationName] = useState('');
+  const [regular, setRegular] = useState('');
+  const [premium, setPremium] = useState('');
+  const [diesel, setDiesel] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const parseCents = (val: string): number | null => {
+    const n = parseFloat(val);
+    if (isNaN(n) || n <= 0) return null;
+    return Math.round(n * 100);
+  };
+
+  const handleSubmit = async () => {
+    if (!stationName.trim()) {
+      Alert.alert('Station Name', 'Please enter the gas station name.');
+      return;
+    }
+
+    const regularCents = parseCents(regular);
+    const premiumCents = parseCents(premium);
+    const dieselCents = parseCents(diesel);
+
+    if (!regularCents && !premiumCents && !dieselCents) {
+      Alert.alert('Prices', 'Please enter at least one fuel price.');
+      return;
+    }
+    if (!userId) return;
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('gas_prices').insert({
+        reporter_id: userId,
+        station_name: stationName.trim(),
+        station_lat: location.latitude ?? 17.189,
+        station_lng: location.longitude ?? -88.497,
+        regular_cents: regularCents,
+        premium_cents: premiumCents,
+        diesel_cents: dieselCents,
+      });
+
+      if (error) throw error;
+
+      Alert.alert('Price Reported', 'Thank you for updating fuel prices!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Error', 'Could not submit price. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Gas Prices</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <ScrollView contentContainerStyle={styles.content}>
+          <TextInput
+            label="Station Name"
+            value={stationName}
+            onChangeText={setStationName}
+            placeholder="e.g. UNO Belize City"
+            maxLength={100}
+          />
+
+          <Text style={styles.sectionLabel}>Prices per gallon (BZD)</Text>
+
+          <TextInput
+            label="Regular"
+            value={regular}
+            onChangeText={setRegular}
+            placeholder="e.g. 12.50"
+            keyboardType="decimal-pad"
+          />
+
+          <TextInput
+            label="Premium"
+            value={premium}
+            onChangeText={setPremium}
+            placeholder="e.g. 14.00"
+            keyboardType="decimal-pad"
+          />
+
+          <TextInput
+            label="Diesel"
+            value={diesel}
+            onChangeText={setDiesel}
+            placeholder="e.g. 11.75"
+            keyboardType="decimal-pad"
+          />
+
+          <View style={styles.locationNote}>
+            <Icon name="map-pin" size={16} color={colors.forest[400]} />
+            <Text style={styles.locationText}>
+              {location.latitude
+                ? 'Using your current location'
+                : 'Location unavailable — using default'}
+            </Text>
+          </View>
+
+          <Button
+            title="Submit Prices"
+            onPress={handleSubmit}
+            loading={submitting}
+            disabled={!stationName.trim()}
+            size="lg"
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.neutral[50],
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.forest[900],
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.neutral[0],
+  },
+  content: {
+    padding: spacing.xl,
+    gap: spacing.xl,
+  },
+  sectionLabel: {
+    ...typography.body2Bold,
+    color: colors.neutral[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  locationNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  locationText: {
+    ...typography.body2,
+    color: colors.forest[400],
+  },
+});

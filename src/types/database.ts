@@ -1,0 +1,792 @@
+export type Role = 'rider' | 'driver' | 'admin';
+export type AccountStatus = 'pending' | 'active' | 'restricted' | 'suspended' | 'dormant';
+export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+export type PostType = 'route_offer' | 'route_request' | 'errand' | 'package' | 'job';
+export type PostStatus = 'open' | 'activated' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'no_show' | 'completed';
+export type ContractStatus = 'active' | 'completed' | 'disputed' | 'cancelled';
+export type PaymentMethod = 'cash' | 'ekyash';
+export type StrikeType = 'soft' | 'hard';
+export type EkyashStatus = 'pending' | 'approved' | 'cancelled' | 'refunded';
+export type FlagReason = 'spam' | 'scam' | 'harassment' | 'fake_account' | 'safety' | 'other';
+export type FlagStatus = 'pending' | 'reviewed' | 'action_taken' | 'dismissed';
+export type ErrandCategory = 'grocery' | 'bill' | 'pharmacy' | 'document' | 'delivery' | 'food' | 'hardware' | 'other';
+export type PickupStyle = 'single' | 'multi_stop';
+export type RoadReportType = 'accident' | 'checkpoint' | 'traffic' | 'flooding' | 'construction' | 'road_damage';
+export type JobCategory = 'skilled_trade' | 'cleaning' | 'delivery' | 'handyman' | 'landscaping' | 'moving' | 'tutoring' | 'tech' | 'other';
+export type PayType = 'hourly' | 'fixed';
+export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
+
+// Regenerate with `supabase gen types typescript` after pushing migrations
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          phone: string;
+          first_name: string | null;
+          last_name: string | null;
+          role: Role;
+          avatar_url: string | null;
+          email: string | null;
+          rating_avg: number;
+          punctuality_pct: number;
+          strikes_soft: number;
+          strikes_hard: number;
+          account_status: AccountStatus;
+          emergency_contact: string | null;
+          push_token: string | null;
+          last_active_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          phone: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          role?: Role;
+          avatar_url?: string | null;
+          email?: string | null;
+          rating_avg?: number;
+          punctuality_pct?: number;
+          strikes_soft?: number;
+          strikes_hard?: number;
+          account_status?: AccountStatus;
+          emergency_contact?: string | null;
+          push_token?: string | null;
+          last_active_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          phone?: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          role?: Role;
+          avatar_url?: string | null;
+          email?: string | null;
+          rating_avg?: number;
+          punctuality_pct?: number;
+          strikes_soft?: number;
+          strikes_hard?: number;
+          account_status?: AccountStatus;
+          emergency_contact?: string | null;
+          push_token?: string | null;
+          last_active_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      posts: {
+        Row: {
+          id: string;
+          author_id: string;
+          type: PostType;
+          status: PostStatus;
+          title: string;
+          description: string | null;
+          origin_address: string | null;
+          origin_lat: number | null;
+          origin_lng: number | null;
+          dest_address: string | null;
+          dest_lat: number | null;
+          dest_lng: number | null;
+          departure_at: string | null;
+          price_cents: number | null;
+          seats_total: number | null;
+          seats_filled: number;
+          min_riders: number | null;
+          pickup_style: PickupStyle | null;
+          errand_category: ErrandCategory | null;
+          errand_fee_cents: number | null;
+          item_cost_cents: number | null;
+          job_category: JobCategory | null;
+          pay_rate_cents: number | null;
+          pay_type: PayType | null;
+          job_timeline: JobTimeline | null;
+          route_geometry: Record<string, unknown> | null;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          author_id: string;
+          type: PostType;
+          status?: PostStatus;
+          title: string;
+          description?: string | null;
+          origin_address?: string | null;
+          origin_lat?: number | null;
+          origin_lng?: number | null;
+          dest_address?: string | null;
+          dest_lat?: number | null;
+          dest_lng?: number | null;
+          departure_at?: string | null;
+          price_cents?: number | null;
+          seats_total?: number | null;
+          seats_filled?: number;
+          min_riders?: number | null;
+          pickup_style?: PickupStyle | null;
+          errand_category?: ErrandCategory | null;
+          errand_fee_cents?: number | null;
+          item_cost_cents?: number | null;
+          job_category?: JobCategory | null;
+          pay_rate_cents?: number | null;
+          pay_type?: PayType | null;
+          job_timeline?: JobTimeline | null;
+          route_geometry?: Record<string, unknown> | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          author_id?: string;
+          type?: PostType;
+          status?: PostStatus;
+          title?: string;
+          description?: string | null;
+          origin_address?: string | null;
+          origin_lat?: number | null;
+          origin_lng?: number | null;
+          dest_address?: string | null;
+          dest_lat?: number | null;
+          dest_lng?: number | null;
+          departure_at?: string | null;
+          price_cents?: number | null;
+          seats_total?: number | null;
+          seats_filled?: number;
+          min_riders?: number | null;
+          pickup_style?: PickupStyle | null;
+          errand_category?: ErrandCategory | null;
+          errand_fee_cents?: number | null;
+          item_cost_cents?: number | null;
+          job_category?: JobCategory | null;
+          pay_rate_cents?: number | null;
+          pay_type?: PayType | null;
+          job_timeline?: JobTimeline | null;
+          route_geometry?: Record<string, unknown> | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      driver_details: {
+        Row: {
+          id: string;
+          license_url: string | null;
+          insurance_url: string | null;
+          id_document_url: string | null;
+          vehicle_make: string | null;
+          vehicle_model: string | null;
+          vehicle_year: number | null;
+          vehicle_color: string | null;
+          vehicle_plate: string | null;
+          verified: boolean;
+          verified_at: string | null;
+          verified_by: string | null;
+          rejection_reason: string | null;
+          review_status: ReviewStatus;
+        };
+        Insert: {
+          id: string;
+          license_url?: string | null;
+          insurance_url?: string | null;
+          id_document_url?: string | null;
+          vehicle_make?: string | null;
+          vehicle_model?: string | null;
+          vehicle_year?: number | null;
+          vehicle_color?: string | null;
+          vehicle_plate?: string | null;
+          verified?: boolean;
+          verified_at?: string | null;
+          verified_by?: string | null;
+          rejection_reason?: string | null;
+          review_status?: ReviewStatus;
+        };
+        Update: {
+          id?: string;
+          license_url?: string | null;
+          insurance_url?: string | null;
+          id_document_url?: string | null;
+          vehicle_make?: string | null;
+          vehicle_model?: string | null;
+          vehicle_year?: number | null;
+          vehicle_color?: string | null;
+          vehicle_plate?: string | null;
+          verified?: boolean;
+          verified_at?: string | null;
+          verified_by?: string | null;
+          rejection_reason?: string | null;
+          review_status?: ReviewStatus;
+        };
+        Relationships: [];
+      };
+      rider_documents: {
+        Row: {
+          id: string;
+          user_id: string;
+          document_url: string;
+          verified: boolean;
+          review_status: ReviewStatus;
+          reviewed_by: string | null;
+          rejection_reason: string | null;
+          uploaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          document_url: string;
+          verified?: boolean;
+          review_status?: ReviewStatus;
+          reviewed_by?: string | null;
+          rejection_reason?: string | null;
+          uploaded_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          document_url?: string;
+          verified?: boolean;
+          review_status?: ReviewStatus;
+          reviewed_by?: string | null;
+          rejection_reason?: string | null;
+          uploaded_at?: string;
+        };
+        Relationships: [];
+      };
+      bookings: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          role: 'rider' | 'driver';
+          status: BookingStatus;
+          seats_booked: number;
+          payment_method: PaymentMethod | null;
+          ekyash_invoice_id: string | null;
+          cancelled_at: string | null;
+          cancel_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          role: 'rider' | 'driver';
+          status?: BookingStatus;
+          seats_booked?: number;
+          payment_method?: PaymentMethod | null;
+          ekyash_invoice_id?: string | null;
+          cancelled_at?: string | null;
+          cancel_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          role?: 'rider' | 'driver';
+          status?: BookingStatus;
+          seats_booked?: number;
+          payment_method?: PaymentMethod | null;
+          ekyash_invoice_id?: string | null;
+          cancelled_at?: string | null;
+          cancel_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      contracts: {
+        Row: {
+          id: string;
+          post_id: string;
+          booking_id: string;
+          parties: string[];
+          origin_address: string | null;
+          origin_coords: unknown;
+          dest_address: string | null;
+          dest_coords: unknown;
+          agreed_price_cents: number;
+          departure_at: string | null;
+          terms: Record<string, unknown> | null;
+          status: ContractStatus;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          booking_id: string;
+          parties: string[];
+          origin_address?: string | null;
+          origin_coords?: unknown;
+          dest_address?: string | null;
+          dest_coords?: unknown;
+          agreed_price_cents: number;
+          departure_at?: string | null;
+          terms?: Record<string, unknown> | null;
+          status?: ContractStatus;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          booking_id?: string;
+          parties?: string[];
+          origin_address?: string | null;
+          origin_coords?: unknown;
+          dest_address?: string | null;
+          dest_coords?: unknown;
+          agreed_price_cents?: number;
+          departure_at?: string | null;
+          terms?: Record<string, unknown> | null;
+          status?: ContractStatus;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      ratings: {
+        Row: {
+          id: string;
+          contract_id: string;
+          rater_id: string;
+          rated_id: string;
+          stars: number;
+          was_on_time: boolean | null;
+          comment: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          contract_id: string;
+          rater_id: string;
+          rated_id: string;
+          stars: number;
+          was_on_time?: boolean | null;
+          comment?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          contract_id?: string;
+          rater_id?: string;
+          rated_id?: string;
+          stars?: number;
+          was_on_time?: boolean | null;
+          comment?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      strikes: {
+        Row: {
+          id: string;
+          user_id: string;
+          contract_id: string | null;
+          type: StrikeType;
+          reason: string;
+          auto_generated: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          contract_id?: string | null;
+          type: StrikeType;
+          reason: string;
+          auto_generated?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          contract_id?: string | null;
+          type?: StrikeType;
+          reason?: string;
+          auto_generated?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      road_reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          type: RoadReportType;
+          lat: number;
+          lng: number;
+          description: string | null;
+          upvotes: number;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          type: RoadReportType;
+          lat: number;
+          lng: number;
+          description?: string | null;
+          upvotes?: number;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          type?: RoadReportType;
+          lat?: number;
+          lng?: number;
+          description?: string | null;
+          upvotes?: number;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      gas_prices: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          station_name: string;
+          station_lat: number;
+          station_lng: number;
+          regular_cents: number | null;
+          premium_cents: number | null;
+          diesel_cents: number | null;
+          verified_count: number;
+          reported_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          station_name: string;
+          station_lat: number;
+          station_lng: number;
+          regular_cents?: number | null;
+          premium_cents?: number | null;
+          diesel_cents?: number | null;
+          verified_count?: number;
+          reported_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          station_name?: string;
+          station_lat?: number;
+          station_lng?: number;
+          regular_cents?: number | null;
+          premium_cents?: number | null;
+          diesel_cents?: number | null;
+          verified_count?: number;
+          reported_at?: string;
+        };
+        Relationships: [];
+      };
+      ekyash_transactions: {
+        Row: {
+          id: string;
+          contract_id: string;
+          payer_id: string;
+          payee_id: string;
+          order_id: string;
+          invoice_id: string | null;
+          transaction_id: string | null;
+          amount_cents: number;
+          platform_fee_cents: number;
+          donation_cents: number;
+          currency: string;
+          status: EkyashStatus;
+          callback_received: boolean;
+          callback_payload: Record<string, unknown> | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          contract_id: string;
+          payer_id: string;
+          payee_id: string;
+          order_id: string;
+          invoice_id?: string | null;
+          transaction_id?: string | null;
+          amount_cents: number;
+          platform_fee_cents?: number;
+          donation_cents?: number;
+          currency?: string;
+          status?: EkyashStatus;
+          callback_received?: boolean;
+          callback_payload?: Record<string, unknown> | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          contract_id?: string;
+          payer_id?: string;
+          payee_id?: string;
+          order_id?: string;
+          invoice_id?: string | null;
+          transaction_id?: string | null;
+          amount_cents?: number;
+          platform_fee_cents?: number;
+          donation_cents?: number;
+          currency?: string;
+          status?: EkyashStatus;
+          callback_received?: boolean;
+          callback_payload?: Record<string, unknown> | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          data: Record<string, unknown> | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body?: string | null;
+          data?: Record<string, unknown> | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          body?: string | null;
+          data?: Record<string, unknown> | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      waitlist: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          notified: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          notified?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          notified?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      driver_checkins: {
+        Row: {
+          id: string;
+          driver_id: string;
+          contract_id: string;
+          selfie_url: string;
+          lat: number | null;
+          lng: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          driver_id: string;
+          contract_id: string;
+          selfie_url: string;
+          lat?: number | null;
+          lng?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          driver_id?: string;
+          contract_id?: string;
+          selfie_url?: string;
+          lat?: number | null;
+          lng?: number | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      donation_totals: {
+        Row: {
+          id: number;
+          total_cents: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          total_cents?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          total_cents?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      email_receipts: {
+        Row: {
+          id: string;
+          user_id: string;
+          contract_id: string | null;
+          ekyash_txn_id: string | null;
+          email_to: string;
+          type: string;
+          resend_id: string | null;
+          status: string;
+          error: string | null;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          contract_id?: string | null;
+          ekyash_txn_id?: string | null;
+          email_to: string;
+          type: string;
+          resend_id?: string | null;
+          status?: string;
+          error?: string | null;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          contract_id?: string | null;
+          ekyash_txn_id?: string | null;
+          email_to?: string;
+          type?: string;
+          resend_id?: string | null;
+          status?: string;
+          error?: string | null;
+          sent_at?: string;
+        };
+        Relationships: [];
+      };
+      flags: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          target_type: 'post' | 'user' | 'booking';
+          target_id: string;
+          reason: FlagReason;
+          description: string | null;
+          status: FlagStatus;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          target_type: 'post' | 'user' | 'booking';
+          target_id: string;
+          reason: FlagReason;
+          description?: string | null;
+          status?: FlagStatus;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          target_type?: 'post' | 'user' | 'booking';
+          target_id?: string;
+          reason?: FlagReason;
+          description?: string | null;
+          status?: FlagStatus;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      admin_actions: {
+        Row: {
+          id: string;
+          admin_id: string;
+          action: string;
+          target_type: string;
+          target_id: string;
+          reason: string | null;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          action: string;
+          target_type: string;
+          target_id: string;
+          reason?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          action?: string;
+          target_type?: string;
+          target_id?: string;
+          reason?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: {
+      role: Role;
+      account_status: AccountStatus;
+      review_status: ReviewStatus;
+      post_type: PostType;
+      post_status: PostStatus;
+      booking_status: BookingStatus;
+      contract_status: ContractStatus;
+      payment_method: PaymentMethod;
+      strike_type: StrikeType;
+      ekyash_status: EkyashStatus;
+      flag_reason: FlagReason;
+      flag_status: FlagStatus;
+      errand_category: ErrandCategory;
+      pickup_style: PickupStyle;
+      road_report_type: RoadReportType;
+    };
+  };
+}

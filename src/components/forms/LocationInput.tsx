@@ -1,0 +1,235 @@
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
+import { Icon } from '@/components/icons';
+import { colors, typography, spacing, borderRadius } from '@/theme';
+import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
+import { BELIZE_BBOX } from '@/lib/constants';
+
+interface Suggestion {
+  id: string;
+  place_name: string;
+}
+
+interface LocationInputProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  error?: string;
+  placeholder?: string;
+  required?: boolean;
+}
+
+/**
+ * Address input with Mapbox Geocoding autocomplete, bounded to Belize.
+ */
+export function LocationInput({
+  label,
+  value,
+  onChangeText,
+  error,
+  placeholder = 'Enter address',
+  required,
+}: LocationInputProps) {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectingRef = useRef(false);
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const bbox = `${BELIZE_BBOX.west},${BELIZE_BBOX.south},${BELIZE_BBOX.east},${BELIZE_BBOX.north}`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&bbox=${bbox}&country=BZ&limit=5&types=place,locality,neighborhood,address,poi`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const items: Suggestion[] = (data.features ?? []).map((f: { id: string; place_name: string }) => ({
+        id: f.id,
+        place_name: f.place_name,
+      }));
+      setSuggestions(items);
+      setShowDropdown(items.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowDropdown(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleChangeText = useCallback(
+    (text: string) => {
+      onChangeText(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => fetchSuggestions(text), 350);
+    },
+    [onChangeText, fetchSuggestions],
+  );
+
+  const handleSelect = useCallback(
+    (item: Suggestion) => {
+      selectingRef.current = true;
+      onChangeText(item.place_name);
+      setSuggestions([]);
+      setShowDropdown(false);
+    },
+    [onChangeText],
+  );
+
+  const handleBlur = useCallback(() => {
+    // Delay hide so onPress on suggestion can fire first
+    setTimeout(() => {
+      if (!selectingRef.current) {
+        setShowDropdown(false);
+      }
+      selectingRef.current = false;
+    }, 200);
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    if (suggestions.length > 0) {
+      setShowDropdown(true);
+    }
+  }, [suggestions]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  return (
+    <View style={[styles.wrapper, showDropdown && styles.wrapperOpen]}>
+      <View style={styles.fieldContainer}>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>{label}</Text>
+          {required && <Text style={styles.required}>*</Text>}
+        </View>
+        <View style={[styles.inputRow, error ? styles.errorBorder : undefined]}>
+          <Icon name="map-pin" size={18} color={colors.forest[400]} />
+          <RNTextInput
+            value={value}
+            onChangeText={handleChangeText}
+            onBlur={handleBlur}
+            onFocus={handleFocus}
+            placeholder={placeholder}
+            placeholderTextColor={colors.neutral[400]}
+            style={styles.input}
+            autoCapitalize="words"
+          />
+          {loading && <ActivityIndicator size="small" color={colors.forest[400]} />}
+        </View>
+        {error && <Text style={styles.error}>{error}</Text>}
+      </View>
+
+      {showDropdown && suggestions.length > 0 && (
+        <View style={styles.dropdown}>
+          {suggestions.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.suggestionItem}
+              onPress={() => handleSelect(item)}
+              activeOpacity={0.7}
+            >
+              <Icon name="map-pin" size={14} color={colors.neutral[400]} />
+              <Text style={styles.suggestionText} numberOfLines={2}>
+                {item.place_name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+    zIndex: 10,
+  },
+  wrapperOpen: {
+    zIndex: 100,
+  },
+  fieldContainer: {
+    gap: spacing.xs,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  label: {
+    ...typography.body2Bold,
+    color: colors.forest[400],
+  },
+  required: {
+    ...typography.body2Bold,
+    color: colors.error,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  errorBorder: {
+    borderColor: colors.error,
+  },
+  input: {
+    ...typography.body1,
+    flex: 1,
+    color: colors.forest[900],
+    ...Platform.select({
+      web: { outlineStyle: 'none' } as Record<string, string>,
+      ios: {} as Record<string, string>,
+      android: {} as Record<string, string>,
+    }),
+  },
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    marginTop: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    zIndex: 200,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.neutral[100],
+  },
+  suggestionText: {
+    ...typography.body2,
+    flex: 1,
+    color: colors.forest[900],
+  },
+  error: {
+    ...typography.caption,
+    color: colors.error,
+  },
+});
