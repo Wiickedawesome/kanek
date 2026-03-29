@@ -21,29 +21,10 @@ export default function PhoneVerifyScreen() {
   const otpRef = useRef<TextInput>(null);
   const captchaRef = useRef<HCaptchaHandle>(null);
 
-  const getCaptchaToken = async (): Promise<string> => {
-    try {
-      const token = await captchaRef.current?.execute();
-      return token ?? '';
-    } catch (e) {
-      console.warn('hCaptcha execute failed:', e);
-      return '';
-    }
-  };
-
   const handleSendOtp = async () => {
     if (mode === 'phone') {
       if (!isValidPhone(phone)) {
         showAlert('Invalid Phone', 'Enter a valid Belize phone number (+501 + 7 digits)');
-        return;
-      }
-      setIsSubmitting(true);
-      const captchaToken = await getCaptchaToken();
-      const { error } = await signInWithPhone(phone, captchaToken || undefined);
-      setIsSubmitting(false);
-      if (error) {
-        captchaRef.current?.resetCaptcha();
-        showAlert('Error', error.message);
         return;
       }
     } else {
@@ -52,9 +33,21 @@ export default function PhoneVerifyScreen() {
         showAlert('Invalid Email', 'Enter a valid email address');
         return;
       }
-      setIsSubmitting(true);
-      const captchaToken = await getCaptchaToken();
-      const { error } = await signInWithEmail(trimmed, captchaToken || undefined);
+    }
+
+    const captchaToken = captchaRef.current?.getToken() || undefined;
+
+    setIsSubmitting(true);
+    if (mode === 'phone') {
+      const { error } = await signInWithPhone(phone, captchaToken);
+      setIsSubmitting(false);
+      if (error) {
+        captchaRef.current?.resetCaptcha();
+        showAlert('Error', error.message);
+        return;
+      }
+    } else {
+      const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken);
       setIsSubmitting(false);
       if (error) {
         captchaRef.current?.resetCaptcha();
@@ -148,6 +141,10 @@ export default function PhoneVerifyScreen() {
           />
         )}
 
+        {/* Visible hCaptcha widget (web only) */}
+        <View nativeID="hcaptcha-mount" style={[styles.captchaWrap, !isInputStep && { display: 'none' }]} />
+        <HCaptcha ref={captchaRef} />
+
         <Pressable
           style={[styles.button, isSubmitting && styles.buttonDisabled]}
           onPress={isInputStep ? handleSendOtp : handleVerifyOtp}
@@ -173,8 +170,6 @@ export default function PhoneVerifyScreen() {
             </Text>
           </Pressable>
         )}
-
-        <HCaptcha ref={captchaRef} />
       </View>
     </SafeAreaView>
   );
@@ -207,6 +202,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.forest[600],
     paddingVertical: spacing.md,
     marginBottom: spacing.xl,
+  },
+  captchaWrap: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    minHeight: 78,
   },
   button: {
     backgroundColor: colors.forest[600],

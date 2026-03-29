@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, forwardRef } from 'react';
 
 export interface HCaptchaHandle {
-  execute: () => Promise<string>;
+  getToken: () => string;
   resetCaptcha: () => void;
 }
 
@@ -12,7 +12,7 @@ export interface HCaptchaHandle {
  */
 export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
   useImperativeHandle(ref, () => ({
-    execute: () => Promise.resolve(''),
+    getToken: () => '',
     resetCaptcha: () => {},
   }));
 

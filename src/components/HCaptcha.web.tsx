@@ -1,73 +1,91 @@
-import { useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 
 const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 
 export interface HCaptchaHandle {
-  execute: () => Promise<string>;
+  getToken: () => string;
   resetCaptcha: () => void;
 }
 
 /** Load the hCaptcha JS SDK once */
 function loadScript(): Promise<void> {
-  if (document.getElementById('hcaptcha-script')) return Promise.resolve();
+  if ((window as any).hcaptcha) return Promise.resolve();
+  if (document.getElementById('hcaptcha-script')) {
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if ((window as any).hcaptcha) { clearInterval(check); resolve(); }
+      }, 50);
+    });
+  }
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.id = 'hcaptcha-script';
     s.src = 'https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off';
     s.async = true;
-    s.onload = () => resolve();
+    s.onload = () => {
+      const check = setInterval(() => {
+        if ((window as any).hcaptcha) { clearInterval(check); resolve(); }
+      }, 50);
+    };
     s.onerror = () => reject(new Error('Failed to load hCaptcha'));
     document.head.appendChild(s);
   });
 }
 
-let widgetId: string | null = null;
-let containerEl: HTMLDivElement | null = null;
-
-function ensureWidget(): string | null {
-  const hc = (window as any).hcaptcha;
-  if (!hc || !SITE_KEY) return null;
-  if (widgetId !== null) return widgetId;
-
-  if (!containerEl) {
-    containerEl = document.createElement('div');
-    containerEl.id = 'hcaptcha-container';
-    containerEl.style.cssText = 'position:fixed;bottom:0;right:0;z-index:-1;opacity:0;pointer-events:none;';
-    document.body.appendChild(containerEl);
-  }
-
-  widgetId = hc.render(containerEl, {
-    sitekey: SITE_KEY,
-    size: 'invisible',
-  });
-  return widgetId;
-}
-
 export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
-  useEffect(() => {
-    if (SITE_KEY) loadScript().then(() => ensureWidget());
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  const tokenRef = useRef('');
+
+  const onVerify = useCallback((token: string) => {
+    tokenRef.current = token;
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    execute: async () => {
-      try {
-        await loadScript();
-        const id = ensureWidget();
-        const hc = (window as any).hcaptcha;
-        if (!hc || id === null) {
-          console.warn('[hCaptcha] SDK not available or widget not rendered');
-          return '';
-        }
-        const res = await hc.execute(id, { async: true });
-        return res.response as string;
-      } catch (e) {
-        console.warn('[hCaptcha] execute error:', e);
-        return '';
-      }
-    },
-    resetCaptcha: () => {
+  const onExpire = useCallback(() => {
+    tokenRef.current = '';
+  }, []);
+
+  useEffect(() => {
+    if (!SITE_KEY) return;
+
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-top:12px;margin-bottom:4px;display:flex;justify-content:center;';
+    containerRef.current = div;
+
+    // Find the mount point — the element with data-hcaptcha attribute
+    const mount = document.getElementById('hcaptcha-mount');
+    if (mount) {
+      mount.appendChild(div);
+    }
+
+    loadScript().then(() => {
       const hc = (window as any).hcaptcha;
-      if (hc && widgetId !== null) hc.reset(widgetId);
+      if (!hc || !containerRef.current) return;
+      widgetIdRef.current = hc.render(containerRef.current, {
+        sitekey: SITE_KEY,
+        size: 'normal',
+        callback: onVerify,
+        'expired-callback': onExpire,
+        'error-callback': onExpire,
+      });
+    });
+
+    return () => {
+      const hc = (window as any).hcaptcha;
+      if (hc && widgetIdRef.current !== null) {
+        try { hc.remove(widgetIdRef.current); } catch {}
+      }
+      div.remove();
+      widgetIdRef.current = null;
+    };
+  }, [onVerify, onExpire]);
+
+  useImperativeHandle(ref, () => ({
+    getToken: () => tokenRef.current,
+    resetCaptcha: () => {
+      tokenRef.current = '';
+      const hc = (window as any).hcaptcha;
+      if (hc && widgetIdRef.current !== null) hc.reset(widgetIdRef.current);
     },
   }));
 
