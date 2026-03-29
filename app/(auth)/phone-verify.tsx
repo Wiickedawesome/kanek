@@ -38,25 +38,30 @@ export default function PhoneVerifyScreen() {
     const captchaToken = captchaRef.current?.getToken() || undefined;
 
     setIsSubmitting(true);
-    if (mode === 'phone') {
-      const { error } = await signInWithPhone(phone, captchaToken);
-      setIsSubmitting(false);
-      if (error) {
-        captchaRef.current?.resetCaptcha();
-        showAlert('Error', error.message);
-        return;
+    try {
+      if (mode === 'phone') {
+        const { error } = await signInWithPhone(phone, captchaToken);
+        if (error) {
+          captchaRef.current?.resetCaptcha();
+          showAlert('Error', error.message);
+          return;
+        }
+      } else {
+        const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken);
+        if (error) {
+          captchaRef.current?.resetCaptcha();
+          showAlert('Error', error.message);
+          return;
+        }
       }
-    } else {
-      const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken);
+      setStep('otp');
+      setTimeout(() => otpRef.current?.focus(), 100);
+    } catch (err) {
+      captchaRef.current?.resetCaptcha();
+      showAlert('Error', err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
       setIsSubmitting(false);
-      if (error) {
-        captchaRef.current?.resetCaptcha();
-        showAlert('Error', error.message);
-        return;
-      }
     }
-    setStep('otp');
-    setTimeout(() => otpRef.current?.focus(), 100);
   };
 
   const handleVerifyOtp = async () => {
@@ -141,9 +146,8 @@ export default function PhoneVerifyScreen() {
           />
         )}
 
-        {/* Visible hCaptcha widget (web only) */}
-        <View nativeID="hcaptcha-mount" style={[styles.captchaWrap, !isInputStep && { display: 'none' }]} />
-        <HCaptcha ref={captchaRef} />
+        {/* Visible hCaptcha checkbox (web only) */}
+        {isInputStep && <HCaptcha ref={captchaRef} />}
 
         <Pressable
           style={[styles.button, isSubmitting && styles.buttonDisabled]}
@@ -202,11 +206,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.forest[600],
     paddingVertical: spacing.md,
     marginBottom: spacing.xl,
-  },
-  captchaWrap: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    minHeight: 78,
   },
   button: {
     backgroundColor: colors.forest[600],

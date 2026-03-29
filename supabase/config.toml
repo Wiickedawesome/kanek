@@ -217,14 +217,14 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+[auth.email.smtp]
+enabled = true
+host = "smtp.office365.com"
+port = 587
+user = "dev@belizechain.org"
+pass = "env(SMTP_PASS)"
+admin_email = "dev@belizechain.org"
+sender_name = "Kanek"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
