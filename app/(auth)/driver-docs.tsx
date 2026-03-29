@@ -3,11 +3,11 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   ScrollView,
   TextInput,
   Image,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -49,7 +49,7 @@ export default function DriverDocsScreen() {
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
-        Alert.alert('File too large', 'Document must be under 5 MB');
+        showAlert('File too large', 'Document must be under 5 MB');
         return;
       }
       setter(asset.uri);
@@ -68,7 +68,7 @@ export default function DriverDocsScreen() {
       .upload(fileName, arrayBuffer, { contentType: 'image/jpeg' });
 
     if (error) {
-      Alert.alert('Upload failed', error.message);
+      showAlert('Upload failed', error.message);
       return null;
     }
     return fileName;
@@ -109,7 +109,7 @@ export default function DriverDocsScreen() {
     });
 
     if (error) {
-      Alert.alert('Submission failed', error.message);
+      showAlert('Submission failed', error.message);
       setIsSubmitting(false);
       return;
     }

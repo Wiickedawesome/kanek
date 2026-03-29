@@ -80,7 +80,6 @@ export const reportsApi = createApi({
 
     upvoteRoadReport: builder.mutation<RoadReportRow, string>({
       queryFn: async (reportId) => {
-        // RPC or manual increment
         const { data: current, error: fetchErr } = await supabase
           .from('road_reports')
           .select('upvotes')
@@ -101,6 +100,40 @@ export const reportsApi = createApi({
         return { data: data as RoadReportRow };
       },
       invalidatesTags: (_r, _e, id) => [{ type: 'RoadReport', id }],
+    }),
+
+    reportGone: builder.mutation<null, string>({
+      queryFn: async (reportId) => {
+        const { data: current, error: fetchErr } = await supabase
+          .from('road_reports')
+          .select('gone_count')
+          .eq('id', reportId)
+          .single();
+
+        if (fetchErr)
+          return { error: { status: 'CUSTOM_ERROR' as const, error: fetchErr.message } };
+
+        const newCount = (current?.gone_count ?? 0) + 1;
+
+        if (newCount >= 3) {
+          const { error: delErr } = await supabase
+            .from('road_reports')
+            .delete()
+            .eq('id', reportId);
+          if (delErr)
+            return { error: { status: 'CUSTOM_ERROR' as const, error: delErr.message } };
+          return { data: null };
+        }
+
+        const { error } = await supabase
+          .from('road_reports')
+          .update({ gone_count: newCount })
+          .eq('id', reportId);
+
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: [{ type: 'RoadReport', id: 'LIST' }],
     }),
 
     // --- Gas prices ---
@@ -177,6 +210,7 @@ export const {
   useGetRoadReportsQuery,
   useCreateRoadReportMutation,
   useUpvoteRoadReportMutation,
+  useReportGoneMutation,
   useGetGasPricesQuery,
   useCreateGasPriceMutation,
   useVerifyGasPriceMutation,

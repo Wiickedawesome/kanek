@@ -65,7 +65,10 @@ export default function ReportsScreen() {
     if (item.type === 'road') {
       const r = item.data;
       return (
-        <Card style={styles.card}>
+        <Card
+          style={styles.card}
+          onPress={() => router.push({ pathname: '/modals/report-detail', params: { id: r.id } })}
+        >
           <View style={styles.cardHeader}>
             <Icon name="construction" size={18} color={colors.forest[400]} />
             <Text style={styles.reportType}>{formatReportType(r.type)}</Text>

@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons';
 import type { IconName } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { RootState } from '@/store';
+import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 
 interface PostTypeOption {
   type: string;
@@ -57,7 +58,9 @@ const POST_OPTIONS: PostTypeOption[] = [
 ];
 
 export default function PostScreen() {
-  const role = useSelector((state: RootState) => state.auth.user?.user_metadata?.role as string | undefined);
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const role = profile?.role;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,8 +70,8 @@ export default function PostScreen() {
       </View>
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {POST_OPTIONS.map((option) => {
-          // Hide driver-only options for riders
-          if (option.driverOnly && role === 'rider') return null;
+          // Hide driver-only options for non-drivers
+          if (option.driverOnly && role !== 'driver') return null;
 
           return (
             <Pressable

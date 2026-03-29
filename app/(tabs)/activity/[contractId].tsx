@@ -24,7 +24,7 @@ import { useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useSOS } from '@/hooks/useSOS';
-import { formatBZD, formatDeparture, formatDate } from '@/lib/helpers';
+import { formatBZD, formatDeparture, formatDate, openInMaps } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
@@ -138,15 +138,19 @@ export default function ContractDetailScreen() {
   }, [contractId, contract, userId, completeContract]);
 
   const handlePayment = useCallback(() => {
-    if (!contract) return;
+    if (!contract || !userId) return;
+    const otherParty = contract.parties.find((p) => p !== userId) ?? '';
     router.push({
       pathname: '/modals/payment-select',
       params: {
         contractId: contract.id,
-        amount: String(contract.agreed_price_cents),
+        payerId: userId,
+        payeeId: otherParty,
+        amountCents: String(contract.agreed_price_cents),
+        description: contract.post?.title ?? 'Kanek payment',
       },
     });
-  }, [contract]);
+  }, [contract, userId]);
 
   if (isLoading) {
     return (
@@ -210,7 +214,22 @@ export default function ContractDetailScreen() {
         {/* Route */}
         {(contract.origin_address || contract.dest_address) && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Route</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Route</Text>
+              {origin && destination && (
+                <Pressable
+                  style={styles.openMapsBtn}
+                  hitSlop={8}
+                  onPress={() => openInMaps(
+                    { lat: origin[1], lng: origin[0], label: contract.origin_address ?? undefined },
+                    { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
+                  )}
+                >
+                  <Icon name="external-link" size={14} color={colors.forest[400]} />
+                  <Text style={styles.openMapsText}>Open in Maps</Text>
+                </Pressable>
+              )}
+            </View>
             <View style={styles.routeRow}>
               <View style={styles.routeDots}>
                 <View style={styles.dotGreen} />
@@ -482,4 +501,16 @@ const styles = StyleSheet.create({
   },
   payButton: { flex: 1 },
   completeButton: { flex: 1 },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  openMapsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  openMapsText: {
+    ...typography.caption,
+    color: colors.forest[400],
+    fontWeight: '600',
+  },
 });

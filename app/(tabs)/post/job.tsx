@@ -20,7 +20,7 @@ import { useCreatePostMutation } from '@/store/api/postsApi';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
-import type { JobCategory, PayType, JobTimeline } from '@/types/database';
+import type { JobCategory, PayType, JobTimeline, PaymentMethod } from '@/types/database';
 
 const JOB_CATEGORIES: { value: JobCategory; label: string }[] = [
   { value: 'skilled_trade', label: 'Skilled Trade' },
@@ -57,6 +57,7 @@ export default function JobFormScreen() {
   const [payRateDollars, setPayRateDollars] = useState('');
   const [payType, setPayType] = useState<PayType>('fixed');
   const [timeline, setTimeline] = useState<JobTimeline>('flexible');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -100,6 +101,7 @@ export default function JobFormScreen() {
         pay_rate_cents: payRateCents,
         pay_type: payType,
         job_timeline: timeline,
+        payment_method: paymentMethod,
       }).unwrap();
 
       router.back();
@@ -207,6 +209,25 @@ export default function JobFormScreen() {
             inputMode="decimal"
             error={errors.payRateDollars}
           />
+
+          {/* Settlement method */}
+          <View>
+            <Text style={styles.fieldLabel}>Settlement</Text>
+            <View style={styles.chipRow}>
+              <Pressable
+                style={[styles.chip, paymentMethod === 'cash' && styles.chipSelected]}
+                onPress={() => setPaymentMethod('cash')}
+              >
+                <Text style={[styles.chipText, paymentMethod === 'cash' && styles.chipTextSelected]}>Cash</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.chip, paymentMethod === 'ekyash' && styles.chipSelected]}
+                onPress={() => setPaymentMethod('ekyash')}
+              >
+                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>eKyash</Text>
+              </Pressable>
+            </View>
+          </View>
 
           {/* Timeline */}
           <View>

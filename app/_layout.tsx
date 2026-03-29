@@ -5,13 +5,13 @@ import { Provider } from 'react-redux';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { store } from '@/store';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthListener } from '@/hooks/useAuth';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutInner() {
-  useAuth();
+  useAuthListener();
 
   const [fontsLoaded] = useFonts({
     'WorkSans-Bold': require('../assets/fonts/WorkSans-Bold.ttf'),

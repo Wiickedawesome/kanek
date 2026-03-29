@@ -21,7 +21,7 @@ import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
 import { buildRouteMapUrl } from '@/lib/mapbox';
-import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
+import { formatBZD, formatDeparture, getTimeAgo, openInMaps } from '@/lib/helpers';
 import type { RootState } from '@/store';
 
 const MAP_HEIGHT = 200;
@@ -114,6 +114,19 @@ export default function PostDetailScreen() {
         {mapUri && (
           <View style={styles.mapContainer}>
             <Image source={{ uri: mapUri }} style={styles.mapImage} resizeMode="cover" />
+            {hasCoords && (
+              <Pressable
+                style={styles.openMapsBtn}
+                hitSlop={8}
+                onPress={() => openInMaps(
+                  { lat: post.origin_lat!, lng: post.origin_lng!, label: post.origin_address ?? undefined },
+                  { lat: post.dest_lat!, lng: post.dest_lng!, label: post.dest_address ?? undefined },
+                )}
+              >
+                <Icon name="external-link" size={16} color={colors.neutral[0]} />
+                <Text style={styles.openMapsText}>Open in Maps</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -131,6 +144,21 @@ export default function PostDetailScreen() {
                 <Text style={styles.address}>{post.dest_address ?? 'Not specified'}</Text>
               </View>
             </View>
+            {/* Open in Maps link for posts without map preview */}
+            {!mapUri && post.origin_lat != null && post.origin_lng != null && (
+              <Pressable
+                style={styles.openMapsLink}
+                onPress={() => openInMaps(
+                  { lat: post.origin_lat!, lng: post.origin_lng!, label: post.origin_address ?? undefined },
+                  post.dest_lat != null && post.dest_lng != null
+                    ? { lat: post.dest_lat, lng: post.dest_lng, label: post.dest_address ?? undefined }
+                    : null,
+                )}
+              >
+                <Icon name="external-link" size={14} color={colors.forest[400]} />
+                <Text style={styles.openMapsLinkText}>Open in Maps</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -529,5 +557,34 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  openMapsBtn: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.pill,
+  },
+  openMapsText: {
+    ...typography.caption,
+    color: colors.neutral[0],
+    fontWeight: '600',
+  },
+  openMapsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+    alignSelf: 'flex-end',
+  },
+  openMapsLinkText: {
+    ...typography.caption,
+    color: colors.forest[400],
+    fontWeight: '600',
   },
 });

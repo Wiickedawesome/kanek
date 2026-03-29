@@ -1,6 +1,93 @@
+import { Linking, Platform, ActionSheetIOS, Alert } from 'react-native';
 import { PHONE_REGEX, BELIZE_BBOX } from './constants';
 
 const BZ_LOCALE = 'en-BZ';
+
+interface OpenMapsLocation {
+  lat: number;
+  lng: number;
+  label?: string;
+}
+
+/** Open a location or route in an external maps app (Google Maps, Apple Maps, Waze). */
+export function openInMaps(
+  origin?: OpenMapsLocation | null,
+  destination?: OpenMapsLocation | null,
+) {
+  if (!origin && !destination) return;
+
+  // Build URLs for each maps provider
+  const googleMapsUrl = buildGoogleMapsUrl(origin, destination);
+  const appleMapsUrl = buildAppleMapsUrl(origin, destination);
+  const wazeUrl = buildWazeUrl(destination ?? origin!);
+
+  const options: { label: string; url: string }[] = [
+    { label: 'Google Maps', url: googleMapsUrl },
+    { label: 'Waze', url: wazeUrl },
+  ];
+  if (Platform.OS === 'ios') {
+    options.unshift({ label: 'Apple Maps', url: appleMapsUrl });
+  }
+
+  if (Platform.OS === 'web') {
+    // Web: just open Google Maps
+    Linking.openURL(googleMapsUrl);
+    return;
+  }
+
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [...options.map((o) => o.label), 'Cancel'],
+        cancelButtonIndex: options.length,
+        title: 'Open in Maps',
+      },
+      (idx) => {
+        if (idx < options.length) Linking.openURL(options[idx].url);
+      },
+    );
+  } else {
+    // Android: use Alert with buttons
+    Alert.alert(
+      'Open in Maps',
+      undefined,
+      [
+        ...options.map((o) => ({
+          text: o.label,
+          onPress: () => Linking.openURL(o.url),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  }
+}
+
+function buildGoogleMapsUrl(
+  origin?: OpenMapsLocation | null,
+  destination?: OpenMapsLocation | null,
+): string {
+  if (origin && destination) {
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=driving`;
+  }
+  const loc = destination ?? origin!;
+  const q = loc.label ? encodeURIComponent(loc.label) : `${loc.lat},${loc.lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
+
+function buildAppleMapsUrl(
+  origin?: OpenMapsLocation | null,
+  destination?: OpenMapsLocation | null,
+): string {
+  if (origin && destination) {
+    return `https://maps.apple.com/?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}&dirflg=d`;
+  }
+  const loc = destination ?? origin!;
+  return `https://maps.apple.com/?q=${loc.label ? encodeURIComponent(loc.label) : `${loc.lat},${loc.lng}`}&ll=${loc.lat},${loc.lng}`;
+}
+
+function buildWazeUrl(loc: OpenMapsLocation): string {
+  return `https://waze.com/ul?ll=${loc.lat},${loc.lng}&navigate=yes`;
+}
 
 /** Format phone for display: +5016001234 → 600-1234 */
 export function formatPhone(phone: string): string {
@@ -11,6 +98,12 @@ export function formatPhone(phone: string): string {
 /** Validate Belize phone number */
 export function isValidPhone(phone: string): boolean {
   return PHONE_REGEX.test(phone);
+}
+
+/** Strip spaces, dashes, and parens from a phone string for validation */
+export function normalizePhone(raw: string): string | null {
+  const stripped = raw.replace(/[\s\-()]/g, '').trim();
+  return stripped || null;
 }
 
 /** Check if coordinates are within Belize */

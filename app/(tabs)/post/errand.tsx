@@ -24,7 +24,7 @@ import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
-import type { ErrandCategory } from '@/types/database';
+import type { ErrandCategory, PaymentMethod } from '@/types/database';
 
 const ERRAND_CATEGORIES: { value: ErrandCategory; label: string }[] = [
   { value: 'grocery', label: 'Grocery' },
@@ -50,6 +50,7 @@ export default function ErrandFormScreen() {
   const [itemCostDollars, setItemCostDollars] = useState('');
   const [needByDate, setNeedByDate] = useState('');
   const [needByTime, setNeedByTime] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -165,6 +166,7 @@ export default function ErrandFormScreen() {
         errand_category: category,
         errand_fee_cents: errandFeeCents,
         item_cost_cents: itemCostCents,
+        payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
         route_duration_min: routeInfo?.duration_minutes ?? null,
@@ -300,6 +302,25 @@ export default function ErrandFormScreen() {
               containerStyle={styles.halfField}
               error={errors.itemCostDollars}
             />
+          </View>
+
+          {/* Settlement method */}
+          <View>
+            <Text style={styles.fieldLabel}>Settlement</Text>
+            <View style={styles.categoryGrid}>
+              <Pressable
+                style={[styles.categoryChip, paymentMethod === 'cash' && styles.categoryChipSelected]}
+                onPress={() => setPaymentMethod('cash')}
+              >
+                <Text style={[styles.categoryText, paymentMethod === 'cash' && styles.categoryTextSelected]}>Cash</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.categoryChip, paymentMethod === 'ekyash' && styles.categoryChipSelected]}
+                onPress={() => setPaymentMethod('ekyash')}
+              >
+                <Text style={[styles.categoryText, paymentMethod === 'ekyash' && styles.categoryTextSelected]}>eKyash</Text>
+              </Pressable>
+            </View>
           </View>
 
           <TextInput

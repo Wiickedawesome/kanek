@@ -1,43 +1,90 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
-import { setSession, setLoading } from '@/store/slices/authSlice';
+import { setSession } from '@/store/slices/authSlice';
+import { profilesApi } from '@/store/api/profilesApi';
+import { postsApi } from '@/store/api/postsApi';
+import { bookingsApi } from '@/store/api/bookingsApi';
+import { ratingsApi } from '@/store/api/ratingsApi';
+import { ekyashApi } from '@/store/api/ekyashApi';
+import { reportsApi } from '@/store/api/reportsApi';
+import { notificationsApi } from '@/store/api/notificationsApi';
+import { checkinsApi } from '@/store/api/checkinsApi';
 import type { AppDispatch } from '@/store';
 
-export function useAuth() {
+/**
+ * Call ONCE at the root layout to bootstrap the session and listen for changes.
+ */
+export function useAuthListener() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       dispatch(setSession(session));
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       dispatch(setSession(session));
     });
 
     return () => subscription.unsubscribe();
   }, [dispatch]);
+}
 
-  const signInWithPhone = async (phone: string) => {
-    dispatch(setLoading(true));
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    dispatch(setLoading(false));
+/**
+ * Auth actions — safe to call from any component without duplicating listeners.
+ */
+export function useAuth() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const signInWithPhone = async (phone: string, captchaToken?: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
+      options: captchaToken ? { captchaToken } : undefined,
+    });
     return { error };
   };
 
   const verifyOtp = async (phone: string, token: string) => {
-    dispatch(setLoading(true));
     const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
-    dispatch(setLoading(false));
+    return { error };
+  };
+
+  const signInWithEmail = async (email: string, captchaToken?: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: captchaToken ? { captchaToken } : undefined,
+    });
+    return { error };
+  };
+
+  const verifyEmailOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
     return { error };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Clear Redux FIRST so navigation redirects immediately
+    dispatch(setSession(null));
+    dispatch(profilesApi.util.resetApiState());
+    dispatch(postsApi.util.resetApiState());
+    dispatch(bookingsApi.util.resetApiState());
+    dispatch(ratingsApi.util.resetApiState());
+    dispatch(ekyashApi.util.resetApiState());
+    dispatch(reportsApi.util.resetApiState());
+    dispatch(notificationsApi.util.resetApiState());
+    dispatch(checkinsApi.util.resetApiState());
+    // Clear Supabase session from server + AsyncStorage
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // If signOut fails, nuke the persisted session directly
+      const keys = await AsyncStorage.getAllKeys();
+      const authKeys = keys.filter((k) => k.startsWith('sb-'));
+      if (authKeys.length > 0) await AsyncStorage.multiRemove(authKeys);
+    }
   };
 
-  return { signInWithPhone, verifyOtp, signOut };
+  return { signInWithPhone, verifyOtp, signInWithEmail, verifyEmailOtp, signOut };
 }

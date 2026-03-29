@@ -13,20 +13,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 import { Button, TextInput } from '@/components/ui';
-import { colors, typography, spacing } from '@/theme';
-import { supabase } from '@/lib/supabase';
+import { MapPicker } from '@/components/map';
+import { colors, typography, spacing, borderRadius } from '@/theme';
+import { useCreateGasPriceMutation } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 
 export default function ReportGasModal() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const location = useSelector((state: RootState) => state.location);
+  const [createGasPrice] = useCreateGasPriceMutation();
 
   const [stationName, setStationName] = useState('');
   const [regular, setRegular] = useState('');
   const [premium, setPremium] = useState('');
   const [diesel, setDiesel] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mapVisible, setMapVisible] = useState(false);
+  const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinLabel, setPinLabel] = useState<string | null>(null);
 
   const parseCents = (val: string): number | null => {
     const n = parseFloat(val);
@@ -48,26 +61,27 @@ export default function ReportGasModal() {
       Alert.alert('Prices', 'Please enter at least one fuel price.');
       return;
     }
-    if (!userId) return;
+    if (!userId) {
+      Alert.alert('Not Signed In', 'Please sign in to submit prices.');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('gas_prices').insert({
-        reporter_id: userId,
-        station_name: stationName.trim(),
-        station_lat: location.latitude ?? 17.189,
-        station_lng: location.longitude ?? -88.497,
-        regular_cents: regularCents,
-        premium_cents: premiumCents,
-        diesel_cents: dieselCents,
-      });
+      await createGasPrice({
+        reporterId: userId,
+        stationName: stationName.trim(),
+        stationLat: pinCoords?.latitude ?? location.latitude ?? 17.189,
+        stationLng: pinCoords?.longitude ?? location.longitude ?? -88.497,
+        regularCents: regularCents ?? undefined,
+        premiumCents: premiumCents ?? undefined,
+        dieselCents: dieselCents ?? undefined,
+      }).unwrap();
 
-      if (error) throw error;
-
-      Alert.alert('Price Reported', 'Thank you for updating fuel prices!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    } catch {
+      Alert.alert('Price Reported', 'Thank you for updating fuel prices!');
+      safeBack();
+    } catch (err) {
+      console.error('Gas price insert error:', err);
       Alert.alert('Error', 'Could not submit price. Please try again.');
     } finally {
       setSubmitting(false);
@@ -77,7 +91,7 @@ export default function ReportGasModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Gas Prices</Text>
@@ -123,14 +137,28 @@ export default function ReportGasModal() {
             keyboardType="decimal-pad"
           />
 
-          <View style={styles.locationNote}>
-            <Icon name="map-pin" size={16} color={colors.forest[400]} />
-            <Text style={styles.locationText}>
-              {location.latitude
-                ? 'Using your current location'
-                : 'Location unavailable — using default'}
+          <Pressable style={styles.locationRow} onPress={() => setMapVisible(true)}>
+            <Icon name="map-pin" size={18} color={colors.accent.green} />
+            <Text style={styles.locationLabel} numberOfLines={1}>
+              {pinLabel
+                ? pinLabel
+                : location.latitude
+                  ? 'Current location'
+                  : 'Default location'}
             </Text>
-          </View>
+            <Text style={styles.locationAction}>Change</Text>
+          </Pressable>
+
+          <MapPicker
+            visible={mapVisible}
+            onClose={() => setMapVisible(false)}
+            onConfirm={(coords, name) => {
+              setPinCoords(coords);
+              setPinLabel(name);
+              setMapVisible(false);
+            }}
+            title="Station Location"
+          />
 
           <Button
             title="Submit Prices"
@@ -175,13 +203,24 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  locationNote: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    backgroundColor: colors.neutral[0],
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
   },
-  locationText: {
+  locationLabel: {
     ...typography.body2,
-    color: colors.forest[400],
+    color: colors.forest[900],
+    flex: 1,
+  },
+  locationAction: {
+    ...typography.body2Bold,
+    color: colors.accent.green,
   },
 });

@@ -17,13 +17,14 @@ import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
-import { colors, typography, spacing } from '@/theme';
+import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
+import type { PaymentMethod } from '@/types/database';
 
 export default function PackageFormScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
@@ -36,6 +37,7 @@ export default function PackageFormScreen() {
   const [priceDollars, setPriceDollars] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -129,6 +131,7 @@ export default function PackageFormScreen() {
         dest_lng: destCoords?.lng ?? null,
         departure_at: departureAt,
         price_cents: priceCents,
+        payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
         route_duration_min: routeInfo?.duration_minutes ?? null,
@@ -228,6 +231,25 @@ export default function PackageFormScreen() {
             error={errors.priceDollars}
           />
 
+          {/* Settlement method */}
+          <View>
+            <Text style={styles.fieldLabel}>Settlement</Text>
+            <View style={styles.chipRow}>
+              <Pressable
+                style={[styles.chip, paymentMethod === 'cash' && styles.chipSelected]}
+                onPress={() => setPaymentMethod('cash')}
+              >
+                <Text style={[styles.chipText, paymentMethod === 'cash' && styles.chipTextSelected]}>Cash</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.chip, paymentMethod === 'ekyash' && styles.chipSelected]}
+                onPress={() => setPaymentMethod('ekyash')}
+              >
+                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>eKyash</Text>
+              </Pressable>
+            </View>
+          </View>
+
           <TextInput
             label="Description"
             placeholder="Describe exactly where you'll be and package details (size, weight, handling)"
@@ -300,5 +322,34 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.md,
+  },
+  fieldLabel: {
+    ...typography.body2Bold,
+    color: colors.forest[900],
+    marginBottom: spacing.sm,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+    backgroundColor: colors.neutral[0],
+  },
+  chipSelected: {
+    backgroundColor: colors.forest[700],
+    borderColor: colors.forest[700],
+  },
+  chipText: {
+    ...typography.body2,
+    color: colors.neutral[500],
+  },
+  chipTextSelected: {
+    color: colors.neutral[0],
   },
 });

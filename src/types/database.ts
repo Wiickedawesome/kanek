@@ -18,6 +18,7 @@ export type PayType = 'hourly' | 'fixed';
 export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
 export type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
 export type BookingRole = 'rider' | 'driver';
+export type BelizeDistrict = 'belize' | 'cayo' | 'corozal' | 'orange_walk' | 'stann_creek' | 'toledo';
 export type FlagTarget = 'post' | 'user' | 'booking';
 export type AdminActionType = 'approve_driver' | 'reject_driver' | 'approve_rider_doc' | 'reject_rider_doc' | 'suspend_user' | 'unsuspend_user' | 'remove_post' | 'dismiss_flag' | 'issue_strike';
 
@@ -28,7 +29,7 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
-          phone: string;
+          phone: string | null;
           first_name: string | null;
           last_name: string | null;
           role: Role;
@@ -40,6 +41,8 @@ export interface Database {
           strikes_hard: number;
           account_status: AccountStatus;
           emergency_contact: string | null;
+          district: BelizeDistrict | null;
+          address_line: string | null;
           push_token: string | null;
           last_active_at: string | null;
           created_at: string;
@@ -47,7 +50,7 @@ export interface Database {
         };
         Insert: {
           id: string;
-          phone: string;
+          phone?: string | null;
           first_name?: string | null;
           last_name?: string | null;
           role?: Role;
@@ -59,6 +62,8 @@ export interface Database {
           strikes_hard?: number;
           account_status?: AccountStatus;
           emergency_contact?: string | null;
+          district?: BelizeDistrict | null;
+          address_line?: string | null;
           push_token?: string | null;
           last_active_at?: string | null;
           created_at?: string;
@@ -78,6 +83,8 @@ export interface Database {
           strikes_hard?: number;
           account_status?: AccountStatus;
           emergency_contact?: string | null;
+          district?: BelizeDistrict | null;
+          address_line?: string | null;
           push_token?: string | null;
           last_active_at?: string | null;
           created_at?: string;
@@ -116,6 +123,10 @@ export interface Database {
           route_distance_km: number | null;
           route_duration_min: number | null;
           route_fuel_cost_cents: number | null;
+          vehicle_description: string | null;
+          pickup_notes: string | null;
+          is_round_trip: boolean;
+          payment_method: PaymentMethod;
           expires_at: string | null;
           created_at: string;
           updated_at: string;
@@ -150,6 +161,10 @@ export interface Database {
           route_distance_km?: number | null;
           route_duration_min?: number | null;
           route_fuel_cost_cents?: number | null;
+          vehicle_description?: string | null;
+          pickup_notes?: string | null;
+          is_round_trip?: boolean;
+          payment_method?: PaymentMethod;
           expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -184,6 +199,10 @@ export interface Database {
           route_distance_km?: number | null;
           route_duration_min?: number | null;
           route_fuel_cost_cents?: number | null;
+          vehicle_description?: string | null;
+          pickup_notes?: string | null;
+          is_round_trip?: boolean;
+          payment_method?: PaymentMethod;
           expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -442,6 +461,7 @@ export interface Database {
           lng: number;
           description: string | null;
           upvotes: number;
+          gone_count: number;
           expires_at: string;
           created_at: string;
         };
@@ -453,6 +473,7 @@ export interface Database {
           lng: number;
           description?: string | null;
           upvotes?: number;
+          gone_count?: number;
           expires_at?: string;
           created_at?: string;
         };
@@ -464,6 +485,7 @@ export interface Database {
           lng?: number;
           description?: string | null;
           upvotes?: number;
+          gone_count?: number;
           expires_at?: string;
           created_at?: string;
         };

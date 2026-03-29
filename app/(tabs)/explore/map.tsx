@@ -2,14 +2,11 @@ import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import MapboxGL from '@rnmapbox/maps';
 import { Icon } from '@/components/icons';
+import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetRoadReportsQuery, useGetGasPricesQuery } from '@/store/api/reportsApi';
-import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
-
-MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 /** Colors for each post type pin */
 const PIN_COLORS: Record<string, string> = {
@@ -24,98 +21,54 @@ const REPORT_PIN_COLOR = colors.error;
 const GAS_PIN_COLOR = colors.forest[600];
 
 export default function ExploreMapScreen() {
-  const cameraRef = useRef<MapboxGL.Camera>(null);
+  const recenterRef = useRef<(() => void) | null>(null);
   const { data: posts } = useGetPostsQuery({});
   const { data: roadReports } = useGetRoadReportsQuery();
   const { data: gasPrices } = useGetGasPricesQuery();
 
-  /** Only posts with coordinates */
-  const mappablePosts = useMemo(
+  const postPoints = useMemo(
     () =>
-      (posts ?? []).filter(
-        (p): p is PostWithAuthor & { origin_lat: number; origin_lng: number } =>
-          p.origin_lat != null && p.origin_lng != null,
-      ),
+      (posts ?? [])
+        .filter(
+          (p): p is PostWithAuthor & { origin_lat: number; origin_lng: number } =>
+            p.origin_lat != null && p.origin_lng != null,
+        )
+        .map((p) => ({
+          id: p.id,
+          lng: p.origin_lng,
+          lat: p.origin_lat,
+          color: PIN_COLORS[p.type] ?? colors.forest[400],
+          label: p.title,
+        })),
     [posts],
   );
 
-  /** GeoJSON FeatureCollection for the points */
-  const geoJson = useMemo(
-    () => ({
-      type: 'FeatureCollection' as const,
-      features: mappablePosts.map((p) => ({
-        type: 'Feature' as const,
-        id: p.id,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [p.origin_lng, p.origin_lat],
-        },
-        properties: {
-          id: p.id,
-          type: p.type,
-          title: p.title,
-          color: PIN_COLORS[p.type] ?? colors.forest[400],
-        },
-      })),
-    }),
-    [mappablePosts],
-  );
-
-  /** Road reports GeoJSON */
-  const reportsGeoJson = useMemo(
-    () => ({
-      type: 'FeatureCollection' as const,
-      features: (roadReports ?? []).map((r) => ({
-        type: 'Feature' as const,
+  const reportPoints = useMemo(
+    () =>
+      (roadReports ?? []).map((r) => ({
         id: r.id,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [r.lng, r.lat],
-        },
-        properties: {
-          id: r.id,
-          type: r.type,
-          color: REPORT_PIN_COLOR,
-        },
+        lng: r.lng,
+        lat: r.lat,
+        color: REPORT_PIN_COLOR,
+        label: r.type,
       })),
-    }),
     [roadReports],
   );
 
-  /** Gas prices GeoJSON */
-  const gasGeoJson = useMemo(
-    () => ({
-      type: 'FeatureCollection' as const,
-      features: (gasPrices ?? []).map((g) => ({
-        type: 'Feature' as const,
+  const gasPoints = useMemo(
+    () =>
+      (gasPrices ?? []).map((g) => ({
         id: g.id,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [g.station_lng, g.station_lat],
-        },
-        properties: {
-          id: g.id,
-          station: g.station_name,
-          color: GAS_PIN_COLOR,
-        },
+        lng: g.station_lng,
+        lat: g.station_lat,
+        color: GAS_PIN_COLOR,
+        label: g.station_name,
       })),
-    }),
     [gasPrices],
   );
 
-  const handlePinPress = (event: any) => {
-    const feature = event?.features?.[0];
-    if (feature?.properties?.id) {
-      router.push(`/(tabs)/explore/${feature.properties.id}`);
-    }
-  };
-
-  const recenter = () => {
-    cameraRef.current?.setCamera({
-      centerCoordinate: [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude],
-      zoomLevel: BELIZE_ZOOM,
-      animationDuration: 600,
-    });
+  const handlePinPress = (id: string) => {
+    router.push(`/(tabs)/explore/${id}`);
   };
 
   return (
@@ -133,73 +86,13 @@ export default function ExploreMapScreen() {
 
       {/* Map */}
       <View style={styles.mapContainer}>
-        <MapboxGL.MapView
-          style={styles.map}
-          styleURL={MapboxGL.StyleURL.Street}
-          logoEnabled={false}
-          attributionEnabled={false}
-          compassEnabled
-          compassPosition={{ top: 72, right: 16 }}
-        >
-          <MapboxGL.Camera
-            ref={cameraRef}
-            centerCoordinate={[BELIZE_CENTER.longitude, BELIZE_CENTER.latitude]}
-            zoomLevel={BELIZE_ZOOM}
-            animationMode="moveTo"
-            animationDuration={0}
-          />
-
-          {geoJson.features.length > 0 && (
-            <MapboxGL.ShapeSource
-              id="posts"
-              shape={geoJson}
-              onPress={handlePinPress}
-            >
-              <MapboxGL.CircleLayer
-                id="posts-circles"
-                style={{
-                  circleRadius: 8,
-                  circleColor: ['get', 'color'],
-                  circleStrokeWidth: 2,
-                  circleStrokeColor: '#ffffff',
-                }}
-              />
-            </MapboxGL.ShapeSource>
-          )}
-
-          {reportsGeoJson.features.length > 0 && (
-            <MapboxGL.ShapeSource id="road-reports" shape={reportsGeoJson}>
-              <MapboxGL.CircleLayer
-                id="road-reports-circles"
-                style={{
-                  circleRadius: 7,
-                  circleColor: REPORT_PIN_COLOR,
-                  circleStrokeWidth: 2,
-                  circleStrokeColor: '#ffffff',
-                }}
-              />
-            </MapboxGL.ShapeSource>
-          )}
-
-          {gasGeoJson.features.length > 0 && (
-            <MapboxGL.ShapeSource id="gas-prices" shape={gasGeoJson}>
-              <MapboxGL.CircleLayer
-                id="gas-prices-circles"
-                style={{
-                  circleRadius: 7,
-                  circleColor: GAS_PIN_COLOR,
-                  circleStrokeWidth: 2,
-                  circleStrokeColor: '#ffffff',
-                }}
-              />
-            </MapboxGL.ShapeSource>
-          )}
-        </MapboxGL.MapView>
-
-        {/* Recenter button */}
-        <Pressable style={styles.recenterBtn} onPress={recenter}>
-          <Icon name="compass" size={22} color={colors.forest[900]} />
-        </Pressable>
+        <ExploreMapContent
+          posts={postPoints}
+          reports={reportPoints}
+          gasStations={gasPoints}
+          onPinPress={handlePinPress}
+          onRecenterRef={recenterRef}
+        />
 
         {/* Legend */}
         <View style={styles.legend}>
@@ -244,25 +137,6 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  recenterBtn: {
-    position: 'absolute',
-    bottom: 100,
-    right: spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.neutral[0],
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
   },
   legend: {
     position: 'absolute',

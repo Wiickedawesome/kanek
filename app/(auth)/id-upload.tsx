@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,7 +27,7 @@ export default function IdUploadScreen() {
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
-        Alert.alert('File too large', 'ID photo must be under 5 MB');
+        showAlert('File too large', 'ID photo must be under 5 MB');
         return;
       }
       setImageUri(asset.uri);
@@ -36,7 +37,7 @@ export default function IdUploadScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required to take a photo of your ID');
+      showAlert('Permission needed', 'Camera access is required to take a photo of your ID');
       return;
     }
 
@@ -64,7 +65,7 @@ export default function IdUploadScreen() {
       .upload(fileName, arrayBuffer, { contentType: 'image/jpeg' });
 
     if (error) {
-      Alert.alert('Upload failed', error.message);
+      showAlert('Upload failed', error.message);
       setIsUploading(false);
       return;
     }

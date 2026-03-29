@@ -6,8 +6,9 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Alert,
+  Platform,
 } from 'react-native';
+import { showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -35,11 +36,9 @@ export default function ProfileScreen() {
     { skip: !userId },
   );
 
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: signOut },
-    ]);
+  const handleSignOut = async () => {
+    const confirmed = await showConfirm('Sign Out', 'Are you sure you want to sign out?');
+    if (confirmed) signOut();
   };
 
   if (isLoading) {

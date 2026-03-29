@@ -13,9 +13,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 import { Button, TextInput , FilterChip } from '@/components/ui';
-import { colors, typography, spacing } from '@/theme';
-import { supabase } from '@/lib/supabase';
+import { MapPicker } from '@/components/map';
+import { colors, typography, spacing, borderRadius } from '@/theme';
+import { useCreateRoadReportMutation } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 import type { RoadReportType } from '@/types/database';
 
@@ -31,35 +40,41 @@ const REPORT_TYPES: { label: string; value: RoadReportType; icon: React.Componen
 export default function ReportRoadModal() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const location = useSelector((state: RootState) => state.location);
+  const [createRoadReport] = useCreateRoadReportMutation();
 
   const [type, setType] = useState<RoadReportType | null>(null);
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mapVisible, setMapVisible] = useState(false);
+  const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinLabel, setPinLabel] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!type) {
       Alert.alert('Select Type', 'Please select the type of road report.');
       return;
     }
-    if (!userId) return;
+    if (!userId) {
+      Alert.alert('Not Signed In', 'Please sign in to submit a report.');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('road_reports').insert({
-        reporter_id: userId,
+      await createRoadReport({
+        reporterId: userId,
         type,
-        lat: location.latitude ?? 17.189,
-        lng: location.longitude ?? -88.497,
-        description: description.trim() || null,
-      });
+        lat: pinCoords?.latitude ?? location.latitude ?? 17.189,
+        lng: pinCoords?.longitude ?? location.longitude ?? -88.497,
+        description: description.trim() || undefined,
+      }).unwrap();
 
-      if (error) throw error;
-
-      Alert.alert('Report Submitted', 'Thank you for helping the community!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    } catch {
-      Alert.alert('Error', 'Could not submit report. Please try again.');
+      Alert.alert('Report Submitted', 'Thank you for helping the community!');
+      safeBack();
+    } catch (err) {
+      console.error('Road report insert error:', err);
+      const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'error' in err ? String((err as { error: string }).error) : 'Could not submit report. Please try again.';
+      Alert.alert('Error', msg);
     } finally {
       setSubmitting(false);
     }
@@ -68,7 +83,7 @@ export default function ReportRoadModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Road Report</Text>
@@ -102,14 +117,28 @@ export default function ReportRoadModal() {
             maxLength={500}
           />
 
-          <View style={styles.locationNote}>
-            <Icon name="map-pin" size={16} color={colors.forest[400]} />
-            <Text style={styles.locationText}>
-              {location.latitude
-                ? 'Using your current location'
-                : 'Location unavailable — using default'}
+          <Pressable style={styles.locationRow} onPress={() => setMapVisible(true)}>
+            <Icon name="map-pin" size={18} color={colors.accent.green} />
+            <Text style={styles.locationLabel} numberOfLines={1}>
+              {pinLabel
+                ? pinLabel
+                : location.latitude
+                  ? 'Current location'
+                  : 'Default location'}
             </Text>
-          </View>
+            <Text style={styles.locationAction}>Change</Text>
+          </Pressable>
+
+          <MapPicker
+            visible={mapVisible}
+            onClose={() => setMapVisible(false)}
+            onConfirm={(coords, name) => {
+              setPinCoords(coords);
+              setPinLabel(name);
+              setMapVisible(false);
+            }}
+            title="Report Location"
+          />
 
           <Button
             title="Submit Report"
@@ -157,13 +186,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  locationNote: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    backgroundColor: colors.neutral[0],
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
   },
-  locationText: {
+  locationLabel: {
     ...typography.body2,
-    color: colors.forest[400],
+    color: colors.forest[900],
+    flex: 1,
+  },
+  locationAction: {
+    ...typography.body2Bold,
+    color: colors.accent.green,
   },
 });

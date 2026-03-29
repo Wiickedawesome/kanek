@@ -14,11 +14,21 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
+import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
-import { isValidPhone } from '@/lib/helpers';
+import { isValidPhone, normalizePhone } from '@/lib/helpers';
 import type { RootState } from '@/store';
-import type { Role } from '@/types/database';
+import type { Role, BelizeDistrict } from '@/types/database';
+
+const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
+  { value: 'belize', label: 'Belize' },
+  { value: 'cayo', label: 'Cayo' },
+  { value: 'corozal', label: 'Corozal' },
+  { value: 'orange_walk', label: 'Orange Walk' },
+  { value: 'stann_creek', label: 'Stann Creek' },
+  { value: 'toledo', label: 'Toledo' },
+];
 
 export default function SettingsScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
@@ -30,6 +40,8 @@ export default function SettingsScreen() {
   const [email, setEmail] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [role, setRole] = useState<Role>('rider');
+  const [district, setDistrict] = useState<BelizeDistrict | null>(null);
+  const [addressLine, setAddressLine] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -38,16 +50,23 @@ export default function SettingsScreen() {
       setEmail(profile.email ?? '');
       setEmergencyContact(profile.emergency_contact ?? '');
       setRole(profile.role);
+      setDistrict(profile.district ?? null);
+      setAddressLine(profile.address_line ?? '');
     }
   }, [profile]);
 
   const handleSave = useCallback(async () => {
     if (!userId) return;
 
-    if (emergencyContact && !isValidPhone(emergencyContact)) {
-      Alert.alert('Invalid Phone', 'Please enter a valid Belize phone number for emergency contact.');
-      return;
+    const normalized = normalizePhone(emergencyContact);
+    if (normalized && !isValidPhone(normalized)) {
+      Alert.alert(
+        'Invalid Emergency Contact',
+        'Emergency contact must be a valid Belize phone number (+501 followed by 7 digits). The contact will not be saved, but your other changes will be.',
+      );
     }
+
+    const validContact = normalized && isValidPhone(normalized) ? normalized : null;
 
     try {
       await updateProfile({
@@ -56,15 +75,17 @@ export default function SettingsScreen() {
           first_name: firstName.trim() || null,
           last_name: lastName.trim() || null,
           email: email.trim() || null,
-          emergency_contact: emergencyContact.trim() || null,
+          emergency_contact: validContact,
           role,
+          district,
+          address_line: addressLine.trim() || null,
         },
       }).unwrap();
       Alert.alert('Saved', 'Your profile has been updated.');
     } catch {
       Alert.alert('Error', 'Could not save profile. Please try again.');
     }
-  }, [userId, firstName, lastName, email, emergencyContact, role, updateProfile]);
+  }, [userId, firstName, lastName, email, emergencyContact, role, district, addressLine, updateProfile]);
 
   if (isLoading) {
     return (
@@ -134,6 +155,32 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* District selector */}
+        <View style={styles.field}>
+          <Text style={styles.label}>District</Text>
+          <View style={styles.districtGrid}>
+            {BELIZE_DISTRICTS.map((d) => (
+              <Pressable
+                key={d.value}
+                style={[styles.districtBtn, district === d.value && styles.districtBtnActive]}
+                onPress={() => setDistrict(d.value)}
+              >
+                <Text style={[styles.districtBtnText, district === d.value && styles.districtBtnTextActive]}>
+                  {d.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.hint}>Trips in your district will appear first.</Text>
+        </View>
+
+        <LocationInput
+          label="Address"
+          value={addressLine}
+          onChangeText={setAddressLine}
+          placeholder="e.g. 21 Burns Ave, San Ignacio"
+        />
+
         {/* Role selector */}
         <View style={styles.field}>
           <Text style={styles.label}>Role</Text>
@@ -166,7 +213,9 @@ export default function SettingsScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Phone Number</Text>
           <View style={[styles.input, styles.inputDisabled]}>
-            <Text style={styles.disabledText}>{profile?.phone ?? '—'}</Text>
+            <Text style={styles.disabledText}>
+              {profile?.phone && profile.phone.startsWith('+') ? profile.phone : '—'}
+            </Text>
           </View>
           <Text style={styles.hint}>Phone number cannot be changed.</Text>
         </View>
@@ -225,4 +274,30 @@ const styles = StyleSheet.create({
   roleBtnText: { ...typography.body1Bold, color: colors.neutral[500] },
   roleBtnTextActive: { color: colors.accent.green },
   driverNote: { ...typography.caption, color: colors.warning, marginTop: spacing.xs },
+
+  districtGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  districtBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+    backgroundColor: colors.neutral[0],
+  },
+  districtBtnActive: {
+    borderColor: colors.accent.green,
+    backgroundColor: '#e8f5e9',
+  },
+  districtBtnText: {
+    ...typography.body2,
+    color: colors.neutral[500],
+  },
+  districtBtnTextActive: {
+    color: colors.accent.green,
+    fontWeight: '600',
+  },
 });

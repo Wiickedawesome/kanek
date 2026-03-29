@@ -19,12 +19,21 @@ import { Icon } from '@/components/icons';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
+import { useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, sanitizeInteger } from '@/lib/helpers';
 import type { RootState } from '@/store';
-import type { PostType, PickupStyle } from '@/types/database';
+import type { PostType, PickupStyle, PaymentMethod } from '@/types/database';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 
 export default function RouteFormScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
@@ -33,6 +42,7 @@ export default function RouteFormScreen() {
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
+  const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', { skip: !userId || !isOffer });
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -44,6 +54,25 @@ export default function RouteFormScreen() {
   const [seatsTotal, setSeatsTotal] = useState('');
   const [minRiders, setMinRiders] = useState('');
   const [pickupStyle, setPickupStyle] = useState<PickupStyle>('single');
+  const [vehicleDescription, setVehicleDescription] = useState('');
+  const [pickupNotes, setPickupNotes] = useState('');
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+
+  // Auto-fill vehicle description from driver_details
+  useEffect(() => {
+    if (driverDetails && !vehicleDescription) {
+      const parts = [
+        driverDetails.vehicle_color,
+        driverDetails.vehicle_year,
+        driverDetails.vehicle_make,
+        driverDetails.vehicle_model,
+      ].filter(Boolean);
+      if (parts.length > 0) {
+        setVehicleDescription(parts.join(' '));
+      }
+    }
+  }, [driverDetails]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -114,6 +143,10 @@ export default function RouteFormScreen() {
           newErrors.minRiders = 'Cannot exceed total seats';
         }
       }
+
+      if (!vehicleDescription.trim()) {
+        newErrors.vehicleDescription = 'Describe your vehicle so riders can find you';
+      }
     }
 
     if (!description.trim()) newErrors.description = 'Description is required';
@@ -134,7 +167,7 @@ export default function RouteFormScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer]);
+  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -163,13 +196,17 @@ export default function RouteFormScreen() {
         seats_total: isOffer ? parseInt(seatsTotal, 10) : null,
         min_riders: minRiders.trim() ? parseInt(minRiders, 10) : null,
         pickup_style: isOffer ? pickupStyle : null,
+        vehicle_description: isOffer ? vehicleDescription.trim() : null,
+        pickup_notes: isOffer && pickupNotes.trim() ? pickupNotes.trim() : null,
+        is_round_trip: isOffer ? isRoundTrip : false,
+        payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
         route_duration_min: routeInfo?.duration_minutes ?? null,
         route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
-      router.back();
+      safeBack();
     } catch (err: unknown) {
       console.error('Post save error:', err);
       const message =
@@ -185,7 +222,7 @@ export default function RouteFormScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>
@@ -264,11 +301,40 @@ export default function RouteFormScreen() {
             error={errors.priceDollars}
           />
 
+          {/* Settlement method */}
+          <View>
+            <Text style={styles.fieldLabel}>Settlement</Text>
+            <View style={styles.pickupSection}>
+              <View style={[styles.row, { gap: spacing.sm }]}>
+                <Pressable
+                  style={[styles.pickupOption, paymentMethod === 'cash' && styles.pickupSelected]}
+                  onPress={() => setPaymentMethod('cash')}
+                >
+                  <Text style={[styles.pickupText, paymentMethod === 'cash' && styles.pickupTextSelected]}>Cash</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.pickupOption, paymentMethod === 'ekyash' && styles.pickupSelected]}
+                  onPress={() => setPaymentMethod('ekyash')}
+                >
+                  <Text style={[styles.pickupText, paymentMethod === 'ekyash' && styles.pickupTextSelected]}>eKyash</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+
           {isOffer && (
             <>
+              <TextInput
+                label="Vehicle description"
+                placeholder="e.g. White 2019 Toyota Corolla"
+                value={vehicleDescription}
+                onChangeText={setVehicleDescription}
+                error={errors.vehicleDescription}
+              />
+
               <View style={styles.row}>
                 <TextInput
-                  label="Total seats"
+                  label="Seats available"
                   placeholder="e.g. 4"
                   value={seatsTotal}
                   onChangeText={(t) => setSeatsTotal(sanitizeInteger(t))}
@@ -287,6 +353,44 @@ export default function RouteFormScreen() {
                   containerStyle={styles.halfField}
                   error={errors.minRiders}
                 />
+              </View>
+
+              <View style={styles.pickupSection}>
+                <Text style={styles.fieldLabel}>Trip type</Text>
+                <View style={styles.row}>
+                  <Pressable
+                    style={[
+                      styles.pickupOption,
+                      !isRoundTrip && styles.pickupSelected,
+                    ]}
+                    onPress={() => setIsRoundTrip(false)}
+                  >
+                    <Text
+                      style={[
+                        styles.pickupText,
+                        !isRoundTrip && styles.pickupTextSelected,
+                      ]}
+                    >
+                      One way
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.pickupOption,
+                      isRoundTrip && styles.pickupSelected,
+                    ]}
+                    onPress={() => setIsRoundTrip(true)}
+                  >
+                    <Text
+                      style={[
+                        styles.pickupText,
+                        isRoundTrip && styles.pickupTextSelected,
+                      ]}
+                    >
+                      Round trip
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.pickupSection}>
@@ -326,6 +430,16 @@ export default function RouteFormScreen() {
                   </Pressable>
                 </View>
               </View>
+
+              <TextInput
+                label="Pickup notes (optional)"
+                placeholder="e.g. I'll be at Shell station by the roundabout"
+                value={pickupNotes}
+                onChangeText={setPickupNotes}
+                multiline
+                numberOfLines={2}
+                style={styles.textArea}
+              />
             </>
           )}
 

@@ -23,6 +23,13 @@ export default function WelcomeScreen() {
         >
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() => router.push('/(auth)/phone-verify')}
+        >
+          <Text style={styles.secondaryButtonText}>I already have an account</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -38,22 +45,26 @@ const styles = StyleSheet.create({
   hero: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   brand: {
     ...typography.h1,
     fontSize: 48,
     lineHeight: 56,
     color: colors.accent.green,
+    textAlign: 'center',
   },
   tagline: {
     ...typography.h2,
     color: colors.neutral[0],
     marginTop: spacing.sm,
+    textAlign: 'center',
   },
   description: {
     ...typography.body1,
     color: colors.neutral[400],
     marginTop: spacing.lg,
+    textAlign: 'center',
   },
   actions: {
     paddingBottom: spacing.xxl,
@@ -67,5 +78,14 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...typography.body1Bold,
     color: colors.neutral[0],
+  },
+  secondaryButton: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  secondaryButtonText: {
+    ...typography.body1Bold,
+    color: colors.neutral[400],
   },
 });

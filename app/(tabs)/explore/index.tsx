@@ -18,10 +18,26 @@ import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { useGetRoadReportsQuery, useUpvoteRoadReportMutation, useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
-import type { PostType, Database } from '@/types/database';
+import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
+import type { PostType, Database, BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
+
+/** Map enum values to keywords that may appear in origin_address */
+const DISTRICT_KEYWORDS: Record<BelizeDistrict, string[]> = {
+  belize: ['belize city', 'belize district', 'ladyville', 'hattieville', 'sandhill'],
+  cayo: ['cayo', 'san ignacio', 'santa elena', 'belmopan', 'benque', 'spanish lookout'],
+  corozal: ['corozal'],
+  orange_walk: ['orange walk'],
+  stann_creek: ['stann creek', 'dangriga', 'hopkins', 'placencia', 'independence'],
+  toledo: ['toledo', 'punta gorda', 'big falls'],
+};
+
+function postMatchesDistrict(post: PostWithAuthor, district: BelizeDistrict): boolean {
+  const addr = (post.origin_address ?? '').toLowerCase();
+  const dest = (post.dest_address ?? '').toLowerCase();
+  return DISTRICT_KEYWORDS[district].some((kw) => addr.includes(kw) || dest.includes(kw));
+}
 
 type FeedFilter = PostType | 'reports' | null;
 
@@ -57,6 +73,7 @@ export default function ExploreScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
   const firstName = profile?.first_name ?? '';
+  const userDistrict = profile?.district ?? null;
 
   const isReportsFilter = typeFilter === 'reports';
   const postTypeFilter = isReportsFilter ? null : typeFilter;
@@ -68,7 +85,6 @@ export default function ExploreScreen() {
 
   const { data: roadReports, isLoading: reportsLoading, refetch: refetchReports } = useGetRoadReportsQuery();
   const { data: gasPrices, isLoading: gasLoading, refetch: refetchGas } = useGetGasPricesQuery();
-  const [upvoteReport] = useUpvoteRoadReportMutation();
   const [verifyGasPrice] = useVerifyGasPriceMutation();
 
   const { subscribeToRoadReports } = useRealtime();
@@ -97,18 +113,36 @@ export default function ExploreScreen() {
       (gasPrices ?? []).slice(0, 5).forEach((g) => items.push({ kind: 'gas_price', data: g }));
     }
 
+    // Sort posts from user's district first
+    if (userDistrict) {
+      items.sort((a, b) => {
+        const aMatch = a.kind === 'post' && postMatchesDistrict(a.data, userDistrict) ? 0 : 1;
+        const bMatch = b.kind === 'post' && postMatchesDistrict(b.data, userDistrict) ? 0 : 1;
+        return aMatch - bMatch;
+      });
+    }
+
     return items;
-  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter]);
+  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict]);
 
   const isLoading = postsLoading || reportsLoading || gasLoading;
   const isFetching = postsFetching;
 
   const topRoutes = useMemo(() => {
     if (typeFilter !== null) return [];
-    return (posts ?? []).filter(
+    const routes = (posts ?? []).filter(
       (p) => p.type === 'route_offer' || p.type === 'route_request',
-    ).slice(0, 10);
-  }, [posts, typeFilter]);
+    );
+    // Prioritize routes in user's district
+    if (userDistrict) {
+      routes.sort((a, b) => {
+        const aMatch = postMatchesDistrict(a, userDistrict) ? 0 : 1;
+        const bMatch = postMatchesDistrict(b, userDistrict) ? 0 : 1;
+        return aMatch - bMatch;
+      });
+    }
+    return routes.slice(0, 10);
+  }, [posts, typeFilter, userDistrict]);
 
   const onRefresh = useCallback(() => {
     refetchPosts();
@@ -126,7 +160,7 @@ export default function ExploreScreen() {
         return (
           <RoadReportCard
             report={item.data}
-            onPress={() => upvoteReport(item.data.id)}
+            onPress={() => router.push({ pathname: '/modals/report-detail', params: { id: item.data.id } })}
           />
         );
       case 'gas_price':
@@ -153,7 +187,7 @@ export default function ExploreScreen() {
         }
       }
     }
-  }, [openPost, upvoteReport, verifyGasPrice]);
+  }, [openPost, verifyGasPrice]);
 
   const keyExtractor = useCallback((item: FeedItem) => {
     return `${item.kind}-${item.kind === 'post' ? item.data.id : item.data.id}`;

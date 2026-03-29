@@ -1,25 +1,69 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { supabase } from '@/lib/supabase';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
+import type { RootState } from '@/store';
 
 type RoleChoice = 'rider' | 'driver';
 
 export default function RoleSelectScreen() {
+  const user = useSelector((state: RootState) => state.auth.user);
   const [selected, setSelected] = useState<RoleChoice | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleContinue = () => {
-    if (!selected) return;
+  const isFormValid = selected && firstName.trim();
+
+  const handleContinue = async () => {
+    if (!isFormValid || !user) return;
+    setIsSaving(true);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: firstName.trim(),
+        last_name: lastName.trim() || null,
+        role: selected,
+      })
+      .eq('id', user.id);
+
+    setIsSaving(false);
+
+    if (error) {
+      showAlert('Error', error.message);
+      return;
+    }
+
     router.push({ pathname: '/(auth)/id-upload', params: { role: selected } });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>How will you use kanek?</Text>
-        <Text style={styles.subtitle}>You can always do both later</Text>
+        <Text style={styles.title}>Tell us about yourself</Text>
+        <Text style={styles.subtitle}>Your name and how you plan to use kanek</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="First name"
+          placeholderTextColor={colors.neutral[400]}
+          value={firstName}
+          onChangeText={setFirstName}
+          autoFocus
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Last name (optional)"
+          placeholderTextColor={colors.neutral[400]}
+          value={lastName}
+          onChangeText={setLastName}
+        />
 
         <Pressable
           style={[styles.card, selected === 'rider' && styles.cardSelected]}
@@ -48,11 +92,11 @@ export default function RoleSelectScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.button, !selected && styles.buttonDisabled]}
+          style={[styles.button, (!isFormValid || isSaving) && styles.buttonDisabled]}
           onPress={handleContinue}
-          disabled={!selected}
+          disabled={!isFormValid || isSaving}
         >
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text style={styles.buttonText}>{isSaving ? 'Saving...' : 'Continue'}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -78,6 +122,15 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     marginTop: spacing.sm,
     marginBottom: spacing.xxl,
+  },
+  input: {
+    ...typography.body1,
+    color: colors.forest[900],
+    backgroundColor: colors.neutral[100],
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
   },
   card: {
     flexDirection: 'row',

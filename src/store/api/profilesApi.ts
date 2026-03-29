@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type DriverDetailsRow = Database['public']['Tables']['driver_details']['Row'];
 
 /** Public-facing profile fields visible to any authenticated user */
 export interface PublicProfile {
@@ -22,7 +23,7 @@ export interface PublicProfile {
 export const profilesApi = createApi({
   reducerPath: 'profilesApi',
   baseQuery: fakeBaseQuery(),
-  tagTypes: ['Profile'],
+  tagTypes: ['Profile', 'DriverDetails'],
   endpoints: (builder) => ({
     getMyProfile: builder.query<ProfileRow, string>({
       queryFn: async (userId) => {
@@ -75,6 +76,21 @@ export const profilesApi = createApi({
       },
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Profile', id }],
     }),
+
+    getDriverDetails: builder.query<DriverDetailsRow | null, string>({
+      queryFn: async (userId) => {
+        const { data, error } = await supabase
+          .from('driver_details')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (error)
+          return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: (data as DriverDetailsRow) ?? null };
+      },
+      providesTags: (_result, _error, id) => [{ type: 'DriverDetails', id }],
+    }),
   }),
 });
 
@@ -82,4 +98,5 @@ export const {
   useGetMyProfileQuery,
   useGetPublicProfileQuery,
   useUpdateProfileMutation,
+  useGetDriverDetailsQuery,
 } = profilesApi;
