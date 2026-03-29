@@ -45,9 +45,11 @@ export function ErrandCard({ post, onPress }: ErrandCardProps) {
       )}
 
       <View style={styles.priceRow}>
-        {post.errand_fee_cents != null && (
+        {post.type === 'package' && post.price_cents != null ? (
+          <Text style={styles.fee}>Delivery fee: {formatBZD(post.price_cents)}</Text>
+        ) : post.errand_fee_cents != null ? (
           <Text style={styles.fee}>Errand fee: {formatBZD(post.errand_fee_cents)}</Text>
-        )}
+        ) : null}
         {post.item_cost_cents != null && (
           <Text style={styles.itemCost}>Item cost: ~{formatBZD(post.item_cost_cents)}</Text>
         )}

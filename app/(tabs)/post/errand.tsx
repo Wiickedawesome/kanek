@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,15 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
+import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
+import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
+import { calculateRoute } from '@/lib/mapbox';
+import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { ErrandCategory } from '@/types/database';
 
@@ -48,6 +53,35 @@ export default function ErrandFormScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Route calculation state
+  const [originCoords, setOriginCoords] = useState<LocationCoords | null>(null);
+  const [destCoords, setDestCoords] = useState<LocationCoords | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  // Auto-calculate route when both coordinates are available
+  useEffect(() => {
+    if (!originCoords || !destCoords) {
+      setRouteInfo(null);
+      return;
+    }
+
+    let cancelled = false;
+    setRouteLoading(true);
+    calculateRoute(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng)
+      .then((info) => {
+        if (!cancelled) setRouteInfo(info);
+      })
+      .catch(() => {
+        if (!cancelled) setRouteInfo(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [originCoords, destCoords]);
+
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -75,7 +109,8 @@ export default function ErrandFormScreen() {
       }
     }
 
-    if (description.length > MAX_DESCRIPTION_LENGTH) {
+    if (!description.trim()) newErrors.description = 'Description is required';
+    else if (description.length > MAX_DESCRIPTION_LENGTH) {
       newErrors.description = `Max ${MAX_DESCRIPTION_LENGTH} characters`;
     }
 
@@ -119,13 +154,21 @@ export default function ErrandFormScreen() {
         author_id: userId,
         type: 'errand',
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         origin_address: originAddress.trim(),
         dest_address: destAddress.trim() || null,
+        origin_lat: originCoords?.lat ?? null,
+        origin_lng: originCoords?.lng ?? null,
+        dest_lat: destCoords?.lat ?? null,
+        dest_lng: destCoords?.lng ?? null,
         departure_at: departureAt,
         errand_category: category,
         errand_fee_cents: errandFeeCents,
         item_cost_cents: itemCostCents,
+        route_geometry: routeInfo?.geometry ?? null,
+        route_distance_km: routeInfo?.distance_km ?? null,
+        route_duration_min: routeInfo?.duration_minutes ?? null,
+        route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
       router.back();
@@ -145,7 +188,7 @@ export default function ErrandFormScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Post an Errand</Text>
         <View style={{ width: 24 }} />
@@ -200,6 +243,7 @@ export default function ErrandFormScreen() {
             placeholder="Where to pick up items"
             value={originAddress}
             onChangeText={setOriginAddress}
+            onLocationSelect={setOriginCoords}
             error={errors.originAddress}
           />
 
@@ -208,7 +252,18 @@ export default function ErrandFormScreen() {
             placeholder="Drop-off address"
             value={destAddress}
             onChangeText={setDestAddress}
+            onLocationSelect={setDestCoords}
           />
+
+          {/* Route calculation summary */}
+          {routeLoading && <RouteInfoCard loading />}
+          {routeInfo && !routeLoading && (
+            <RouteInfoCard
+              distanceKm={routeInfo.distance_km}
+              durationMinutes={routeInfo.duration_minutes}
+              fuelCostCents={routeInfo.fuel_cost_cents}
+            />
+          )}
 
           <View style={styles.row}>
             <DateInput
@@ -229,8 +284,9 @@ export default function ErrandFormScreen() {
               label="Errand fee (BZD)"
               placeholder="0.00"
               value={errandFeeDollars}
-              onChangeText={setErrandFeeDollars}
+              onChangeText={(t) => setErrandFeeDollars(sanitizeDecimal(t))}
               keyboardType="decimal-pad"
+              inputMode="decimal"
               containerStyle={styles.halfField}
               error={errors.errandFeeDollars}
             />
@@ -238,16 +294,17 @@ export default function ErrandFormScreen() {
               label="Item cost est. (BZD)"
               placeholder="0.00"
               value={itemCostDollars}
-              onChangeText={setItemCostDollars}
+              onChangeText={(t) => setItemCostDollars(sanitizeDecimal(t))}
               keyboardType="decimal-pad"
+              inputMode="decimal"
               containerStyle={styles.halfField}
               error={errors.itemCostDollars}
             />
           </View>
 
           <TextInput
-            label="Description (optional)"
-            placeholder="What needs to be done..."
+            label="Description"
+            placeholder="Describe exactly where you'll be and what needs to be done"
             value={description}
             onChangeText={setDescription}
             multiline

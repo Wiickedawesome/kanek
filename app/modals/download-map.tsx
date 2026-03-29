@@ -119,7 +119,7 @@ export default function DownloadMapModal() {
             onPress={() => handleDelete(item.key, item.name)}
             hitSlop={8}
           >
-            <Icon name="navigation" size={16} color={colors.error} />
+            <Icon name="chevron-right" size={16} color={colors.error} />
             <Text style={styles.deleteBtnText}>Remove</Text>
           </Pressable>
         ) : (
@@ -138,7 +138,7 @@ export default function DownloadMapModal() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Offline Maps</Text>
         <View style={{ width: 24 }} />

@@ -18,6 +18,7 @@ import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { JobCategory, PayType, JobTimeline } from '@/types/database';
 
@@ -112,7 +113,7 @@ export default function JobFormScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Post a Job</Text>
         <View style={{ width: 24 }} />
@@ -201,8 +202,9 @@ export default function JobFormScreen() {
             label={payType === 'hourly' ? 'Rate per hour (BZD)' : 'Fixed pay (BZD)'}
             placeholder="0.00"
             value={payRateDollars}
-            onChangeText={setPayRateDollars}
+            onChangeText={(t) => setPayRateDollars(sanitizeDecimal(t))}
             keyboardType="decimal-pad"
+            inputMode="decimal"
             error={errors.payRateDollars}
           />
 
@@ -234,7 +236,7 @@ export default function JobFormScreen() {
 
           <TextInput
             label="Description"
-            placeholder="What does the job involve? Include time, tools needed, etc."
+            placeholder="Describe exactly where you'll be and what the job involves (time, tools, etc.)"
             value={description}
             onChangeText={setDescription}
             multiline

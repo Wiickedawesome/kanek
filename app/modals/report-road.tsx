@@ -69,7 +69,7 @@ export default function ReportRoadModal() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Road Report</Text>
         <View style={{ width: 24 }} />

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
 import { Icon } from '@/components/icons';
+import { MapPicker } from '@/components/map/MapPicker';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import { BELIZE_BBOX } from '@/lib/constants';
@@ -8,12 +9,20 @@ import { BELIZE_BBOX } from '@/lib/constants';
 interface Suggestion {
   id: string;
   place_name: string;
+  lat: number;
+  lng: number;
+}
+
+export interface LocationCoords {
+  lat: number;
+  lng: number;
 }
 
 interface LocationInputProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  onLocationSelect?: (coords: LocationCoords) => void;
   error?: string;
   placeholder?: string;
   required?: boolean;
@@ -26,6 +35,7 @@ export function LocationInput({
   label,
   value,
   onChangeText,
+  onLocationSelect,
   error,
   placeholder = 'Enter address',
   required,
@@ -33,8 +43,10 @@ export function LocationInput({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectingRef = useRef(false);
+  const selectedCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
@@ -49,9 +61,11 @@ export function LocationInput({
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&bbox=${bbox}&country=BZ&limit=5&types=place,locality,neighborhood,address,poi`;
       const res = await fetch(url);
       const data = await res.json();
-      const items: Suggestion[] = (data.features ?? []).map((f: { id: string; place_name: string }) => ({
+      const items: Suggestion[] = (data.features ?? []).map((f: { id: string; place_name: string; center: [number, number] }) => ({
         id: f.id,
         place_name: f.place_name,
+        lng: f.center[0],
+        lat: f.center[1],
       }));
       setSuggestions(items);
       setShowDropdown(items.length > 0);
@@ -76,10 +90,22 @@ export function LocationInput({
     (item: Suggestion) => {
       selectingRef.current = true;
       onChangeText(item.place_name);
+      onLocationSelect?.({ lat: item.lat, lng: item.lng });
+      selectedCoordsRef.current = { latitude: item.lat, longitude: item.lng };
       setSuggestions([]);
       setShowDropdown(false);
     },
-    [onChangeText],
+    [onChangeText, onLocationSelect],
+  );
+
+  const handleMapConfirm = useCallback(
+    (coords: { latitude: number; longitude: number }, placeName: string) => {
+      onChangeText(placeName);
+      onLocationSelect?.({ lat: coords.latitude, lng: coords.longitude });
+      selectedCoordsRef.current = coords;
+      setShowMapPicker(false);
+    },
+    [onChangeText, onLocationSelect],
   );
 
   const handleBlur = useCallback(() => {
@@ -124,6 +150,9 @@ export function LocationInput({
             autoCapitalize="words"
           />
           {loading && <ActivityIndicator size="small" color={colors.forest[400]} />}
+          <Pressable onPress={() => setShowMapPicker(true)} hitSlop={8} style={styles.mapBtn}>
+            <Icon name="map-pin" size={18} color={colors.forest[900]} />
+          </Pressable>
         </View>
         {error && <Text style={styles.error}>{error}</Text>}
       </View>
@@ -145,6 +174,14 @@ export function LocationInput({
           ))}
         </View>
       )}
+
+      <MapPicker
+        visible={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={handleMapConfirm}
+        initialCoords={selectedCoordsRef.current}
+        title={`${label} — Drop Pin`}
+      />
     </View>
   );
 }
@@ -186,6 +223,11 @@ const styles = StyleSheet.create({
   },
   errorBorder: {
     borderColor: colors.error,
+  },
+  mapBtn: {
+    padding: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.neutral[100],
   },
   input: {
     ...typography.body1,

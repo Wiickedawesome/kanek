@@ -15,7 +15,7 @@ import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { FilterChip, EmptyState } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard } from '@/components/cards';
+import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { useGetRoadReportsQuery, useUpvoteRoadReportMutation, useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
@@ -103,6 +103,13 @@ export default function ExploreScreen() {
   const isLoading = postsLoading || reportsLoading || gasLoading;
   const isFetching = postsFetching;
 
+  const topRoutes = useMemo(() => {
+    if (typeFilter !== null) return [];
+    return (posts ?? []).filter(
+      (p) => p.type === 'route_offer' || p.type === 'route_request',
+    ).slice(0, 10);
+  }, [posts, typeFilter]);
+
   const onRefresh = useCallback(() => {
     refetchPosts();
     refetchReports();
@@ -185,6 +192,7 @@ export default function ExploreScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
         contentContainerStyle={styles.filters}
       >
         {FILTER_OPTIONS.map((opt) => (
@@ -201,8 +209,19 @@ export default function ExploreScreen() {
         data={feedItems}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        style={styles.list}
         contentContainerStyle={styles.feed}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={
+          <View>
+            {topRoutes.length > 0 && (
+              <TopRoutesSection routes={topRoutes} onPressRoute={openPost} />
+            )}
+            <Text style={styles.sectionHeading}>
+              {typeFilter === null ? 'Community board' : FILTER_OPTIONS.find(o => o.value === typeFilter)?.label ?? 'Posts'}
+            </Text>
+          </View>
+        }
         refreshControl={
           <RefreshControl
             refreshing={isFetching && !isLoading}
@@ -298,10 +317,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     alignItems: 'flex-start',
   },
+  filterScroll: {
+    flexGrow: 0,
+  },
+  list: {
+    flex: 1,
+  },
   feed: {
     padding: spacing.lg,
-    paddingTop: spacing.sm,
-    flexGrow: 1,
+    paddingTop: spacing.lg,
+  },
+  sectionHeading: {
+    ...typography.h3,
+    color: colors.forest[900],
+    marginBottom: spacing.md,
+    marginTop: spacing.lg,
   },
   separator: {
     height: spacing.md,

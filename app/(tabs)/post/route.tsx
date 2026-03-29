@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
+import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
+import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
+import { calculateRoute } from '@/lib/mapbox';
+import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { sanitizeDecimal, sanitizeInteger } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { PostType, PickupStyle } from '@/types/database';
 
@@ -41,6 +46,35 @@ export default function RouteFormScreen() {
   const [pickupStyle, setPickupStyle] = useState<PickupStyle>('single');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Route calculation state
+  const [originCoords, setOriginCoords] = useState<LocationCoords | null>(null);
+  const [destCoords, setDestCoords] = useState<LocationCoords | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  // Auto-calculate route when both coordinates are available
+  useEffect(() => {
+    if (!originCoords || !destCoords) {
+      setRouteInfo(null);
+      return;
+    }
+
+    let cancelled = false;
+    setRouteLoading(true);
+    calculateRoute(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng)
+      .then((info) => {
+        if (!cancelled) setRouteInfo(info);
+      })
+      .catch(() => {
+        if (!cancelled) setRouteInfo(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [originCoords, destCoords]);
 
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -82,7 +116,8 @@ export default function RouteFormScreen() {
       }
     }
 
-    if (description.length > MAX_DESCRIPTION_LENGTH) {
+    if (!description.trim()) newErrors.description = 'Description is required';
+    else if (description.length > MAX_DESCRIPTION_LENGTH) {
       newErrors.description = `Max ${MAX_DESCRIPTION_LENGTH} characters`;
     }
 
@@ -116,14 +151,22 @@ export default function RouteFormScreen() {
         author_id: userId,
         type: postType,
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         origin_address: originAddress.trim(),
         dest_address: destAddress.trim(),
+        origin_lat: originCoords?.lat ?? null,
+        origin_lng: originCoords?.lng ?? null,
+        dest_lat: destCoords?.lat ?? null,
+        dest_lng: destCoords?.lng ?? null,
         departure_at: departure,
         price_cents: priceCents,
         seats_total: isOffer ? parseInt(seatsTotal, 10) : null,
         min_riders: minRiders.trim() ? parseInt(minRiders, 10) : null,
         pickup_style: isOffer ? pickupStyle : null,
+        route_geometry: routeInfo?.geometry ?? null,
+        route_distance_km: routeInfo?.distance_km ?? null,
+        route_duration_min: routeInfo?.duration_minutes ?? null,
+        route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
       router.back();
@@ -143,7 +186,7 @@ export default function RouteFormScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>
           {isOffer ? 'Offer a Route' : 'Request a Route'}
@@ -173,6 +216,7 @@ export default function RouteFormScreen() {
             placeholder="Origin address or town"
             value={originAddress}
             onChangeText={setOriginAddress}
+            onLocationSelect={setOriginCoords}
             error={errors.originAddress}
           />
 
@@ -181,8 +225,19 @@ export default function RouteFormScreen() {
             placeholder="Destination address or town"
             value={destAddress}
             onChangeText={setDestAddress}
+            onLocationSelect={setDestCoords}
             error={errors.destAddress}
           />
+
+          {/* Route calculation summary */}
+          {routeLoading && <RouteInfoCard loading />}
+          {routeInfo && !routeLoading && (
+            <RouteInfoCard
+              distanceKm={routeInfo.distance_km}
+              durationMinutes={routeInfo.duration_minutes}
+              fuelCostCents={routeInfo.fuel_cost_cents}
+            />
+          )}
 
           <View style={styles.row}>
             <DateInput
@@ -203,8 +258,9 @@ export default function RouteFormScreen() {
             label={isOffer ? 'Price per seat (BZD)' : 'Offering price (BZD)'}
             placeholder="0.00"
             value={priceDollars}
-            onChangeText={setPriceDollars}
+            onChangeText={(t) => setPriceDollars(sanitizeDecimal(t))}
             keyboardType="decimal-pad"
+            inputMode="decimal"
             error={errors.priceDollars}
           />
 
@@ -215,8 +271,9 @@ export default function RouteFormScreen() {
                   label="Total seats"
                   placeholder="e.g. 4"
                   value={seatsTotal}
-                  onChangeText={setSeatsTotal}
+                  onChangeText={(t) => setSeatsTotal(sanitizeInteger(t))}
                   keyboardType="number-pad"
+                  inputMode="numeric"
                   containerStyle={styles.halfField}
                   error={errors.seatsTotal}
                 />
@@ -224,8 +281,9 @@ export default function RouteFormScreen() {
                   label="Min riders (optional)"
                   placeholder="e.g. 2"
                   value={minRiders}
-                  onChangeText={setMinRiders}
+                  onChangeText={(t) => setMinRiders(sanitizeInteger(t))}
                   keyboardType="number-pad"
+                  inputMode="numeric"
                   containerStyle={styles.halfField}
                   error={errors.minRiders}
                 />
@@ -272,8 +330,8 @@ export default function RouteFormScreen() {
           )}
 
           <TextInput
-            label="Description (optional)"
-            placeholder="Any additional details..."
+            label="Description"
+            placeholder="Describe exactly where you'll be (e.g. by the gas station on Western Hwy)"
             value={description}
             onChangeText={setDescription}
             multiline

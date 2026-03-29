@@ -16,6 +16,10 @@ export type RoadReportType = 'accident' | 'checkpoint' | 'traffic' | 'flooding' 
 export type JobCategory = 'skilled_trade' | 'cleaning' | 'delivery' | 'handyman' | 'landscaping' | 'moving' | 'tutoring' | 'tech' | 'other';
 export type PayType = 'hourly' | 'fixed';
 export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
+export type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
+export type BookingRole = 'rider' | 'driver';
+export type FlagTarget = 'post' | 'user' | 'booking';
+export type AdminActionType = 'approve_driver' | 'reject_driver' | 'approve_rider_doc' | 'reject_rider_doc' | 'suspend_user' | 'unsuspend_user' | 'remove_post' | 'dismiss_flag' | 'issue_strike';
 
 // Regenerate with `supabase gen types typescript` after pushing migrations
 export interface Database {
@@ -109,6 +113,9 @@ export interface Database {
           pay_type: PayType | null;
           job_timeline: JobTimeline | null;
           route_geometry: Record<string, unknown> | null;
+          route_distance_km: number | null;
+          route_duration_min: number | null;
+          route_fuel_cost_cents: number | null;
           expires_at: string | null;
           created_at: string;
           updated_at: string;
@@ -140,6 +147,9 @@ export interface Database {
           pay_type?: PayType | null;
           job_timeline?: JobTimeline | null;
           route_geometry?: Record<string, unknown> | null;
+          route_distance_km?: number | null;
+          route_duration_min?: number | null;
+          route_fuel_cost_cents?: number | null;
           expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -171,6 +181,9 @@ export interface Database {
           pay_type?: PayType | null;
           job_timeline?: JobTimeline | null;
           route_geometry?: Record<string, unknown> | null;
+          route_distance_km?: number | null;
+          route_duration_min?: number | null;
+          route_fuel_cost_cents?: number | null;
           expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -396,7 +409,7 @@ export interface Database {
           user_id: string;
           contract_id: string | null;
           type: StrikeType;
-          reason: string;
+          reason: StrikeReason;
           auto_generated: boolean;
           created_at: string;
         };
@@ -405,7 +418,7 @@ export interface Database {
           user_id: string;
           contract_id?: string | null;
           type: StrikeType;
-          reason: string;
+          reason: StrikeReason;
           auto_generated?: boolean;
           created_at?: string;
         };
@@ -414,7 +427,7 @@ export interface Database {
           user_id?: string;
           contract_id?: string | null;
           type?: StrikeType;
-          reason?: string;
+          reason?: StrikeReason;
           auto_generated?: boolean;
           created_at?: string;
         };
@@ -739,7 +752,7 @@ export interface Database {
         Row: {
           id: string;
           admin_id: string;
-          action: string;
+          action: AdminActionType;
           target_type: string;
           target_id: string;
           reason: string | null;
@@ -749,7 +762,7 @@ export interface Database {
         Insert: {
           id?: string;
           admin_id: string;
-          action: string;
+          action: AdminActionType;
           target_type: string;
           target_id: string;
           reason?: string | null;
@@ -759,7 +772,7 @@ export interface Database {
         Update: {
           id?: string;
           admin_id?: string;
-          action?: string;
+          action?: AdminActionType;
           target_type?: string;
           target_id?: string;
           reason?: string | null;
@@ -787,6 +800,13 @@ export interface Database {
       errand_category: ErrandCategory;
       pickup_style: PickupStyle;
       road_report_type: RoadReportType;
+      job_category: JobCategory;
+      pay_type: PayType;
+      job_timeline: JobTimeline;
+      strike_reason: StrikeReason;
+      booking_role: BookingRole;
+      flag_target: FlagTarget;
+      admin_action_type: AdminActionType;
     };
   };
 }

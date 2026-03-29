@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Image,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,10 +17,16 @@ import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui';
+import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useGetPostByIdQuery } from '@/store/api/postsApi';
+import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
+import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
 import type { RootState } from '@/store';
+
+const MAP_HEIGHT = 200;
+const MAP_PIXEL_WIDTH = 800; // retina
+const MAP_PIXEL_HEIGHT = MAP_HEIGHT * 2;
 
 export default function PostDetailScreen() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -26,6 +34,26 @@ export default function PostDetailScreen() {
   const { data: post, isLoading, error } = useGetPostByIdQuery(postId ?? '', {
     skip: !postId,
   });
+  const [deletePost] = useDeletePostMutation();
+
+  const hasCoords =
+    post != null &&
+    post.origin_lat != null &&
+    post.origin_lng != null &&
+    post.dest_lat != null &&
+    post.dest_lng != null;
+
+  const mapUri = useMemo(() => {
+    if (!hasCoords || !post) return null;
+    const geo = post.route_geometry as { type: string; coordinates: [number, number][] } | null;
+    return buildRouteMapUrl(
+      post.origin_lat!,
+      post.origin_lng!,
+      post.dest_lat!,
+      post.dest_lng!,
+      { width: MAP_PIXEL_WIDTH, height: MAP_PIXEL_HEIGHT, routeGeometry: geo, padding: 60 },
+    );
+  }, [hasCoords, post]);
 
   if (isLoading) {
     return (
@@ -57,7 +85,7 @@ export default function PostDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           Post Details
@@ -82,6 +110,13 @@ export default function PostDetailScreen() {
         {/* Title */}
         <Text style={styles.title}>{post.title}</Text>
 
+        {/* Route map */}
+        {mapUri && (
+          <View style={styles.mapContainer}>
+            <Image source={{ uri: mapUri }} style={styles.mapImage} resizeMode="cover" />
+          </View>
+        )}
+
         {/* Route info */}
         {(post.origin_address || post.dest_address) && (
           <View style={styles.section}>
@@ -97,6 +132,15 @@ export default function PostDetailScreen() {
               </View>
             </View>
           </View>
+        )}
+
+        {/* Route calculation summary */}
+        {post.route_distance_km != null && post.route_duration_min != null && post.route_fuel_cost_cents != null && (
+          <RouteInfoCard
+            distanceKm={post.route_distance_km}
+            durationMinutes={post.route_duration_min}
+            fuelCostCents={post.route_fuel_cost_cents}
+          />
         )}
 
         {/* Departure */}
@@ -222,7 +266,48 @@ export default function PostDetailScreen() {
       </ScrollView>
 
       {/* Bottom action */}
-      {!isOwner && post.status === 'open' && (
+      {isOwner ? (
+        <View style={styles.bottomBar}>
+          <Button
+            title="Delete Post"
+            variant="outline"
+            onPress={async () => {
+              const confirmed = Platform.OS === 'web'
+                ? window.confirm(`Are you sure you want to delete "${post.title}"?`)
+                : await new Promise<boolean>((resolve) =>
+                    Alert.alert(
+                      'Delete Post',
+                      `Are you sure you want to delete "${post.title}"?`,
+                      [
+                        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+                        { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+                      ],
+                    ),
+                  );
+
+              if (!confirmed) return;
+
+              try {
+                await deletePost(post.id).unwrap();
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)/activity');
+                }
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
+                if (Platform.OS === 'web') {
+                  window.alert(msg);
+                } else {
+                  Alert.alert('Error', msg);
+                }
+              }
+            }}
+            size="lg"
+            style={styles.actionButton}
+          />
+        </View>
+      ) : post.status === 'open' ? (
         <View style={styles.bottomBar}>
           <Button
             title={getActionLabel(post.type)}
@@ -236,7 +321,7 @@ export default function PostDetailScreen() {
             style={styles.actionButton}
           />
         </View>
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -315,6 +400,14 @@ const styles = StyleSheet.create({
   title: {
     ...typography.h2,
     color: colors.forest[900],
+  },
+  mapContainer: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  mapImage: {
+    width: '100%',
+    height: MAP_HEIGHT,
   },
   section: {
     gap: spacing.sm,

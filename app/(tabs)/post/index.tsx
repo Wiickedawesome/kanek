@@ -88,7 +88,7 @@ export default function PostScreen() {
                 <Text style={styles.cardTitle}>{option.label}</Text>
                 <Text style={styles.cardDesc}>{option.description}</Text>
               </View>
-              <Icon name="navigation" size={18} color={colors.neutral[400]} />
+              <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
             </Pressable>
           );
         })}

@@ -224,7 +224,7 @@ function MenuItem({
         <Text style={styles.menuLabel}>{label}</Text>
         {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
-      <Icon name="navigation" size={16} color={colors.neutral[400]} />
+      <Icon name="chevron-right" size={16} color={colors.neutral[400]} />
     </Pressable>
   );
 }

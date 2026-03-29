@@ -1,5 +1,6 @@
 export { FormField } from './FormField';
 export { LocationInput } from './LocationInput';
+export type { LocationCoords } from './LocationInput';
 export { DateTimePicker } from './DateTimePicker';
 export { DateInput } from './DateInput';
 export { PriceInput } from './PriceInput';

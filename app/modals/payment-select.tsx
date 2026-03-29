@@ -44,7 +44,7 @@ export default function PaymentSelectModal() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="navigation" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Pay</Text>
         <View style={{ width: 24 }} />
@@ -66,7 +66,7 @@ export default function PaymentSelectModal() {
                 Pay the driver directly in person.
               </Text>
             </View>
-            <Icon name="navigation" size={20} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
           </Pressable>
 
           {/* E-Kyash option */}
@@ -80,7 +80,7 @@ export default function PaymentSelectModal() {
                 Pay instantly via QR code or deep link.
               </Text>
             </View>
-            <Icon name="navigation" size={20} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
           </Pressable>
         </View>
 

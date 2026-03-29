@@ -20,6 +20,9 @@ import { Navigation } from './Navigation';
 import { Search } from './Search';
 import { Filter } from './Filter';
 import { Phone } from './Phone';
+import { X } from './X';
+import { ChevronLeft } from './ChevronLeft';
+import { ChevronRight } from './ChevronRight';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -46,6 +49,9 @@ export { Navigation } from './Navigation';
 export { Search } from './Search';
 export { Filter } from './Filter';
 export { Phone } from './Phone';
+export { X } from './X';
+export { ChevronLeft } from './ChevronLeft';
+export { ChevronRight } from './ChevronRight';
 
 const iconMap = {
   compass: Compass,
@@ -67,6 +73,9 @@ const iconMap = {
   search: Search,
   filter: Filter,
   phone: Phone,
+  x: X,
+  'chevron-left': ChevronLeft,
+  'chevron-right': ChevronRight,
 } as const;
 
 export type IconName = keyof typeof iconMap;

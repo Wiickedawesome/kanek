@@ -28,6 +28,21 @@ export function formatBZD(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+/** Strip non-numeric chars, allow one decimal point. Use as onChangeText filter. */
+export function sanitizeDecimal(text: string): string {
+  let result = text.replace(/[^0-9.]/g, '');
+  const dotIdx = result.indexOf('.');
+  if (dotIdx !== -1) {
+    result = result.slice(0, dotIdx + 1) + result.slice(dotIdx + 1).replace(/\./g, '');
+  }
+  return result;
+}
+
+/** Strip non-digit chars. Use as onChangeText filter for integer fields. */
+export function sanitizeInteger(text: string): string {
+  return text.replace(/[^0-9]/g, '');
+}
+
 /** Parse DD/MM/YYYY + HH:MM into a Date. Returns null if invalid. */
 export function parseBZDateTime(ddmmyyyy: string, hhmm: string): Date | null {
   const parts = ddmmyyyy.split('/');
