@@ -25,6 +25,7 @@ import { ChevronLeft } from './ChevronLeft';
 import { ChevronRight } from './ChevronRight';
 import { ExternalLink } from './ExternalLink';
 import { Bell } from './Bell';
+import { Send } from './Send';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -56,6 +57,7 @@ export { ChevronLeft } from './ChevronLeft';
 export { ChevronRight } from './ChevronRight';
 export { ExternalLink } from './ExternalLink';
 export { Bell } from './Bell';
+export { Send } from './Send';
 
 const iconMap = {
   compass: Compass,
@@ -82,6 +84,7 @@ const iconMap = {
   'chevron-right': ChevronRight,
   'external-link': ExternalLink,
   bell: Bell,
+  send: Send,
 } as const;
 
 export type IconName = keyof typeof iconMap;

@@ -803,6 +803,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      contract_messages: {
+        Row: {
+          id: string;
+          contract_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          contract_id: string;
+          sender_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          contract_id?: string;
+          sender_id?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

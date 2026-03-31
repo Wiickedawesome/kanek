@@ -1,4 +1,5 @@
 import { Linking, Platform, ActionSheetIOS, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { PHONE_REGEX, BELIZE_BBOX } from './constants';
 
 const BZ_LOCALE = 'en-BZ';
@@ -219,4 +220,13 @@ export function getTimeAgo(isoDate: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
   return formatShortDate(isoDate);
+}
+
+/** Navigate back safely — uses history when available, otherwise navigates to fallback */
+export function safeGoBack(fallback: string) {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.navigate(fallback as any);
+  }
 }

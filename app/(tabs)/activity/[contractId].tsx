@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,10 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,11 +23,13 @@ import {
   useGetContractByIdQuery,
   useCompleteContractMutation,
 } from '@/store/api/bookingsApi';
+import { useGetMessagesQuery, useSendMessageMutation } from '@/store/api/messagesApi';
+import type { MessageWithSender } from '@/store/api/messagesApi';
 import { useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useSOS } from '@/hooks/useSOS';
-import { formatBZD, formatDeparture, formatDate, openInMaps } from '@/lib/helpers';
+import { formatBZD, formatDeparture, formatDate, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
@@ -36,11 +42,18 @@ export default function ContractDetailScreen() {
     skip: !contractId,
   });
   const [completeContract, { isLoading: isCompleting }] = useCompleteContractMutation();
-  const { subscribeToTracking } = useRealtime();
+  const { subscribeToTracking, subscribeToMessages } = useRealtime();
   const { startTracking, stopTracking, isTracking: isDriverTracking } = useDriverTracking();
   const { triggerSOS, isSending: isSOSSending } = useSOS();
 
   const [driverLocation, setDriverLocation] = useState<DriverLocationUpdate | null>(null);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const chatListRef = useRef<FlatList<MessageWithSender>>(null);
+
+  // Chat queries
+  const { data: messages = [] } = useGetMessagesQuery(contractId ?? '', { skip: !contractId });
+  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
   // Check if user has already rated this contract
   const otherPartyId = contract?.parties.find((p) => p !== userId);
@@ -69,6 +82,20 @@ export default function ContractDetailScreen() {
     });
     return unsubscribe;
   }, [contractId, contract?.status, subscribeToTracking]);
+
+  // Subscribe to real-time chat messages
+  useEffect(() => {
+    if (!contractId) return;
+    const unsubscribe = subscribeToMessages(contractId);
+    return unsubscribe;
+  }, [contractId, subscribeToMessages]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => chatListRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  }, [messages.length]);
 
   // Extract route coordinates from post geometry
   const routeCoordinates = useMemo((): [number, number][] | undefined => {
@@ -147,6 +174,16 @@ export default function ContractDetailScreen() {
     });
   }, [contract, userId]);
 
+  const handleSend = useCallback(async () => {
+    if (!contractId || !userId || !messageText.trim()) return;
+    try {
+      await sendMessage({ contractId, senderId: userId, body: messageText }).unwrap();
+      setMessageText('');
+    } catch {
+      showAlert('Error', 'Could not send message.');
+    }
+  }, [contractId, userId, messageText, sendMessage]);
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered}>
@@ -160,7 +197,7 @@ export default function ContractDetailScreen() {
       <SafeAreaView style={styles.centered}>
         <Icon name="alert-triangle" size={48} color={colors.neutral[400]} />
         <Text style={styles.errorText}>Contract not found</Text>
-        <Button title="Go Back" variant="outline" onPress={() => router.back()} />
+        <Button title="Go Back" variant="outline" onPress={() => safeGoBack('/(tabs)/activity/')} />
       </SafeAreaView>
     );
   }
@@ -169,223 +206,286 @@ export default function ContractDetailScreen() {
   const isParty = contract.parties.includes(userId ?? '');
   const statusColor = STATUS_COLORS[contract.status];
 
+  const renderMessage = ({ item }: { item: MessageWithSender }) => {
+    const isMe = item.sender_id === userId;
+    const senderName = item.sender
+      ? `${item.sender.first_name ?? ''} ${item.sender.last_name ?? ''}`.trim()
+      : 'Unknown';
+    const time = new Date(item.created_at).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    return (
+      <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.theirBubble]}>
+        {!isMe && <Text style={styles.senderName}>{senderName}</Text>}
+        <Text style={[styles.messageText, isMe && styles.myMessageText]}>{item.body}</Text>
+        <Text style={[styles.messageTime, isMe && styles.myMessageTime]}>{time}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
-        <Text style={styles.headerTitle}>Contract</Text>
-        {isActive && (
-          <Pressable onPress={triggerSOS} hitSlop={12} disabled={isSOSSending}>
-            <Icon name="shield-alert" size={24} color={colors.error} />
-          </Pressable>
-        )}
-        {!isActive && <View style={{ width: 24 }} />}
+        <Text style={styles.headerTitle}>
+          {contract.post?.title ?? 'Contract'}
+        </Text>
+        <View style={styles.headerRight}>
+          {isActive && (
+            <Pressable onPress={triggerSOS} hitSlop={12} disabled={isSOSSending}>
+              <Icon name="shield-alert" size={24} color={colors.error} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Status banner */}
-        <View style={[styles.statusBanner, { backgroundColor: statusColor.bg }]}>
-          <Text style={[styles.statusLabel, { color: statusColor.fg }]}>
-            {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-          </Text>
-          {isActive && driverLocation && (
-            <Text style={styles.liveText}>
-              Live tracking active
-            </Text>
-          )}
-        </View>
-
-        {/* Post info */}
-        {contract.post && (
-          <View style={styles.section}>
-            <PostTypeBadge type={contract.post.type} />
-            <Text style={styles.postTitle}>{contract.post.title}</Text>
-          </View>
-        )}
-
-        {/* Route */}
-        {(contract.origin_address || contract.dest_address) && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionLabel}>Route</Text>
-              {origin && destination && (
-                <Pressable
-                  style={styles.openMapsBtn}
-                  hitSlop={8}
-                  onPress={() => openInMaps(
-                    { lat: origin[1], lng: origin[0], label: contract.origin_address ?? undefined },
-                    { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
-                  )}
-                >
-                  <Icon name="external-link" size={14} color={colors.forest[400]} />
-                  <Text style={styles.openMapsText}>Open in Maps</Text>
-                </Pressable>
-              )}
-            </View>
-            <View style={styles.routeRow}>
-              <View style={styles.routeDots}>
-                <View style={styles.dotGreen} />
-                <View style={styles.routeLine} />
-                <View style={styles.dotRed} />
-              </View>
-              <View style={styles.routeAddresses}>
-                <Text style={styles.address}>{contract.origin_address ?? 'Not specified'}</Text>
-                <Text style={styles.address}>{contract.dest_address ?? 'Not specified'}</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Departure */}
-        {contract.departure_at && (
-          <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
-            <Text style={styles.infoText}>{formatDeparture(contract.departure_at)}</Text>
-          </View>
-        )}
-
-        {/* Price */}
-        <View style={styles.infoRow}>
-          <Icon name="receipt" size={18} color={colors.forest[400]} />
-          <Text style={styles.infoText}>
-            Agreed price: {formatBZD(contract.agreed_price_cents)}
-          </Text>
-        </View>
-
-        {/* Payment method */}
-        {contract.booking?.payment_method && (
-          <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={colors.forest[400]} />
-            <Text style={styles.infoText}>
-              Payment: {contract.booking.payment_method === 'ekyash' ? 'E-Kyash' : 'Cash'}
-            </Text>
-          </View>
-        )}
-
-        {/* Seats */}
-        {contract.booking && contract.booking.seats_booked > 0 && (
-          <View style={styles.infoRow}>
-            <Icon name="user" size={18} color={colors.forest[400]} />
-            <Text style={styles.infoText}>
-              {contract.booking.seats_booked} seat{contract.booking.seats_booked !== 1 ? 's' : ''} booked
-            </Text>
-          </View>
-        )}
-
-        {/* Terms */}
-        {contract.terms && Object.keys(contract.terms).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Terms</Text>
-            {Object.entries(contract.terms).map(([key, value]) => (
-              <Text key={key} style={styles.termRow}>
-                {key}: {String(value)}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        {/* Trip details header — collapsible */}
+        <Pressable
+          style={[styles.tripHeader, { backgroundColor: statusColor.bg }]}
+          onPress={() => setDetailsExpanded((prev) => !prev)}
+        >
+          <View style={styles.tripHeaderRow}>
+            <View style={styles.tripHeaderLeft}>
+              {contract.post && <PostTypeBadge type={contract.post.type} />}
+              <Text style={[styles.statusChip, { color: statusColor.fg }]}>
+                {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
               </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Live tracking map */}
-        {isActive && (origin || destination) && (
-          <View style={styles.mapContainer}>
-            <LiveTrackingMap
-              driverLocation={driverLocation}
-              origin={origin}
-              destination={destination}
-              routeCoordinates={routeCoordinates}
-              isDriver={!!isDriver}
+            </View>
+            <Icon
+              name={detailsExpanded ? 'chevron-left' : 'chevron-right'}
+              size={18}
+              color={colors.forest[400]}
+              style={detailsExpanded ? styles.chevronDown : styles.chevronRight}
             />
           </View>
+          {/* Always-visible summary row */}
+          <View style={styles.tripSummary}>
+            {contract.origin_address && (
+              <Text style={styles.tripSummaryText} numberOfLines={1}>
+                {contract.origin_address} → {contract.dest_address ?? '…'}
+              </Text>
+            )}
+            <Text style={styles.tripSummaryPrice}>
+              {formatBZD(contract.agreed_price_cents)}
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* Expanded trip details */}
+        {detailsExpanded && (
+          <ScrollView style={styles.detailsPanel} contentContainerStyle={styles.detailsContent}>
+            {/* View original post */}
+            {contract.post?.id && (
+              <Pressable
+                style={styles.viewPostLink}
+                onPress={() => router.push(`/explore/${contract.post!.id}`)}
+              >
+                <Icon name="external-link" size={16} color={colors.accent.green} />
+                <Text style={styles.viewPostText}>View Original Post</Text>
+              </Pressable>
+            )}
+
+            {/* Route */}
+            {(contract.origin_address || contract.dest_address) && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionLabel}>Route</Text>
+                  {origin && destination && (
+                    <Pressable
+                      style={styles.openMapsBtn}
+                      hitSlop={8}
+                      onPress={() => openInMaps(
+                        { lat: origin[1], lng: origin[0], label: contract.origin_address ?? undefined },
+                        { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
+                      )}
+                    >
+                      <Icon name="external-link" size={14} color={colors.forest[400]} />
+                      <Text style={styles.openMapsText}>Open in Maps</Text>
+                    </Pressable>
+                  )}
+                </View>
+                <View style={styles.routeRow}>
+                  <View style={styles.routeDots}>
+                    <View style={styles.dotGreen} />
+                    <View style={styles.routeLine} />
+                    <View style={styles.dotRed} />
+                  </View>
+                  <View style={styles.routeAddresses}>
+                    <Text style={styles.address}>{contract.origin_address ?? 'Not specified'}</Text>
+                    <Text style={styles.address}>{contract.dest_address ?? 'Not specified'}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Departure */}
+            {contract.departure_at && (
+              <View style={styles.infoRow}>
+                <Icon name="clock" size={18} color={colors.forest[400]} />
+                <Text style={styles.infoText}>{formatDeparture(contract.departure_at)}</Text>
+              </View>
+            )}
+
+            {/* Payment method */}
+            {contract.booking?.payment_method && (
+              <View style={styles.infoRow}>
+                <Icon name="receipt" size={18} color={colors.forest[400]} />
+                <Text style={styles.infoText}>
+                  Payment: {contract.booking.payment_method === 'ekyash' ? 'E-Kyash' : 'Cash'}
+                </Text>
+              </View>
+            )}
+
+            {/* Seats */}
+            {contract.booking && contract.booking.seats_booked > 0 && (
+              <View style={styles.infoRow}>
+                <Icon name="user" size={18} color={colors.forest[400]} />
+                <Text style={styles.infoText}>
+                  {contract.booking.seats_booked} seat{contract.booking.seats_booked !== 1 ? 's' : ''} booked
+                </Text>
+              </View>
+            )}
+
+            {/* Live tracking map */}
+            {isActive && (origin || destination) && (
+              <View style={styles.mapContainer}>
+                <LiveTrackingMap
+                  driverLocation={driverLocation}
+                  origin={origin}
+                  destination={destination}
+                  routeCoordinates={routeCoordinates}
+                  isDriver={!!isDriver}
+                />
+              </View>
+            )}
+
+            {/* Driver tracking controls */}
+            {isActive && isDriver && (
+              <View style={styles.driverControls}>
+                <Pressable
+                  style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
+                  onPress={handleToggleTracking}
+                >
+                  <Icon
+                    name="navigation"
+                    size={18}
+                    color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
+                  />
+                  <Text
+                    style={[
+                      styles.trackingToggleText,
+                      isDriverTracking && styles.trackingToggleTextActive,
+                    ]}
+                  >
+                    {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.checkinButton}
+                  onPress={() => router.push({
+                    pathname: '/modals/selfie-checkin',
+                    params: { contractId: contractId! },
+                  })}
+                >
+                  <Icon name="user" size={18} color={colors.forest[400]} />
+                  <Text style={styles.checkinText}>Selfie Check-in</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Action buttons in expanded details */}
+            {isParty && isActive && (
+              <View style={styles.detailActions}>
+                {contract.booking?.payment_method === 'ekyash' && (
+                  <Button
+                    title="Pay with E-Kyash"
+                    variant="outline"
+                    onPress={handlePayment}
+                    style={styles.detailActionBtn}
+                  />
+                )}
+                <Button
+                  title={isCompleting ? 'Completing...' : 'Complete Trip'}
+                  onPress={handleComplete}
+                  disabled={isCompleting}
+                  style={styles.detailActionBtn}
+                />
+              </View>
+            )}
+
+            {/* Rate prompt */}
+            {isParty && contract.status === 'completed' && !hasRated && otherPartyId && (
+              <Button
+                title="Rate Trip"
+                onPress={() =>
+                  router.push({
+                    pathname: '/modals/rate',
+                    params: { contractId, ratedId: otherPartyId },
+                  })
+                }
+                style={styles.detailActionBtn}
+              />
+            )}
+          </ScrollView>
         )}
 
-        {/* Driver tracking controls */}
-        {isActive && isDriver && (
-          <View style={styles.driverControls}>
+        {/* Chat messages */}
+        <FlatList
+          ref={chatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.chatList}
+          contentContainerStyle={styles.chatContent}
+          ListEmptyComponent={
+            <View style={styles.emptyChat}>
+              <Icon name="clipboard-list" size={40} color={colors.neutral[300]} />
+              <Text style={styles.emptyChatText}>No messages yet</Text>
+              <Text style={styles.emptyChatSubText}>
+                Send a message to coordinate your trip
+              </Text>
+            </View>
+          }
+        />
+
+        {/* Message input */}
+        {isParty && (
+          <View style={styles.inputBar}>
+            <TextInput
+              style={styles.textInput}
+              value={messageText}
+              onChangeText={setMessageText}
+              placeholder="Type a message…"
+              placeholderTextColor={colors.neutral[400]}
+              multiline
+              maxLength={2000}
+            />
             <Pressable
-              style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
-              onPress={handleToggleTracking}
+              style={[styles.sendButton, (!messageText.trim() || isSending) && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={!messageText.trim() || isSending}
+              hitSlop={8}
             >
               <Icon
-                name="navigation"
-                size={18}
-                color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
+                name="send"
+                size={20}
+                color={messageText.trim() && !isSending ? colors.neutral[0] : colors.neutral[400]}
               />
-              <Text
-                style={[
-                  styles.trackingToggleText,
-                  isDriverTracking && styles.trackingToggleTextActive,
-                ]}
-              >
-                {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.checkinButton}
-              onPress={() => router.push({
-                pathname: '/modals/selfie-checkin',
-                params: { contractId: contractId! },
-              })}
-            >
-              <Icon name="user" size={18} color={colors.forest[400]} />
-              <Text style={styles.checkinText}>Selfie Check-in</Text>
             </Pressable>
           </View>
         )}
-
-        {/* Timestamps */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Timeline</Text>
-          <View style={styles.timelineRow}>
-            <Text style={styles.timelineLabel}>Created</Text>
-            <Text style={styles.timelineValue}>{formatDate(contract.created_at)}</Text>
-          </View>
-          {contract.completed_at && (
-            <View style={styles.timelineRow}>
-              <Text style={styles.timelineLabel}>Completed</Text>
-              <Text style={styles.timelineValue}>{formatDate(contract.completed_at)}</Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Bottom actions */}
-      {isParty && isActive && (
-        <View style={styles.bottomBar}>
-          {contract.booking?.payment_method === 'ekyash' && (
-            <Button
-              title="Pay with E-Kyash"
-              variant="outline"
-              onPress={handlePayment}
-              style={styles.payButton}
-            />
-          )}
-          <Button
-            title={isCompleting ? 'Completing...' : 'Complete Trip'}
-            onPress={handleComplete}
-            disabled={isCompleting}
-            style={styles.completeButton}
-          />
-        </View>
-      )}
-
-      {/* Rate prompt for completed contracts */}
-      {isParty && contract.status === 'completed' && !hasRated && otherPartyId && (
-        <View style={styles.bottomBar}>
-          <Button
-            title="Rate Trip"
-            onPress={() =>
-              router.push({
-                pathname: '/modals/rate',
-                params: { contractId, ratedId: otherPartyId },
-              })
-            }
-            style={styles.completeButton}
-          />
-        </View>
-      )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -401,6 +501,7 @@ const STATUS_COLORS: Record<ContractStatus, { bg: string; fg: string }> = {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.neutral[50] },
+  flex: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
   errorText: { ...typography.body1, color: colors.neutral[400], marginVertical: spacing.lg },
   header: {
@@ -412,24 +513,56 @@ const styles = StyleSheet.create({
     backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
-  scrollContent: { padding: spacing.lg, paddingBottom: 120 },
+  headerRight: { width: 24, alignItems: 'flex-end' },
 
-  statusBanner: {
+  // Trip header (collapsible)
+  tripHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[200],
+  },
+  tripHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
   },
-  statusLabel: { ...typography.body1Bold },
-  liveText: { ...typography.caption, color: colors.accent.green },
+  tripHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  statusChip: { ...typography.body2Bold },
+  chevronDown: { transform: [{ rotate: '-90deg' }] },
+  chevronRight: {},
+  tripSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+  },
+  tripSummaryText: { ...typography.body2, color: colors.forest[500], flex: 1, marginRight: spacing.sm },
+  tripSummaryPrice: { ...typography.body1Bold, color: colors.forest[900] },
 
+  // Expanded details panel
+  detailsPanel: { maxHeight: 400, borderBottomWidth: 1, borderBottomColor: colors.neutral[200] },
+  detailsContent: { padding: spacing.lg },
+  detailActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
+  detailActionBtn: { flex: 1 },
+
+  // Shared detail styles
   section: { marginBottom: spacing.xl },
   sectionLabel: { ...typography.body2Bold, color: colors.forest[400], marginBottom: spacing.sm },
-  postTitle: { ...typography.h3, color: colors.forest[900], marginTop: spacing.xs },
-
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  openMapsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  openMapsText: { ...typography.caption, color: colors.forest[400], fontWeight: '600' },
+  viewPostLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  viewPostText: {
+    ...typography.body2Bold,
+    color: colors.accent.green,
+  },
   routeRow: { flexDirection: 'row', gap: spacing.md },
   routeDots: { alignItems: 'center', paddingVertical: 2 },
   dotGreen: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent.green },
@@ -437,31 +570,10 @@ const styles = StyleSheet.create({
   dotRed: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.error },
   routeAddresses: { flex: 1, justifyContent: 'space-between', gap: spacing.lg },
   address: { ...typography.body1, color: colors.forest[900] },
-
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   infoText: { ...typography.body1, color: colors.forest[900] },
-
-  termRow: { ...typography.body2, color: colors.forest[500], marginBottom: spacing.xs },
-
-  trackingCard: {
-    backgroundColor: colors.neutral[100],
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.accent.green,
-  },
-  trackingHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  trackingTitle: { ...typography.body1Bold, color: colors.accent.green },
-  trackingCoords: { ...typography.body2, color: colors.forest[500] },
-  trackingTime: { ...typography.caption, color: colors.neutral[400], marginTop: spacing.xs },
-
-  mapContainer: {
-    height: 280,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-  },
+  mapContainer: { height: 200, borderRadius: borderRadius.lg, overflow: 'hidden', marginBottom: spacing.lg },
+  driverControls: { gap: spacing.md, marginBottom: spacing.xl },
   trackingToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -472,24 +584,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
     borderWidth: 2,
     borderColor: colors.accent.green,
-    marginBottom: spacing.xl,
   },
-  trackingToggleActive: {
-    backgroundColor: colors.accent.green,
-    borderColor: colors.accent.green,
-  },
-  trackingToggleText: {
-    ...typography.body1Bold,
-    color: colors.accent.green,
-  },
-  trackingToggleTextActive: {
-    color: colors.neutral[0],
-  },
-
-  driverControls: {
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
+  trackingToggleActive: { backgroundColor: colors.accent.green, borderColor: colors.accent.green },
+  trackingToggleText: { ...typography.body1Bold, color: colors.accent.green },
+  trackingToggleTextActive: { color: colors.neutral[0] },
   checkinButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -501,44 +599,70 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral[300],
   },
-  checkinText: {
-    ...typography.body1Bold,
-    color: colors.forest[500],
-  },
+  checkinText: { ...typography.body1Bold, color: colors.forest[500] },
 
-  timelineRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // Chat
+  chatList: { flex: 1 },
+  chatContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexGrow: 1, justifyContent: 'flex-end' },
+  emptyChat: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
+  emptyChatText: { ...typography.body1Bold, color: colors.neutral[400] },
+  emptyChatSubText: { ...typography.body2, color: colors.neutral[400] },
+
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
   },
-  timelineLabel: { ...typography.body2, color: colors.forest[400] },
-  timelineValue: { ...typography.body2, color: colors.forest[900] },
-
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+  myBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.accent.green,
+    borderBottomRightRadius: 4,
+  },
+  theirBubble: {
+    alignSelf: 'flex-start',
     backgroundColor: colors.neutral[0],
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  senderName: { ...typography.caption, color: colors.forest[400], fontWeight: '600', marginBottom: 2 },
+  messageText: { ...typography.body1, color: colors.forest[900] },
+  myMessageText: { color: colors.neutral[0] },
+  messageTime: { ...typography.caption, color: colors.forest[400], marginTop: 2, alignSelf: 'flex-end' },
+  myMessageTime: { color: 'rgba(255,255,255,0.7)' },
+
+  // Input bar
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
+    backgroundColor: colors.neutral[0],
+    gap: spacing.sm,
   },
-  payButton: { flex: 1 },
-  completeButton: { flex: 1 },
-
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  openMapsBtn: {
-    flexDirection: 'row',
+  textInput: {
+    flex: 1,
+    ...typography.body1,
+    color: colors.forest[900],
+    backgroundColor: colors.neutral[100],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent.green,
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
   },
-  openMapsText: {
-    ...typography.caption,
-    color: colors.forest[400],
-    fontWeight: '600',
+  sendButtonDisabled: {
+    backgroundColor: colors.neutral[200],
   },
 });

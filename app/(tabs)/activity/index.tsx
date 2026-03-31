@@ -16,17 +16,20 @@ import { PostTypeBadge } from '@/components/ui/Badge';
 import { Card, EmptyState } from '@/components/ui';
 import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useGetMyBookingsQuery, useCancelBookingMutation, type BookingWithPost } from '@/store/api/bookingsApi';
+import { useGetMyBookingsQuery, useGetMyContractsQuery, useCancelBookingMutation, type BookingWithPost, type ContractWithDetails } from '@/store/api/bookingsApi';
 import { useGetMyPostsQuery, useDeletePostMutation, type PostWithAuthor } from '@/store/api/postsApi';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
-import type { BookingStatus } from '@/types/database';
+import type { BookingStatus, ContractStatus } from '@/types/database';
 
 type Tab = 'active' | 'history' | 'my_posts';
 
 const ACTIVE_STATUSES: BookingStatus[] = ['pending', 'confirmed'];
 const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
+const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
+const HISTORY_CONTRACT_STATUSES: ContractStatus[] = ['completed', 'cancelled'];
+const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
 
 export default function ActivityScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -46,6 +49,26 @@ export default function ActivityScreen() {
   } = useGetMyBookingsQuery(
     { userId: userId ?? '', status: statuses },
     { skip: !userId || tab === 'my_posts' },
+  );
+
+  const {
+    data: historyContracts,
+    isLoading: contractsLoading,
+    isFetching: contractsFetching,
+    refetch: refetchContracts,
+  } = useGetMyContractsQuery(
+    { userId: userId ?? '', status: HISTORY_CONTRACT_STATUSES },
+    { skip: !userId || tab !== 'history' },
+  );
+
+  const {
+    data: activeContracts,
+    isLoading: activeContractsLoading,
+    isFetching: activeContractsFetching,
+    refetch: refetchActiveContracts,
+  } = useGetMyContractsQuery(
+    { userId: userId ?? '', status: ACTIVE_CONTRACT_STATUSES },
+    { skip: !userId || tab !== 'active' },
   );
 
   const {
@@ -106,10 +129,14 @@ export default function ActivityScreen() {
   const onRefresh = useCallback(() => {
     if (tab === 'my_posts') {
       refetchPosts();
+    } else if (tab === 'history') {
+      refetchBookings();
+      refetchContracts();
     } else {
       refetchBookings();
+      refetchActiveContracts();
     }
-  }, [tab, refetchPosts, refetchBookings]);
+  }, [tab, refetchPosts, refetchBookings, refetchContracts, refetchActiveContracts]);
 
   const renderBooking = useCallback(
     ({ item }: { item: BookingWithPost }) => {
@@ -180,6 +207,128 @@ export default function ActivityScreen() {
     [handleCancelBooking],
   );
 
+  const renderContract = useCallback(
+    ({ item }: { item: ContractWithDetails }) => (
+      <Pressable onPress={() => router.push(`/(tabs)/activity/${item.id}`)}>
+        <Card style={styles.bookingCard}>
+          <View style={styles.cardHeader}>
+            {item.post && <PostTypeBadge type={item.post.type} />}
+            <ContractStatusBadge status={item.status} />
+          </View>
+
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.post?.title ?? 'Untitled Post'}
+          </Text>
+
+          {item.post?.origin_address && item.post?.dest_address && (
+            <View style={styles.routeInfo}>
+              <Icon name="map-pin" size={14} color={colors.forest[400]} />
+              <Text style={styles.routeText} numberOfLines={1}>
+                {item.post.origin_address} → {item.post.dest_address}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.cardFooter}>
+            <Text style={styles.footerText}>
+              {item.booking?.seats_booked ?? 1} seat{(item.booking?.seats_booked ?? 1) !== 1 ? 's' : ''}
+              {item.booking?.payment_method ? ` · ${item.booking.payment_method}` : ''}
+            </Text>
+            <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
+          </View>
+        </Card>
+      </Pressable>
+    ),
+    [],
+  );
+
+  // Build merged history list: contracts first, then bookings without a contract
+  type HistoryItem =
+    | { kind: 'contract'; data: ContractWithDetails }
+    | { kind: 'booking'; data: BookingWithPost };
+
+  const historyItems = React.useMemo((): HistoryItem[] => {
+    if (tab !== 'history') return [];
+    const items: HistoryItem[] = [];
+
+    // Add completed/cancelled contracts
+    const contractBookingIds = new Set<string>();
+    if (historyContracts) {
+      for (const c of historyContracts) {
+        items.push({ kind: 'contract', data: c });
+        if (c.booking_id) contractBookingIds.add(c.booking_id);
+      }
+    }
+
+    // Add bookings that don't have a corresponding contract (e.g. cancelled before acceptance)
+    if (bookings) {
+      for (const b of bookings) {
+        if (!contractBookingIds.has(b.id)) {
+          items.push({ kind: 'booking', data: b });
+        }
+      }
+    }
+
+    // Sort newest first
+    items.sort((a, b) => {
+      const dateA = new Date(a.data.created_at).getTime();
+      const dateB = new Date(b.data.created_at).getTime();
+      return dateB - dateA;
+    });
+
+    return items;
+  }, [tab, historyContracts, bookings]);
+
+  // Build merged active list: active contracts + active bookings (dedup)
+  type ActiveItem =
+    | { kind: 'contract'; data: ContractWithDetails }
+    | { kind: 'booking'; data: BookingWithPost };
+
+  const activeItems = React.useMemo((): ActiveItem[] => {
+    if (tab !== 'active') return [];
+    const items: ActiveItem[] = [];
+
+    const contractBookingIds = new Set<string>();
+    if (activeContracts) {
+      for (const c of activeContracts) {
+        items.push({ kind: 'contract', data: c });
+        if (c.booking_id) contractBookingIds.add(c.booking_id);
+      }
+    }
+
+    if (bookings) {
+      for (const b of bookings) {
+        if (!contractBookingIds.has(b.id)) {
+          items.push({ kind: 'booking', data: b });
+        }
+      }
+    }
+
+    items.sort((a, b) => {
+      const dateA = new Date(a.data.created_at).getTime();
+      const dateB = new Date(b.data.created_at).getTime();
+      return dateB - dateA;
+    });
+
+    return items;
+  }, [tab, activeContracts, bookings]);
+
+  const renderHistoryItem = useCallback(
+    ({ item }: { item: HistoryItem }) => {
+      if (item.kind === 'contract') return renderContract({ item: item.data });
+      return renderBooking({ item: item.data });
+    },
+    [renderContract, renderBooking],
+  );
+
+  const renderActiveItem = useCallback(
+    ({ item }: { item: ActiveItem }) => {
+      if (item.kind === 'contract') return renderContract({ item: item.data });
+      return renderBooking({ item: item.data });
+    },
+    [renderContract, renderBooking],
+  );
+
   const renderMyPost = useCallback(
     ({ item }: { item: PostWithAuthor }) => (
       <Pressable onPress={() => router.push(`/explore/${item.id}`)}>
@@ -236,8 +385,13 @@ export default function ActivityScreen() {
     [handleDeletePost],
   );
 
-  const isLoading = tab === 'my_posts' ? postsLoading : bookingsLoading;
-  const isFetching = tab === 'my_posts' ? postsFetching : bookingsFetching;
+  const filteredPosts = React.useMemo(() => {
+    if (!myPosts) return [];
+    return myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
+  }, [myPosts]);
+
+  const isLoading = tab === 'my_posts' ? postsLoading : tab === 'history' ? (bookingsLoading || contractsLoading) : (bookingsLoading || activeContractsLoading);
+  const isFetching = tab === 'my_posts' ? postsFetching : tab === 'history' ? (bookingsFetching || contractsFetching) : (bookingsFetching || activeContractsFetching);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -287,7 +441,7 @@ export default function ActivityScreen() {
         </View>
       ) : tab === 'my_posts' ? (
         <FlatList
-          data={myPosts}
+          data={filteredPosts}
           renderItem={renderMyPost}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.feed}
@@ -307,11 +461,11 @@ export default function ActivityScreen() {
             />
           }
         />
-      ) : (
+      ) : tab === 'history' ? (
         <FlatList
-          data={bookings}
-          renderItem={renderBooking}
-          keyExtractor={(item) => item.id}
+          data={historyItems}
+          renderItem={renderHistoryItem}
+          keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
           contentContainerStyle={styles.feed}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
@@ -324,12 +478,30 @@ export default function ActivityScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="clipboard-list"
-              title={tab === 'active' ? 'No active bookings' : 'No history yet'}
-              message={
-                tab === 'active'
-                  ? 'When you book a ride or accept an errand, it will appear here.'
-                  : 'Your completed and cancelled bookings will show here.'
-              }
+              title="No history yet"
+              message="Your completed and cancelled jobs will show here."
+            />
+          }
+        />
+      ) : (
+        <FlatList
+          data={activeItems}
+          renderItem={renderActiveItem}
+          keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
+          contentContainerStyle={styles.feed}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching && !isLoading}
+              onRefresh={onRefresh}
+              tintColor={colors.accent.green}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="clipboard-list"
+              title="No active bookings"
+              message="When you book a ride or accept an errand, it will appear here."
             />
           }
         />
@@ -368,6 +540,23 @@ function PostStatusBadge({ status }: { status: string }) {
   };
 
   const c = config[status] ?? { label: status, bg: colors.neutral[200], fg: colors.neutral[500] };
+
+  return (
+    <View style={[styles.statusBadge, { backgroundColor: c.bg }]}>
+      <Text style={[styles.statusText, { color: c.fg }]}>{c.label}</Text>
+    </View>
+  );
+}
+
+function ContractStatusBadge({ status }: { status: ContractStatus }) {
+  const config: Record<ContractStatus, { label: string; bg: string; fg: string }> = {
+    active: { label: 'Active', bg: '#e8f5e9', fg: colors.accent.green },
+    completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+    cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
+    disputed: { label: 'Disputed', bg: '#fff8e1', fg: colors.warning },
+  };
+
+  const c = config[status];
 
   return (
     <View style={[styles.statusBadge, { backgroundColor: c.bg }]}>

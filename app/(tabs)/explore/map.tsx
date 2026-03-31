@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
+import { safeGoBack } from '@/lib/helpers';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -75,7 +76,7 @@ export default function ExploreMapScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Map View</Text>

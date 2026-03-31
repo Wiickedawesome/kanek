@@ -21,7 +21,7 @@ import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation } from '@/store/api/bookingsApi';
 import { supabase } from '@/lib/supabase';
 import { buildRouteMapUrl } from '@/lib/mapbox';
-import { formatBZD, formatDeparture, getTimeAgo, openInMaps } from '@/lib/helpers';
+import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 
@@ -81,7 +81,7 @@ export default function PostDetailScreen() {
       <SafeAreaView style={styles.centered}>
         <Icon name="alert-triangle" size={48} color={colors.neutral[400]} />
         <Text style={styles.errorText}>Post not found</Text>
-        <Button title="Go Back" variant="outline" onPress={() => router.back()} />
+        <Button title="Go Back" variant="outline" onPress={() => safeGoBack('/(tabs)/explore/')} />
       </SafeAreaView>
     );
   }
@@ -97,7 +97,7 @@ export default function PostDetailScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -422,11 +422,7 @@ export default function PostDetailScreen() {
 
               try {
                 await deletePost(post.id).unwrap();
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace('/(tabs)/activity');
-                }
+                router.navigate('/(tabs)/explore/');
               } catch (e: any) {
                 const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
                 showAlert('Error', msg);

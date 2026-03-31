@@ -8,6 +8,7 @@ import { notificationsApi } from '@/store/api/notificationsApi';
 import { postsApi } from '@/store/api/postsApi';
 import { bookingsApi } from '@/store/api/bookingsApi';
 import { reportsApi } from '@/store/api/reportsApi';
+import { messagesApi } from '@/store/api/messagesApi';
 import type { AppDispatch, RootState } from '@/store';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -267,6 +268,35 @@ export function useRealtime() {
     };
   }, [userId, dispatch]);
 
+  /** Subscribe to new chat messages for a contract */
+  const subscribeToMessages = useCallback(
+    (contractId: string) => {
+      const channel = supabase
+        .channel(`messages:${contractId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'contract_messages',
+            filter: `contract_id=eq.${contractId}`,
+          },
+          () => {
+            dispatch(messagesApi.util.invalidateTags([{ type: 'Message', id: contractId }]));
+          },
+        )
+        .subscribe();
+
+      channelsRef.current.push(channel);
+
+      return () => {
+        supabase.removeChannel(channel);
+        channelsRef.current = channelsRef.current.filter((c) => c !== channel);
+      };
+    },
+    [dispatch],
+  );
+
   // Cleanup all channels on unmount
   useEffect(() => {
     return () => {
@@ -282,5 +312,6 @@ export function useRealtime() {
     subscribeToRoadReports,
     subscribeToBookings,
     subscribeToContracts,
+    subscribeToMessages,
   };
 }

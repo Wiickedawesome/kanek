@@ -38,7 +38,9 @@ export function MapPickerContent({ initialCenter, onCenterChange }: MapPickerCon
         maxZoomLevel={18}
         bounds={{ sw: BELIZE_SW, ne: BELIZE_NE }}
       />
-      <MapboxGL.UserLocation visible androidRenderMode="compass" />
+      {MapboxGL.UserLocation && (
+        <MapboxGL.UserLocation visible androidRenderMode="compass" />
+      )}
     </MapboxGL.MapView>
   );
 }

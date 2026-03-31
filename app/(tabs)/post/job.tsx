@@ -17,19 +17,13 @@ import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
-import { sanitizeDecimal } from '@/lib/helpers';
+import { sanitizeDecimal, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import { showAlert } from '@/lib/alert';
 import { showToast } from '@/store/slices/toastSlice';
 import type { JobCategory, PayType, JobTimeline, PaymentMethod } from '@/types/database';
 
-const safeBack = () => {
-  if (router.canGoBack()) {
-    router.back();
-  } else {
-    router.replace('/(tabs)/explore');
-  }
-};
+const safeBack = () => safeGoBack('/(tabs)/post/');
 
 const JOB_CATEGORIES: { value: JobCategory; label: string }[] = [
   { value: 'skilled_trade', label: 'Skilled Trade' },

@@ -24,7 +24,7 @@ export const notificationsApi = createApi({
       providesTags: [{ type: 'Notification', id: 'LIST' }],
     }),
 
-    markNotificationRead: builder.mutation<void, string>({
+    markNotificationRead: builder.mutation<null, string>({
       queryFn: async (notificationId) => {
         const { error } = await supabase
           .from('notifications')
@@ -32,12 +32,12 @@ export const notificationsApi = createApi({
           .eq('id', notificationId);
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined };
+        return { data: null };
       },
       invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
     }),
 
-    markAllNotificationsRead: builder.mutation<void, string>({
+    markAllNotificationsRead: builder.mutation<null, string>({
       queryFn: async (userId) => {
         const { error } = await supabase
           .from('notifications')
@@ -46,12 +46,12 @@ export const notificationsApi = createApi({
           .eq('read', false);
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined };
+        return { data: null };
       },
       invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
     }),
 
-    registerPushToken: builder.mutation<void, { userId: string; token: string }>({
+    registerPushToken: builder.mutation<null, { userId: string; token: string }>({
       queryFn: async ({ userId, token }) => {
         const { error } = await supabase
           .from('profiles')
@@ -59,7 +59,7 @@ export const notificationsApi = createApi({
           .eq('id', userId);
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined };
+        return { data: null };
       },
     }),
   }),

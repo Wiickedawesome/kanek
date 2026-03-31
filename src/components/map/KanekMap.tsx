@@ -62,7 +62,7 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
             animationDuration={500}
           />
 
-          {showUserLocation && (
+          {showUserLocation && MapboxGL.UserLocation && (
             <MapboxGL.UserLocation
               visible
               androidRenderMode="compass"

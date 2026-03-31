@@ -16,6 +16,7 @@ import * as Notifications from 'expo-notifications';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { showAlert } from '@/lib/alert';
+import { safeGoBack } from '@/lib/helpers';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
 
@@ -84,7 +85,7 @@ export default function NotificationSettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={8}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>

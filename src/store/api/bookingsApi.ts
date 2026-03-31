@@ -350,6 +350,15 @@ export const bookingsApi = createApi({
           .single();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
+        // Also mark the associated booking as completed
+        if (data.booking_id) {
+          await supabase
+            .from('bookings')
+            .update({ status: 'completed' })
+            .eq('id', data.booking_id);
+        }
+
         return { data: data as ContractRow };
       },
       invalidatesTags: (_r, _e, id) => [

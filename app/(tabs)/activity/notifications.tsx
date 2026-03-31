@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Card, EmptyState } from '@/components/ui';
-import { getTimeAgo } from '@/lib/helpers';
+import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing } from '@/theme';
 import {
   useGetNotificationsQuery,
@@ -100,7 +100,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>

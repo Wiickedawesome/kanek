@@ -14,7 +14,7 @@ import { Icon } from '@/components/icons';
 import { Card, EmptyState } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPaymentHistoryQuery } from '@/store/api/ekyashApi';
-import { formatBZD, formatDate } from '@/lib/helpers';
+import { formatBZD, formatDate, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
 
@@ -75,7 +75,7 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>E-Kyash Wallet</Text>

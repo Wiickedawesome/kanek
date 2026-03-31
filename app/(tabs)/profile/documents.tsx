@@ -14,6 +14,7 @@ import { Icon } from '@/components/icons';
 import { Button, Card } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
+import { safeGoBack } from '@/lib/helpers';
 import { useGetMyProfileQuery, useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 import type { ReviewStatus } from '@/types/database';
@@ -149,7 +150,7 @@ export default function DocumentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>My Documents</Text>

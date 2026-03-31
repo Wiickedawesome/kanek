@@ -15,7 +15,7 @@ import { RatingBreakdown } from '@/components/profile';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
-import { formatMonthYear, formatShortDate } from '@/lib/helpers';
+import { formatMonthYear, formatShortDate, safeGoBack } from '@/lib/helpers';
 
 export default function UserProfileModal() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -46,7 +46,7 @@ export default function UserProfileModal() {
       <SafeAreaView style={styles.centered}>
         <Icon name="user" size={48} color={colors.neutral[400]} />
         <Text style={styles.errorText}>User not found</Text>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')}>
           <Text style={styles.backLink}>Go back</Text>
         </Pressable>
       </SafeAreaView>
@@ -61,7 +61,7 @@ export default function UserProfileModal() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Trust Profile</Text>

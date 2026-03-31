@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { formatBZD } from '@/lib/helpers';
+import { formatBZD, safeGoBack } from '@/lib/helpers';
 
 /**
  * Payment method selection: Cash vs E-Kyash.
@@ -43,7 +43,7 @@ export default function PaymentSelectModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Pay</Text>

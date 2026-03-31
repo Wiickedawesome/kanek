@@ -13,14 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { safeGoBack } from '@/lib/helpers';
 
-const safeBack = () => {
-  if (router.canGoBack()) {
-    router.back();
-  } else {
-    router.replace('/(tabs)/explore');
-  }
-};
+const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 import { Button, TextInput , FilterChip } from '@/components/ui';
 import { MapPicker } from '@/components/map';
 import { colors, typography, spacing, borderRadius } from '@/theme';

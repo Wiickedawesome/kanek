@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
-import { getTimeAgo } from '@/lib/helpers';
+import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import {
   useGetRoadReportsQuery,
@@ -20,13 +20,7 @@ import {
   useReportGoneMutation,
 } from '@/store/api/reportsApi';
 
-const safeBack = () => {
-  if (router.canGoBack()) {
-    router.back();
-  } else {
-    router.replace('/(tabs)/explore');
-  }
-};
+const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
   accident: 'Accident',

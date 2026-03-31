@@ -11,6 +11,7 @@ import { ekyashApi } from './api/ekyashApi';
 import { reportsApi } from './api/reportsApi';
 import { notificationsApi } from './api/notificationsApi';
 import { checkinsApi } from './api/checkinsApi';
+import { messagesApi } from './api/messagesApi';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     [reportsApi.reducerPath]: reportsApi.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [checkinsApi.reducerPath]: checkinsApi.reducer,
+    [messagesApi.reducerPath]: messagesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -43,6 +45,7 @@ export const store = configureStore({
       reportsApi.middleware,
       notificationsApi.middleware,
       checkinsApi.middleware,
+      messagesApi.middleware,
     ),
 });
 

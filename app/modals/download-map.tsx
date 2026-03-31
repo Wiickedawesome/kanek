@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
+import { safeGoBack } from '@/lib/helpers';
 import {
   OFFLINE_REGIONS,
   downloadOfflinePack,
@@ -130,7 +131,7 @@ export default function DownloadMapModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Offline Maps</Text>

@@ -18,6 +18,7 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
+import { safeGoBack } from '@/lib/helpers';
 
 export default function RateModal() {
   const { contractId, ratedId } = useLocalSearchParams<{
@@ -80,7 +81,7 @@ export default function RateModal() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Rate Trip</Text>
@@ -91,7 +92,7 @@ export default function RateModal() {
           <Text style={styles.alreadyRatedText}>
             You{"'"}ve already rated this trip
           </Text>
-          <Button title="Go Back" variant="outline" onPress={() => router.back()} />
+          <Button title="Go Back" variant="outline" onPress={() => safeGoBack('/(tabs)/activity/')} />
         </View>
       </SafeAreaView>
     );
@@ -100,7 +101,7 @@ export default function RateModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Rate Trip</Text>

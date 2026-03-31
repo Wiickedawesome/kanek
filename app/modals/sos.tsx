@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
+import { safeGoBack } from '@/lib/helpers';
 import { useSOS } from '@/hooks/useSOS';
 
 export default function SOSModal() {
@@ -20,7 +21,7 @@ export default function SOSModal() {
     <SafeAreaView style={styles.container}>
       {/* Close */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Emergency</Text>

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui';
 import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
-import { isValidPhone, normalizePhone } from '@/lib/helpers';
+import { isValidPhone, normalizePhone, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
 import { showAlert } from '@/lib/alert';
@@ -98,7 +98,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Account Settings</Text>

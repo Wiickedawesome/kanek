@@ -13,7 +13,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { formatBZD } from '@/lib/helpers';
+import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import {
   useCreatePaymentMutation,
@@ -107,7 +107,7 @@ export default function EkyashPayModal() {
           <Text style={styles.errorText}>
             Could not create invoice. Please try again.
           </Text>
-          <Button title="Go Back" onPress={() => router.back()} variant="outline" />
+          <Button title="Go Back" onPress={() => safeGoBack('/(tabs)/activity/')} variant="outline" />
         </View>
       );
     }
@@ -178,7 +178,7 @@ export default function EkyashPayModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>E-Kyash Payment</Text>

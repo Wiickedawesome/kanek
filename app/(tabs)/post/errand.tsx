@@ -21,19 +21,13 @@ import { useCreatePostMutation } from '@/store/api/postsApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
-import { sanitizeDecimal } from '@/lib/helpers';
+import { sanitizeDecimal, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import { showAlert } from '@/lib/alert';
 import { showToast } from '@/store/slices/toastSlice';
 import type { ErrandCategory, PaymentMethod } from '@/types/database';
 
-const safeBack = () => {
-  if (router.canGoBack()) {
-    router.back();
-  } else {
-    router.replace('/(tabs)/explore');
-  }
-};
+const safeBack = () => safeGoBack('/(tabs)/post/');
 
 const ERRAND_CATEGORIES: { value: ErrandCategory; label: string }[] = [
   { value: 'grocery', label: 'Grocery' },

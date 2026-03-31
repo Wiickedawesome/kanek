@@ -18,6 +18,7 @@ import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';
 import type { FlagReason } from '@/types/database';
+import { safeGoBack } from '@/lib/helpers';
 
 const REASONS: { value: FlagReason; label: string }[] = [
   { value: 'spam', label: 'Spam' },
@@ -74,7 +75,7 @@ export default function FlagContentModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Content</Text>

@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
-import { formatDateTime } from '@/lib/helpers';
+import { formatDateTime, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
   useGetCheckinQuery,
@@ -98,7 +98,7 @@ export default function SelfieCheckinModal() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Check-In</Text>
@@ -117,7 +117,7 @@ export default function SelfieCheckinModal() {
           <Button
             title="Go Back"
             variant="outline"
-            onPress={() => router.back()}
+            onPress={() => safeGoBack('/(tabs)/activity/')}
           />
         </View>
       </SafeAreaView>
@@ -127,7 +127,7 @@ export default function SelfieCheckinModal() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Selfie Check-In</Text>
