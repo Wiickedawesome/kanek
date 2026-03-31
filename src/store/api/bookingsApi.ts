@@ -1,9 +1,22 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { postsApi } from './postsApi';
 import type { Database, BookingStatus, PostType, ContractStatus, PaymentMethod } from '@/types/database';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type ContractRow = Database['public']['Tables']['contracts']['Row'];
+
+/** Booking with booker profile (for post owner view) */
+export interface BookingWithUser extends BookingRow {
+  user: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    rating_avg: number;
+    punctuality_pct: number;
+  } | null;
+}
 
 /** Booking with related post title and author info */
 export interface BookingWithPost extends BookingRow {
@@ -17,6 +30,7 @@ export interface BookingWithPost extends BookingRow {
     price_cents: number | null;
     author_id: string;
   } | null;
+  contract: { id: string } | null;
 }
 
 /** Contract with post + booking + party profiles */
@@ -83,7 +97,8 @@ export const bookingsApi = createApi({
             *,
             post:posts (
               id, title, type, origin_address, dest_address, departure_at, price_cents, author_id
-            )
+            ),
+            contract:contracts!contracts_booking_id_fkey ( id )
           `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
@@ -108,6 +123,48 @@ export const bookingsApi = createApi({
           : [{ type: 'Booking', id: 'LIST' }],
     }),
 
+    /** Check if the current user already has an active booking for a post */
+    getBookingForPost: builder.query<BookingRow | null, { postId: string; userId: string }>({
+      queryFn: async ({ postId, userId }) => {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('post_id', postId)
+          .eq('user_id', userId)
+          .in('status', ['pending', 'confirmed'])
+          .limit(1)
+          .maybeSingle();
+
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: (data as BookingRow) ?? null };
+      },
+      providesTags: (_r, _e, { postId }) => [{ type: 'Booking', id: `POST_${postId}` }],
+    }),
+
+    /** Get all active bookings for a post (for post author to see who booked) */
+    getPostBookings: builder.query<BookingWithUser[], { postId: string }>({ 
+      queryFn: async ({ postId }) => {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            user:profiles!bookings_user_id_fkey (
+              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
+            )
+          `)
+          .eq('post_id', postId)
+          .in('status', ['pending', 'confirmed'])
+          .order('created_at', { ascending: false });
+
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: (data as unknown as BookingWithUser[]) ?? [] };
+      },
+      providesTags: (_r, _e, { postId }) => [
+        { type: 'Booking', id: `POST_${postId}` },
+        { type: 'Booking', id: 'LIST' },
+      ],
+    }),
+
     createBooking: builder.mutation<BookingRow, CreateBookingArgs>({
       queryFn: async ({ postId, userId, role, seatsBooked = 1, paymentMethod }) => {
         const { data, error } = await supabase
@@ -125,22 +182,21 @@ export const bookingsApi = createApi({
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: data as BookingRow };
       },
-      invalidatesTags: [{ type: 'Booking', id: 'LIST' }],
-    }),
-
-    confirmBooking: builder.mutation<BookingRow, string>({
-      queryFn: async (bookingId) => {
-        const { data, error } = await supabase
-          .from('bookings')
-          .update({ status: 'confirmed' })
-          .eq('id', bookingId)
-          .select()
-          .single();
-
-        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: data as BookingRow };
+      invalidatesTags: (_r, _e, arg) => [
+        { type: 'Booking', id: 'LIST' },
+        { type: 'Booking', id: `POST_${arg.postId}` },
+      ],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Invalidate post cache so feed + detail reflect seat changes / status
+          dispatch(postsApi.util.invalidateTags([
+            { type: 'Post', id: arg.postId },
+            { type: 'Post', id: 'LIST' },
+            { type: 'Post', id: 'MY_LIST' },
+          ]));
+        } catch { /* booking failed, no need to invalidate */ }
       },
-      invalidatesTags: (_r, _e, id) => [{ type: 'Booking', id }, { type: 'Booking', id: 'LIST' }],
     }),
 
     cancelBooking: builder.mutation<BookingRow, CancelBookingArgs>({
@@ -163,6 +219,17 @@ export const bookingsApi = createApi({
         { type: 'Booking', id: bookingId },
         { type: 'Booking', id: 'LIST' },
       ],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          // Cancellation trigger may revert post status — invalidate post cache
+          dispatch(postsApi.util.invalidateTags([
+            { type: 'Post', id: data.post_id },
+            { type: 'Post', id: 'LIST' },
+            { type: 'Post', id: 'MY_LIST' },
+          ]));
+        } catch { /* cancel failed */ }
+      },
     }),
 
     completeBooking: builder.mutation<BookingRow, string>({
@@ -178,6 +245,20 @@ export const bookingsApi = createApi({
         return { data: data as BookingRow };
       },
       invalidatesTags: (_r, _e, id) => [{ type: 'Booking', id }, { type: 'Booking', id: 'LIST' }],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(postsApi.util.invalidateTags([
+            { type: 'Post', id: data.post_id },
+            { type: 'Post', id: 'LIST' },
+            { type: 'Post', id: 'MY_LIST' },
+          ]));
+          // Also invalidate post-specific booking cache
+          dispatch(bookingsApi.util.invalidateTags([
+            { type: 'Booking', id: `POST_${data.post_id}` },
+          ]));
+        } catch { /* complete failed */ }
+      },
     }),
 
     // --- Contract endpoints ---
@@ -282,8 +363,9 @@ export const bookingsApi = createApi({
 
 export const {
   useGetMyBookingsQuery,
+  useGetBookingForPostQuery,
+  useGetPostBookingsQuery,
   useCreateBookingMutation,
-  useConfirmBookingMutation,
   useCancelBookingMutation,
   useCompleteBookingMutation,
   useGetMyContractsQuery,

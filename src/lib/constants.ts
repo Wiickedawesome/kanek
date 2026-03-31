@@ -21,3 +21,9 @@ export const MAX_SEATS = 20;
 export const MAX_PRICE_CENTS = 999_900;
 export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_NAME_LENGTH = 50;
+
+/** Number of top routes to show on explore feed */
+export const TOP_ROUTES_LIMIT = 10;
+
+/** Number of gas prices to show on explore feed */
+export const GAS_PRICES_LIMIT = 5;

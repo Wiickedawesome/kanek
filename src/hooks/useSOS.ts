@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import { showAlert, showConfirm } from '@/lib/alert';
 import * as Location from 'expo-location';
 import { useSelector } from 'react-redux';
 import { supabase } from '@/lib/supabase';
@@ -26,12 +27,12 @@ export function useSOS() {
 
   const triggerSOS = useCallback(async () => {
     if (!userId) {
-      Alert.alert('Error', 'You must be signed in to use SOS.');
+      showAlert('Error', 'You must be signed in to use SOS.');
       return;
     }
 
     if (cooldownRef.current) {
-      Alert.alert('SOS Already Sent', 'Please wait before sending another SOS.');
+      showAlert('SOS Already Sent', 'Please wait before sending another SOS.');
       return;
     }
 
@@ -53,7 +54,7 @@ export function useSOS() {
 
     try {
       // Call edge function to send emergency SMS
-      const { error } = await supabase.functions.invoke('send-sms-sos', {
+      const { data, error } = await supabase.functions.invoke('send-sms-sos', {
         body: {
           userId,
           latitude: coords?.latitude ?? null,
@@ -63,23 +64,26 @@ export function useSOS() {
       });
 
       if (error) {
-        Alert.alert('SOS Error', 'Could not send SOS message. Try calling emergency services directly.');
+        showAlert('SOS Error', 'Could not send SOS message. Try calling emergency services directly.');
+      } else if (data && !data.sent) {
+        setState({ isSending: false, lastSentAt: Date.now() });
+        showAlert(
+          'SOS Alert Recorded',
+          'Your emergency alert was logged but SMS could not be sent. Please call emergency services directly.',
+        );
       } else {
         setState({ isSending: false, lastSentAt: Date.now() });
-        Alert.alert(
+        showAlert(
           'SOS Sent',
           'Your emergency contact has been notified with your location.',
-          [
-            { text: 'OK' },
-            {
-              text: 'Call 911',
-              onPress: () => Linking.openURL('tel:911'),
-            },
-          ],
         );
+        const callNow = await showConfirm('Call 911?', 'Would you like to call emergency services now?');
+        if (callNow) {
+          Linking.openURL('tel:911');
+        }
       }
     } catch {
-      Alert.alert('SOS Error', 'Network error. Try calling emergency services directly.');
+      showAlert('SOS Error', 'Network error. Try calling emergency services directly.');
     } finally {
       setState((prev) => ({ ...prev, isSending: false }));
       // Reset cooldown

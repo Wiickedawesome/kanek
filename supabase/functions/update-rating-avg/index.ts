@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
     // Fetch all ratings for this user
     const { data: ratings, error: ratingsError } = await supabase
       .from('ratings')
-      .select('stars, on_time')
-      .eq('ratee_id', userId);
+      .select('stars, was_on_time')
+      .eq('rated_id', userId);
 
     if (ratingsError) return errorResponse(ratingsError.message, 500);
 
@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     const totalStars = ratings.reduce((sum, r) => sum + r.stars, 0);
     const ratingAvg = Math.round((totalStars / ratings.length) * 100) / 100;
 
-    const onTimeCount = ratings.filter((r) => r.on_time === true).length;
-    const ratedWithTime = ratings.filter((r) => r.on_time !== null).length;
+    const onTimeCount = ratings.filter((r) => r.was_on_time === true).length;
+    const ratedWithTime = ratings.filter((r) => r.was_on_time !== null).length;
     const punctualityPct = ratedWithTime > 0
       ? Math.round((onTimeCount / ratedWithTime) * 100)
       : null;

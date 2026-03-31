@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -49,7 +49,7 @@ export default function ReportGasModal() {
 
   const handleSubmit = async () => {
     if (!stationName.trim()) {
-      Alert.alert('Station Name', 'Please enter the gas station name.');
+      showAlert('Station Name', 'Please enter the gas station name.');
       return;
     }
 
@@ -58,11 +58,11 @@ export default function ReportGasModal() {
     const dieselCents = parseCents(diesel);
 
     if (!regularCents && !premiumCents && !dieselCents) {
-      Alert.alert('Prices', 'Please enter at least one fuel price.');
+      showAlert('Prices', 'Please enter at least one fuel price.');
       return;
     }
     if (!userId) {
-      Alert.alert('Not Signed In', 'Please sign in to submit prices.');
+      showAlert('Not Signed In', 'Please sign in to submit prices.');
       return;
     }
 
@@ -78,11 +78,11 @@ export default function ReportGasModal() {
         dieselCents: dieselCents ?? undefined,
       }).unwrap();
 
-      Alert.alert('Price Reported', 'Thank you for updating fuel prices!');
+      showAlert('Price Reported', 'Thank you for updating fuel prices!');
       safeBack();
     } catch (err) {
       console.error('Gas price insert error:', err);
-      Alert.alert('Error', 'Could not submit price. Please try again.');
+      showAlert('Error', 'Could not submit price. Please try again.');
     } finally {
       setSubmitting(false);
     }

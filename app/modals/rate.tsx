@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -47,12 +47,12 @@ export default function RateModal() {
 
   const handleSubmit = async () => {
     if (stars === 0) {
-      Alert.alert('Rating Required', 'Please select a star rating.');
+      showAlert('Rating Required', 'Please select a star rating.');
       return;
     }
     if (!userId || !contractId || !ratedId) return;
     if (alreadyRated) {
-      Alert.alert('Already Rated', 'You have already rated this trip.');
+      showAlert('Already Rated', 'You have already rated this trip.');
       return;
     }
 
@@ -67,11 +67,10 @@ export default function RateModal() {
         comment: comment.trim() || null,
       }).unwrap();
 
-      Alert.alert('Thanks!', 'Your rating has been submitted.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showAlert('Thanks!', 'Your rating has been submitted.');
+      router.back();
     } catch {
-      Alert.alert('Error', 'Could not submit rating. Please try again.');
+      showAlert('Error', 'Could not submit rating. Please try again.');
     } finally {
       setSubmitting(false);
     }

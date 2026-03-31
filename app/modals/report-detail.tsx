@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   Image,
   ScrollView,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
@@ -70,19 +70,19 @@ export default function ReportDetailModal() {
   const handleStillHere = async () => {
     try {
       await upvote(report.id).unwrap();
-      Alert.alert('Thanks!', 'Your confirmation has been recorded.');
+      showAlert('Thanks!', 'Your confirmation has been recorded.');
     } catch {
-      Alert.alert('Error', 'Could not confirm the report.');
+      showAlert('Error', 'Could not confirm the report.');
     }
   };
 
   const handleGone = async () => {
     try {
       await reportGone(report.id).unwrap();
-      Alert.alert('Thanks!', 'Your feedback has been recorded.');
+      showAlert('Thanks!', 'Your feedback has been recorded.');
       safeBack();
     } catch {
-      Alert.alert('Error', 'Could not submit your feedback.');
+      showAlert('Error', 'Could not submit your feedback.');
     }
   };
 

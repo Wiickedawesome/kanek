@@ -30,6 +30,9 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   payment_received: 'receipt',
   booking_confirmed: 'clipboard-list',
   booking_cancelled: 'clipboard-list',
+  new_booking: 'user',
+  errand_accepted: 'package',
+  job_application: 'clipboard-list',
   sos_sent: 'shield-alert',
   driver_verified: 'user',
   strike_issued: 'alert-triangle',
@@ -52,9 +55,11 @@ export default function NotificationsScreen() {
       if (!notification.read) {
         markRead(notification.id);
       }
-      const data = notification.data as { contractId?: string } | null;
+      const data = notification.data as { contractId?: string; postId?: string } | null;
       if (data?.contractId) {
         router.push(`/(tabs)/activity/${data.contractId}`);
+      } else if (data?.postId) {
+        router.push(`/(tabs)/explore/${data.postId}`);
       }
     },
     [markRead],

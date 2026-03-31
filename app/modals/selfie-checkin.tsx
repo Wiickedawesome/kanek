@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   Image,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -38,7 +38,7 @@ export default function SelfieCheckinModal() {
   const takeSelfie = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
+      showAlert(
         'Camera Permission',
         'Camera access is needed for check-in selfies.',
       );
@@ -84,11 +84,10 @@ export default function SelfieCheckinModal() {
         lng,
       }).unwrap();
 
-      Alert.alert('Checked In', 'Your selfie check-in has been recorded.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showAlert('Checked In', 'Your selfie check-in has been recorded.');
+      router.back();
     } catch {
-      Alert.alert('Error', 'Could not submit check-in. Please try again.');
+      showAlert('Error', 'Could not submit check-in. Please try again.');
     } finally {
       setSubmitting(false);
     }

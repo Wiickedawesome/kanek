@@ -6,7 +6,6 @@ import {
   ScrollView,
   TextInput,
   Pressable,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +19,7 @@ import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/prof
 import { isValidPhone, normalizePhone } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
+import { showAlert } from '@/lib/alert';
 
 const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
   { value: 'belize', label: 'Belize' },
@@ -60,7 +60,7 @@ export default function SettingsScreen() {
 
     const normalized = normalizePhone(emergencyContact);
     if (normalized && !isValidPhone(normalized)) {
-      Alert.alert(
+      showAlert(
         'Invalid Emergency Contact',
         'Emergency contact must be a valid Belize phone number (+501 followed by 7 digits). The contact will not be saved, but your other changes will be.',
       );
@@ -81,9 +81,9 @@ export default function SettingsScreen() {
           address_line: addressLine.trim() || null,
         },
       }).unwrap();
-      Alert.alert('Saved', 'Your profile has been updated.');
+      showAlert('Saved', 'Your profile has been updated.');
     } catch {
-      Alert.alert('Error', 'Could not save profile. Please try again.');
+      showAlert('Error', 'Could not save profile. Please try again.');
     }
   }, [userId, firstName, lastName, email, emergencyContact, role, district, addressLine, updateProfile]);
 

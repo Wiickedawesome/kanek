@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import locationReducer from './slices/locationSlice';
 import notificationsReducer from './slices/notificationsSlice';
+import toastReducer from './slices/toastSlice';
 import { postsApi } from './api/postsApi';
 import { bookingsApi } from './api/bookingsApi';
 import { profilesApi } from './api/profilesApi';
@@ -16,6 +17,7 @@ export const store = configureStore({
     auth: authReducer,
     location: locationReducer,
     notifications: notificationsReducer,
+    toast: toastReducer,
     [postsApi.reducerPath]: postsApi.reducer,
     [bookingsApi.reducerPath]: bookingsApi.reducer,
     [profilesApi.reducerPath]: profilesApi.reducer,

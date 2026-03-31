@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
@@ -25,8 +24,19 @@ import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { PaymentMethod } from '@/types/database';
+import { showAlert } from '@/lib/alert';
+import { showToast } from '@/store/slices/toastSlice';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 
 export default function PackageFormScreen() {
+  const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
 
@@ -107,7 +117,7 @@ export default function PackageFormScreen() {
   const handleSubmit = async () => {
     if (!validate()) return;
     if (!userId) {
-      Alert.alert('Error', 'You must be signed in to post');
+      showAlert('Error', 'You must be signed in to post');
       return;
     }
 
@@ -138,7 +148,8 @@ export default function PackageFormScreen() {
         route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
-      router.back();
+      dispatch(showToast({ title: 'Post created successfully!' }));
+      safeBack();
     } catch (err: unknown) {
       console.error('Post save error:', err);
       const message =
@@ -147,14 +158,14 @@ export default function PackageFormScreen() {
           : typeof err === 'object' && err !== null && 'error' in err
             ? String((err as Record<string, unknown>).error)
             : 'Something went wrong';
-      Alert.alert('Error', message);
+      showAlert('Error', message);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Send a Package</Text>

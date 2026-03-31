@@ -6,12 +6,15 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { store } from '@/store';
 import { useAuthListener } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
+import { InAppToast } from '@/components/ui/InAppToast';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutInner() {
   useAuthListener();
+  useNotifications();
 
   const [fontsLoaded] = useFonts({
     'WorkSans-Bold': require('../assets/fonts/WorkSans-Bold.ttf'),
@@ -31,6 +34,7 @@ function RootLayoutInner() {
   return (
     <>
       <StatusBar style="light" />
+      <InAppToast />
       <Stack
         screenOptions={{
           headerShown: false,

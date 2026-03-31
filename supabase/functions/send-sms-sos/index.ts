@@ -65,6 +65,17 @@ Deno.serve(async (req) => {
       }
     } else {
       console.warn('[SOS] Twilio not configured — SMS not sent:', message);
+
+      // Still record the SOS attempt
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        type: 'sos_sent',
+        title: 'SOS Alert Attempted',
+        body: `Emergency alert could not be sent — SMS service not configured`,
+        data: { latitude, longitude, emergencyContact: user.emergency_contact },
+      });
+
+      return jsonResponse({ sent: false, to: user.emergency_contact, error: 'SMS service not configured' });
     }
 
     // Store the SOS event as a notification for audit

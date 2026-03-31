@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -42,7 +42,7 @@ export default function FlagContentModal() {
 
   const handleSubmit = async () => {
     if (!reason) {
-      Alert.alert('Reason Required', 'Please select a reason for your report.');
+      showAlert('Reason Required', 'Please select a reason for your report.');
       return;
     }
     if (!userId || !targetType || !targetId) return;
@@ -59,13 +59,13 @@ export default function FlagContentModal() {
 
       if (error) throw error;
 
-      Alert.alert(
+      showAlert(
         'Report Submitted',
         'Thank you. Our team will review this report.',
-        [{ text: 'OK', onPress: () => router.back() }],
       );
+      router.back();
     } catch {
-      Alert.alert('Error', 'Could not submit report. Please try again.');
+      showAlert('Error', 'Could not submit report. Please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -6,7 +6,6 @@ import {
   Pressable,
   Image,
   Linking,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD } from '@/lib/helpers';
+import { showAlert } from '@/lib/alert';
 import {
   useCreatePaymentMutation,
   useGetPaymentStatusQuery,
@@ -69,13 +69,11 @@ export default function EkyashPayModal() {
   // Handle status changes
   useEffect(() => {
     if (statusData?.status === 'approved') {
-      Alert.alert('Payment Successful', 'Your E-Kyash payment has been confirmed!', [
-        { text: 'OK', onPress: () => router.dismiss() },
-      ]);
+      showAlert('Payment Successful', 'Your E-Kyash payment has been confirmed!');
+      router.dismiss();
     } else if (statusData?.status === 'cancelled') {
-      Alert.alert('Payment Cancelled', 'This payment was declined or cancelled.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showAlert('Payment Cancelled', 'This payment was declined or cancelled.');
+      router.back();
     }
   }, [statusData?.status]);
 
@@ -85,7 +83,7 @@ export default function EkyashPayModal() {
     if (canOpen) {
       await Linking.openURL(payment.paymentLink);
     } else {
-      Alert.alert(
+      showAlert(
         'E-Kyash Not Found',
         'Please install the E-Kyash app to pay via deep link, or scan the QR code.',
       );

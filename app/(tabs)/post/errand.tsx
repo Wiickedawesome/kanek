@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
@@ -24,7 +23,17 @@ import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
+import { showAlert } from '@/lib/alert';
+import { showToast } from '@/store/slices/toastSlice';
 import type { ErrandCategory, PaymentMethod } from '@/types/database';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 
 const ERRAND_CATEGORIES: { value: ErrandCategory; label: string }[] = [
   { value: 'grocery', label: 'Grocery' },
@@ -38,6 +47,7 @@ const ERRAND_CATEGORIES: { value: ErrandCategory; label: string }[] = [
 ];
 
 export default function ErrandFormScreen() {
+  const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
 
@@ -132,11 +142,11 @@ export default function ErrandFormScreen() {
   const handleSubmit = async () => {
     if (!validate()) return;
     if (!userId) {
-      Alert.alert('Error', 'You must be signed in to post');
+      showAlert('Error', 'You must be signed in to post');
       return;
     }
     if (!category) {
-      Alert.alert('Error', 'Please select a category');
+      showAlert('Error', 'Please select a category');
       return;
     }
 
@@ -173,7 +183,8 @@ export default function ErrandFormScreen() {
         route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
-      router.back();
+      dispatch(showToast({ title: 'Post created successfully!' }));
+      safeBack();
     } catch (err: unknown) {
       console.error('Post save error:', err);
       const message =
@@ -182,14 +193,14 @@ export default function ErrandFormScreen() {
           : typeof err === 'object' && err !== null && 'error' in err
             ? String((err as Record<string, unknown>).error)
             : 'Something went wrong';
-      Alert.alert('Error', message);
+      showAlert('Error', message);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Post an Errand</Text>

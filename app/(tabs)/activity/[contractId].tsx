@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +24,7 @@ import { useRealtime } from '@/hooks/useRealtime';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useSOS } from '@/hooks/useSOS';
 import { formatBZD, formatDeparture, formatDate, openInMaps } from '@/lib/helpers';
+import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
@@ -91,50 +91,45 @@ export default function ContractDetailScreen() {
       : null;
 
   // Driver: start/stop tracking
-  const handleToggleTracking = useCallback(() => {
+  const handleToggleTracking = useCallback(async () => {
     if (!contractId) return;
     if (isDriverTracking) {
-      Alert.alert('Stop Tracking', 'Stop broadcasting your location to riders?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Stop', style: 'destructive', onPress: () => stopTracking() },
-      ]);
+      const confirmed = await showConfirm(
+        'Stop Tracking',
+        'Stop broadcasting your location to riders?',
+      );
+      if (confirmed) stopTracking();
     } else {
       startTracking(contractId);
     }
   }, [contractId, isDriverTracking, startTracking, stopTracking]);
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     if (!contractId || !contract || !userId) return;
 
     // Determine the other party to rate
     const otherPartyId = contract.parties.find((p) => p !== userId);
 
-    Alert.alert(
+    const confirmed = await showConfirm(
       'Complete Trip',
       'Mark this contract as completed? You\'ll be prompted to rate the other party.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Complete',
-          onPress: async () => {
-            try {
-              await completeContract(contractId).unwrap();
-              if (otherPartyId) {
-                router.push({
-                  pathname: '/modals/rate',
-                  params: {
-                    contractId,
-                    ratedId: otherPartyId,
-                  },
-                });
-              }
-            } catch {
-              Alert.alert('Error', 'Could not complete the contract. Please try again.');
-            }
-          },
-        },
-      ],
     );
+    if (!confirmed) return;
+
+    try {
+      await completeContract(contractId).unwrap();
+      if (otherPartyId) {
+        router.push({
+          pathname: '/modals/rate',
+          params: {
+            contractId,
+            ratedId: otherPartyId,
+          },
+        });
+      }
+    } catch {
+      showAlert('Error', 'Could not complete the contract. Please try again.');
+    }
   }, [contractId, contract, userId, completeContract]);
 
   const handlePayment = useCallback(() => {
@@ -307,24 +302,37 @@ export default function ContractDetailScreen() {
 
         {/* Driver tracking controls */}
         {isActive && isDriver && (
-          <Pressable
-            style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
-            onPress={handleToggleTracking}
-          >
-            <Icon
-              name="navigation"
-              size={18}
-              color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
-            />
-            <Text
-              style={[
-                styles.trackingToggleText,
-                isDriverTracking && styles.trackingToggleTextActive,
-              ]}
+          <View style={styles.driverControls}>
+            <Pressable
+              style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
+              onPress={handleToggleTracking}
             >
-              {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
-            </Text>
-          </Pressable>
+              <Icon
+                name="navigation"
+                size={18}
+                color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
+              />
+              <Text
+                style={[
+                  styles.trackingToggleText,
+                  isDriverTracking && styles.trackingToggleTextActive,
+                ]}
+              >
+                {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.checkinButton}
+              onPress={() => router.push({
+                pathname: '/modals/selfie-checkin',
+                params: { contractId: contractId! },
+              })}
+            >
+              <Icon name="user" size={18} color={colors.forest[400]} />
+              <Text style={styles.checkinText}>Selfie Check-in</Text>
+            </Pressable>
+          </View>
         )}
 
         {/* Timestamps */}
@@ -476,6 +484,26 @@ const styles = StyleSheet.create({
   },
   trackingToggleTextActive: {
     color: colors.neutral[0],
+  },
+
+  driverControls: {
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  checkinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+  },
+  checkinText: {
+    ...typography.body1Bold,
+    color: colors.forest[500],
   },
 
   timelineRow: {

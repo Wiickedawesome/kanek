@@ -22,6 +22,7 @@ import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation
 import type { PostType, Database, BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
+import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT } from '@/lib/constants';
 
 /** Map enum values to keywords that may appear in origin_address */
 const DISTRICT_KEYWORDS: Record<BelizeDistrict, string[]> = {
@@ -110,7 +111,7 @@ export default function ExploreScreen() {
     // When showing "All", weave active road reports and recent gas prices into feed
     if (typeFilter === null) {
       (roadReports ?? []).forEach((r) => items.push({ kind: 'road_report', data: r }));
-      (gasPrices ?? []).slice(0, 5).forEach((g) => items.push({ kind: 'gas_price', data: g }));
+      (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g) => items.push({ kind: 'gas_price', data: g }));
     }
 
     // Sort posts from user's district first
@@ -141,7 +142,7 @@ export default function ExploreScreen() {
         return aMatch - bMatch;
       });
     }
-    return routes.slice(0, 10);
+    return routes.slice(0, TOP_ROUTES_LIMIT);
   }, [posts, typeFilter, userDistrict]);
 
   const onRefresh = useCallback(() => {

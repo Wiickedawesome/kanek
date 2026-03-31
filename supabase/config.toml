@@ -194,10 +194,10 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+[auth.captcha]
+enabled = false
+provider = "hcaptcha"
+secret = "0x0000000000000000000000000000000000000000"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -217,8 +217,9 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
+# Office 365 SMTP blocked from Supabase cloud — using built-in email for now
 [auth.email.smtp]
-enabled = true
+enabled = false
 host = "smtp.office365.com"
 port = 587
 user = "dev@belizechain.org"

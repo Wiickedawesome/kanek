@@ -127,6 +127,11 @@ export function sanitizeDecimal(text: string): string {
   const dotIdx = result.indexOf('.');
   if (dotIdx !== -1) {
     result = result.slice(0, dotIdx + 1) + result.slice(dotIdx + 1).replace(/\./g, '');
+    // Limit to 2 decimal places
+    const decimals = result.slice(dotIdx + 1);
+    if (decimals.length > 2) {
+      result = result.slice(0, dotIdx + 3);
+    }
   }
   return result;
 }

@@ -77,10 +77,8 @@ Deno.serve(async (req) => {
         .update({ status: 'active' })
         .eq('id', txn.contract_id);
 
-      // Increment donation counter
-      await supabase.rpc('increment_donation', {
-        amount: txn.donation_cents,
-      });
+      // Donation counter is handled automatically by the
+      // accumulate_donation() trigger on ekyash_transactions
 
       // 4. Create notifications for both parties
       const notifications = [

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { Alert, AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import * as Location from 'expo-location';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -72,7 +73,7 @@ export function useDriverTracking() {
     async (contractId: string) => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== Location.PermissionStatus.GRANTED) {
-        Alert.alert(
+        showAlert(
           'Location Required',
           'Location permission is needed to share your position with riders during the trip.',
         );

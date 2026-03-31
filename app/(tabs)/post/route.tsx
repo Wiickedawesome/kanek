@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
@@ -25,6 +24,8 @@ import type { RouteInfo } from '@/lib/mapbox';
 import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, sanitizeInteger } from '@/lib/helpers';
 import type { RootState } from '@/store';
+import { showAlert } from '@/lib/alert';
+import { showToast } from '@/store/slices/toastSlice';
 import type { PostType, PickupStyle, PaymentMethod } from '@/types/database';
 
 const safeBack = () => {
@@ -40,6 +41,7 @@ export default function RouteFormScreen() {
   const postType = (type as PostType) || 'route_offer';
   const isOffer = postType === 'route_offer';
 
+  const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
   const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', { skip: !userId || !isOffer });
@@ -96,7 +98,10 @@ export default function RouteFormScreen() {
         if (!cancelled) setRouteInfo(info);
       })
       .catch(() => {
-        if (!cancelled) setRouteInfo(null);
+        if (!cancelled) {
+          setRouteInfo(null);
+          showAlert('Route Error', 'Could not calculate route. Check your addresses and try again.');
+        }
       })
       .finally(() => {
         if (!cancelled) setRouteLoading(false);
@@ -172,7 +177,7 @@ export default function RouteFormScreen() {
   const handleSubmit = async () => {
     if (!validate()) return;
     if (!userId) {
-      Alert.alert('Error', 'You must be signed in to post');
+      showAlert('Error', 'You must be signed in to post');
       return;
     }
 
@@ -206,6 +211,7 @@ export default function RouteFormScreen() {
         route_fuel_cost_cents: routeInfo?.fuel_cost_cents ?? null,
       }).unwrap();
 
+      dispatch(showToast({ title: 'Post created successfully!' }));
       safeBack();
     } catch (err: unknown) {
       console.error('Post save error:', err);
@@ -215,7 +221,7 @@ export default function RouteFormScreen() {
           : typeof err === 'object' && err !== null && 'error' in err
             ? String((err as Record<string, unknown>).error)
             : 'Something went wrong';
-      Alert.alert('Error', message);
+      showAlert('Error', message);
     }
   };
 

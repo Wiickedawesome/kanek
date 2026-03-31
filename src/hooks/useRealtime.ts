@@ -1,10 +1,27 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { addNotification, setNotifications } from '@/store/slices/notificationsSlice';
+import { showToast } from '@/store/slices/toastSlice';
+import { notificationsApi } from '@/store/api/notificationsApi';
+import { postsApi } from '@/store/api/postsApi';
+import { bookingsApi } from '@/store/api/bookingsApi';
 import { reportsApi } from '@/store/api/reportsApi';
 import type { AppDispatch, RootState } from '@/store';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+
+const NOTIF_PREFS_KEY = 'kanek_notification_prefs';
+
+/** Map notification type → preference category key */
+function getNotifCategory(type: string): string | null {
+  if (['new_booking', 'seat_booked', 'booking_cancelled'].includes(type)) return 'bookings';
+  if (['errand_accepted'].includes(type)) return 'errands';
+  if (['job_application'].includes(type)) return 'jobs';
+  if (['route_activated'].includes(type)) return 'routes';
+  if (['report_nearby', 'report_update'].includes(type)) return 'reports';
+  return null; // system notifications always shown
+}
 
 interface DriverLocation {
   userId: string;
@@ -58,7 +75,21 @@ export function useRealtime() {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          dispatch(addNotification(payload.new as any));
+          const notif = payload.new as any;
+          dispatch(addNotification(notif));
+          // Show in-app toast if prefs allow it
+          AsyncStorage.getItem(NOTIF_PREFS_KEY).then((raw) => {
+            const prefs = raw ? JSON.parse(raw) : null;
+            const inAppEnabled = prefs?.inAppEnabled ?? true;
+            if (!inAppEnabled) return;
+            const cat = getNotifCategory(notif.type ?? '');
+            if (cat && prefs && prefs[cat] === false) return;
+            dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body }));
+          });
+          // Invalidate RTK Query caches so screens refresh
+          dispatch(notificationsApi.util.invalidateTags([{ type: 'Notification', id: 'LIST' }]));
+          dispatch(postsApi.util.invalidateTags([{ type: 'Post', id: 'MY_LIST' }]));
+          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
         },
       )
       .subscribe();
@@ -168,6 +199,74 @@ export function useRealtime() {
     };
   }, [dispatch]);
 
+  /** Subscribe to booking status changes for the current user */
+  const subscribeToBookings = useCallback(() => {
+    if (!userId) return () => {};
+
+    const channel = supabase
+      .channel(`bookings:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
+        },
+      )
+      .subscribe();
+
+    channelsRef.current.push(channel);
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelsRef.current = channelsRef.current.filter((c) => c !== channel);
+    };
+  }, [userId, dispatch]);
+
+  /** Subscribe to contract status changes for contracts involving the current user */
+  const subscribeToContracts = useCallback(() => {
+    if (!userId) return () => {};
+
+    const channel = supabase
+      .channel(`contracts:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contracts',
+          filter: `driver_id=eq.${userId}`,
+        },
+        () => {
+          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contracts',
+          filter: `rider_id=eq.${userId}`,
+        },
+        () => {
+          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
+        },
+      )
+      .subscribe();
+
+    channelsRef.current.push(channel);
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelsRef.current = channelsRef.current.filter((c) => c !== channel);
+    };
+  }, [userId, dispatch]);
+
   // Cleanup all channels on unmount
   useEffect(() => {
     return () => {
@@ -181,5 +280,7 @@ export function useRealtime() {
     broadcastLocation,
     subscribeToPost,
     subscribeToRoadReports,
+    subscribeToBookings,
+    subscribeToContracts,
   };
 }

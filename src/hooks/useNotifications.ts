@@ -1,16 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { useSelector, useDispatch } from 'react-redux';
-import { supabase } from '@/lib/supabase';
-import { addNotification } from '@/store/slices/notificationsSlice';
+import { useSelector } from 'react-redux';
 import { useRegisterPushTokenMutation } from '@/store/api/notificationsApi';
-import type { RootState, AppDispatch } from '@/store';
-import type { Database } from '@/types/database';
-
-type NotificationRow = Database['public']['Tables']['notifications']['Row'];
+import type { RootState } from '@/store';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -24,9 +19,7 @@ Notifications.setNotificationHandler({
 
 export function useNotifications() {
   const userId = useSelector((s: RootState) => s.auth.user?.id);
-  const dispatch = useDispatch<AppDispatch>();
   const [registerToken] = useRegisterPushTokenMutation();
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Register push token
   const registerPushToken = useCallback(async () => {
@@ -55,35 +48,6 @@ export function useNotifications() {
       });
     }
   }, [userId, registerToken]);
-
-  // Subscribe to realtime notifications
-  useEffect(() => {
-    if (!userId) return;
-
-    channelRef.current = supabase
-      .channel(`user-notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const notification = payload.new as NotificationRow;
-          dispatch(addNotification(notification));
-        },
-      )
-      .subscribe();
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [userId, dispatch]);
 
   // Register token on mount
   useEffect(() => {

@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   FlatList,
 } from 'react-native';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
@@ -71,29 +71,22 @@ export default function DownloadMapModal() {
       (error: Error) => {
         setActiveDownload(null);
         setProgress(0);
-        Alert.alert('Download Failed', error.message);
+        showAlert('Download Failed', error.message);
       },
     );
 
     unsubRef.current = unsub;
   };
 
-  const handleDelete = (regionKey: OfflineRegionKey, name: string) => {
-    Alert.alert(
+  const handleDelete = async (regionKey: OfflineRegionKey, name: string) => {
+    const confirmed = await showConfirm(
       'Delete Map',
       `Remove "${name}" offline data? You can re-download anytime.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteOfflinePack(regionKey);
-            loadPacks();
-          },
-        },
-      ],
     );
+    if (confirmed) {
+      await deleteOfflinePack(regionKey);
+      loadPacks();
+    }
   };
 
   const renderItem = ({ item }: { item: RegionItem }) => {

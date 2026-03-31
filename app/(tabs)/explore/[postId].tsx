@@ -1,14 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   ActivityIndicator,
   Image,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -20,8 +18,11 @@ import { Button } from '@/components/ui';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
+import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation } from '@/store/api/bookingsApi';
+import { supabase } from '@/lib/supabase';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo, openInMaps } from '@/lib/helpers';
+import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 
 const MAP_HEIGHT = 200;
@@ -35,6 +36,18 @@ export default function PostDetailScreen() {
     skip: !postId,
   });
   const [deletePost] = useDeletePostMutation();
+  const [createBooking] = useCreateBookingMutation();
+  const [completeBooking] = useCompleteBookingMutation();
+  const { data: existingBooking } = useGetBookingForPostQuery(
+    { postId: postId ?? '', userId: userId ?? '' },
+    { skip: !postId || !userId },
+  );
+  const { data: postBookings } = useGetPostBookingsQuery(
+    { postId: postId ?? '' },
+    { skip: !postId || !isOwnerCheck(userId, post) },
+  );
+  const [isBooking, setIsBooking] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const hasCoords =
     post != null &&
@@ -259,7 +272,15 @@ export default function PostDetailScreen() {
         {/* Author card */}
         <View style={styles.authorCard}>
           <Text style={styles.sectionLabel}>Posted by</Text>
-          <View style={styles.authorRow}>
+          <Pressable
+            style={styles.authorRow}
+            onPress={() => {
+              if (post.author_id && !isOwner) {
+                router.push({ pathname: '/modals/user-profile', params: { userId: post.author_id } });
+              }
+            }}
+            disabled={isOwner}
+          >
             <Avatar
               uri={post.author?.avatar_url}
               name={authorName}
@@ -284,7 +305,20 @@ export default function PostDetailScreen() {
                 </View>
               )}
             </View>
-          </View>
+          </Pressable>
+          {!isOwner && (
+            <Pressable
+              style={styles.reportButton}
+              onPress={() => router.push({
+                pathname: '/modals/flag-content',
+                params: { targetType: 'post', targetId: postId! },
+              })}
+              hitSlop={8}
+            >
+              <Icon name="alert-triangle" size={14} color={colors.neutral[400]} />
+              <Text style={styles.reportText}>Report</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Posted time */}
@@ -294,24 +328,95 @@ export default function PostDetailScreen() {
       </ScrollView>
 
       {/* Bottom action */}
-      {isOwner ? (
+      {isOwner && post.status !== 'open' && post.status !== 'completed' && post.status !== 'cancelled' && post.status !== 'expired' ? (
+        /* OWNER: post is filled/activated/in_progress — show who booked + complete */
+        <View style={styles.bottomBar}>
+          {postBookings && postBookings.length > 0 && (
+            <View style={styles.bookerSection}>
+              <Text style={styles.bookerLabel}>{getAcceptedLabel(post.type)}</Text>
+              {postBookings.map((b) => {
+                const name = b.user
+                  ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
+                  : 'Unknown';
+                return (
+                  <View key={b.id} style={styles.bookerRow}>
+                    <Avatar
+                      uri={b.user?.avatar_url}
+                      name={name}
+                      size="sm"
+                    />
+                    <View style={styles.bookerInfo}>
+                      <Text style={styles.bookerName}>{name}</Text>
+                      <Text style={styles.bookerMeta}>
+                        {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                        {b.seats_booked > 1 ? ` · ${b.seats_booked} seats` : ''}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+          <Button
+            title={isCompleting ? 'Completing...' : 'Mark Complete'}
+            disabled={isCompleting}
+            onPress={async () => {
+              if (!postBookings || postBookings.length === 0) {
+                showAlert('No bookings', 'There are no active bookings to complete.');
+                return;
+              }
+              const confirmed = await showConfirm(
+                'Mark Complete',
+                'Mark this post and all its bookings as completed?',
+              );
+              if (!confirmed) return;
+
+              setIsCompleting(true);
+              try {
+                // Complete all active bookings — trigger cascades to contract + post
+                for (const b of postBookings) {
+                  await completeBooking(b.id).unwrap();
+                }
+                // Navigate to rate the first booker
+                const firstBooking = postBookings[0];
+                const { data: contract } = await supabase
+                  .from('contracts')
+                  .select('id')
+                  .eq('booking_id', firstBooking.id)
+                  .single();
+
+                if (contract && firstBooking.user_id) {
+                  router.push({
+                    pathname: '/modals/rate',
+                    params: {
+                      contractId: contract.id,
+                      ratedId: firstBooking.user_id,
+                    },
+                  });
+                } else {
+                  showAlert('Completed', 'This post has been marked as completed.');
+                }
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to complete.';
+                showAlert('Error', msg);
+              } finally {
+                setIsCompleting(false);
+              }
+            }}
+            size="lg"
+            style={styles.actionButton}
+          />
+        </View>
+      ) : isOwner && post.status === 'open' ? (
         <View style={styles.bottomBar}>
           <Button
             title="Delete Post"
             variant="outline"
             onPress={async () => {
-              const confirmed = Platform.OS === 'web'
-                ? window.confirm(`Are you sure you want to delete "${post.title}"?`)
-                : await new Promise<boolean>((resolve) =>
-                    Alert.alert(
-                      'Delete Post',
-                      `Are you sure you want to delete "${post.title}"?`,
-                      [
-                        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-                        { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-                      ],
-                    ),
-                  );
+              const confirmed = await showConfirm(
+                'Delete Post',
+                `Are you sure you want to delete "${post.title}"?`,
+              );
 
               if (!confirmed) return;
 
@@ -324,13 +429,19 @@ export default function PostDetailScreen() {
                 }
               } catch (e: any) {
                 const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
-                if (Platform.OS === 'web') {
-                  window.alert(msg);
-                } else {
-                  Alert.alert('Error', msg);
-                }
+                showAlert('Error', msg);
               }
             }}
+            size="lg"
+            style={styles.actionButton}
+          />
+        </View>
+      ) : existingBooking ? (
+        <View style={styles.bottomBar}>
+          <Button
+            title={getBookedLabel(post.type)}
+            disabled
+            onPress={() => {}}
             size="lg"
             style={styles.actionButton}
           />
@@ -338,18 +449,53 @@ export default function PostDetailScreen() {
       ) : post.status === 'open' ? (
         <View style={styles.bottomBar}>
           <Button
-            title={getActionLabel(post.type)}
-            onPress={() =>
-              Alert.alert(
-                'Coming Soon',
-                'Booking and messaging will be available in the next update.',
-              )
-            }
+            title={isBooking ? 'Please wait...' : getActionLabel(post.type)}
+            disabled={isBooking}
+            onPress={async () => {
+              if (!userId) {
+                showAlert('Sign in required', 'Please sign in to continue.');
+                return;
+              }
+
+              const confirmed = await showConfirm(
+                getActionLabel(post.type),
+                getConfirmMessage(post.type),
+              );
+              if (!confirmed) return;
+
+              setIsBooking(true);
+              try {
+                const role = getBookingRole(post.type);
+                await createBooking({
+                  postId: post.id,
+                  userId,
+                  role,
+                  seatsBooked: post.type === 'route_offer' ? 1 : undefined,
+                }).unwrap();
+                showAlert('Success', getSuccessMessage(post.type));
+                router.replace({ pathname: '/(tabs)/activity', params: { tab: 'active' } });
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Something went wrong';
+                showAlert('Error', msg);
+              } finally {
+                setIsBooking(false);
+              }
+            }}
             size="lg"
             style={styles.actionButton}
           />
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.bottomBar}>
+          <Text style={styles.bottomStatusText}>
+            {post.status === 'filled' ? 'This post is no longer accepting responses.'
+              : post.status === 'completed' ? 'This post has been completed.'
+              : post.status === 'cancelled' ? 'This post was cancelled.'
+              : post.status === 'expired' ? 'This post has expired.'
+              : 'This post is not available.'}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -362,6 +508,61 @@ function getActionLabel(type: string): string {
     case 'package': return 'Deliver Package';
     case 'job': return 'Apply for Job';
     default: return 'Respond';
+  }
+}
+
+function getBookedLabel(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Seat Booked';
+    case 'route_request': return 'Offer Sent';
+    case 'errand': return 'Errand Accepted';
+    case 'package': return 'Delivery Accepted';
+    case 'job': return 'Application Sent';
+    default: return 'Booked';
+  }
+}
+
+function getAcceptedLabel(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Booked by';
+    case 'route_request': return 'Driver offered';
+    case 'errand': return 'Accepted by';
+    case 'package': return 'Delivery by';
+    case 'job': return 'Applied by';
+    default: return 'Responded by';
+  }
+}
+
+/** Safe check usable before `post` is loaded */
+function isOwnerCheck(userId: string | undefined, post: { author_id: string } | undefined | null): boolean {
+  return !!userId && !!post && userId === post.author_id;
+}
+
+function getBookingRole(postType: string): 'rider' | 'driver' {
+  // If the post is a driver offering a route, the person booking is a rider
+  // If it's a request/errand/package, the person responding is a driver
+  return postType === 'route_offer' ? 'rider' : 'driver';
+}
+
+function getConfirmMessage(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Book 1 seat on this route?';
+    case 'route_request': return 'Offer to drive this route?';
+    case 'errand': return 'Accept this errand?';
+    case 'package': return 'Offer to deliver this package?';
+    case 'job': return 'Apply for this job?';
+    default: return 'Respond to this post?';
+  }
+}
+
+function getSuccessMessage(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Seat booked! Check Activity for updates.';
+    case 'route_request': return 'Offer sent! Check Activity for updates.';
+    case 'errand': return 'Errand accepted! Check Activity for updates.';
+    case 'package': return 'Delivery offer sent! Check Activity for updates.';
+    case 'job': return 'Application sent! Check Activity for updates.';
+    default: return 'Response sent! Check Activity for updates.';
   }
 }
 
@@ -544,6 +745,16 @@ const styles = StyleSheet.create({
     color: colors.neutral[400],
     textAlign: 'center',
   },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-end',
+  },
+  reportText: {
+    ...typography.caption,
+    color: colors.neutral[400],
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -557,6 +768,39 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  bottomStatusText: {
+    ...typography.body1,
+    color: colors.neutral[500],
+    textAlign: 'center',
+  },
+  bookerSection: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  bookerLabel: {
+    ...typography.body2Bold,
+    color: colors.neutral[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  bookerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  bookerInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  bookerName: {
+    ...typography.body1Bold,
+    color: colors.forest[900],
+  },
+  bookerMeta: {
+    ...typography.caption,
+    color: colors.neutral[500],
   },
   openMapsBtn: {
     position: 'absolute',

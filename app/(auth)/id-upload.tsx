@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,73 +8,95 @@ import { supabase } from '@/lib/supabase';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import type { RootState } from '@/store';
 
 export default function IdUploadScreen() {
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [idUri, setIdUri] = useState<string | null>(null);
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { role } = useLocalSearchParams<{ role?: string }>();
   const user = useSelector((state: RootState) => state.auth.user);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-      allowsEditing: true,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
-        showAlert('File too large', 'ID photo must be under 5 MB');
-        return;
-      }
-      setImageUri(asset.uri);
-    }
-  };
-
-  const takePhoto = async () => {
+  const requestCamera = async (): Promise<boolean> => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      showAlert('Permission needed', 'Camera access is required to take a photo of your ID');
-      return;
+      showAlert('Permission needed', 'Camera access is required');
+      return false;
     }
+    return true;
+  };
 
+  const takeIdPhoto = async () => {
+    if (!(await requestCamera())) return;
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.8,
       allowsEditing: true,
     });
-
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      setIdUri(result.assets[0].uri);
     }
   };
 
-  const handleUpload = async () => {
-    if (!imageUri || !user) return;
-    setIsUploading(true);
+  const takeSelfie = async () => {
+    if (!(await requestCamera())) return;
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      allowsEditing: true,
+      cameraType: ImagePicker.CameraType.front,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelfieUri(result.assets[0].uri);
+    }
+  };
 
-    const fileName = `${user.id}/id-${Date.now()}.jpg`;
-    const response = await fetch(imageUri);
+  const uploadImage = async (uri: string, path: string): Promise<boolean> => {
+    const response = await fetch(uri);
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
 
     const { error } = await supabase.storage
       .from('documents')
-      .upload(fileName, arrayBuffer, { contentType: 'image/jpeg' });
+      .upload(path, arrayBuffer, { contentType: 'image/jpeg' });
 
     if (error) {
       showAlert('Upload failed', error.message);
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!idUri || !selfieUri || !user) return;
+    setIsUploading(true);
+
+    const idPath = `${user.id}/id-${Date.now()}.jpg`;
+    const selfiePath = `${user.id}/selfie-${Date.now()}.jpg`;
+
+    const [idOk, selfieOk] = await Promise.all([
+      uploadImage(idUri, idPath),
+      uploadImage(selfieUri, selfiePath),
+    ]);
+
+    if (!idOk || !selfieOk) {
       setIsUploading(false);
       return;
     }
 
-    // Store document record
-    await supabase.from('rider_documents').insert({
+    // Store ID document record
+    const { error: docError } = await supabase.from('rider_documents').insert({
       user_id: user.id,
-      document_url: fileName,
+      document_url: idPath,
     });
+
+    if (docError) {
+      showAlert('Error', docError.message);
+      setIsUploading(false);
+      return;
+    }
+
+    // Save selfie as avatar
+    const { publicUrl } = supabase.storage.from('documents').getPublicUrl(selfiePath).data;
+    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
 
     setIsUploading(false);
 
@@ -85,37 +107,48 @@ export default function IdUploadScreen() {
     }
   };
 
+  const canSubmit = idUri && selfieUri && !isUploading;
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         <Text style={styles.title}>Verify your identity</Text>
         <Text style={styles.subtitle}>
-          Upload a photo of your government-issued ID. This helps keep the community safe.
+          Take a photo of your government-issued ID and a selfie. Both are required.
         </Text>
 
-        {imageUri ? (
-          <Pressable onPress={pickImage} style={styles.preview}>
-            <Image source={{ uri: imageUri }} style={styles.previewImage} />
-            <Text style={styles.changeText}>Tap to change</Text>
+        {/* ID Photo */}
+        <Text style={styles.sectionLabel}>Government ID</Text>
+        {idUri ? (
+          <Pressable onPress={takeIdPhoto} style={styles.preview}>
+            <Image source={{ uri: idUri }} style={styles.previewImage} />
+            <Text style={styles.changeText}>Tap to retake</Text>
           </Pressable>
         ) : (
-          <View style={styles.uploadOptions}>
-            <Pressable style={styles.uploadCard} onPress={takePhoto}>
-              <Icon name="user" size={32} color={colors.forest[400]} />
-              <Text style={styles.uploadLabel}>Take Photo</Text>
-            </Pressable>
+          <Pressable style={styles.captureCard} onPress={takeIdPhoto}>
+            <Icon name="receipt" size={32} color={colors.forest[400]} />
+            <Text style={styles.captureLabel}>Take ID Photo</Text>
+          </Pressable>
+        )}
 
-            <Pressable style={styles.uploadCard} onPress={pickImage}>
-              <Icon name="receipt" size={32} color={colors.forest[400]} />
-              <Text style={styles.uploadLabel}>From Gallery</Text>
-            </Pressable>
-          </View>
+        {/* Selfie */}
+        <Text style={styles.sectionLabel}>Selfie</Text>
+        {selfieUri ? (
+          <Pressable onPress={takeSelfie} style={styles.preview}>
+            <Image source={{ uri: selfieUri }} style={styles.previewImage} />
+            <Text style={styles.changeText}>Tap to retake</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.captureCard} onPress={takeSelfie}>
+            <Icon name="user" size={32} color={colors.forest[400]} />
+            <Text style={styles.captureLabel}>Take Selfie</Text>
+          </Pressable>
         )}
 
         <Pressable
-          style={[styles.button, (!imageUri || isUploading) && styles.buttonDisabled]}
-          onPress={handleUpload}
-          disabled={!imageUri || isUploading}
+          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={!canSubmit}
         >
           <Text style={styles.buttonText}>
             {isUploading ? 'Uploading...' : 'Submit for Review'}
@@ -123,9 +156,9 @@ export default function IdUploadScreen() {
         </Pressable>
 
         <Text style={styles.note}>
-          Your ID will be reviewed by the kanek team. Your account will be activated once verified.
+          Your ID and selfie will be reviewed by the kanek team. Your account will be activated once verified.
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -137,8 +170,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
   },
   title: {
     ...typography.h1,
@@ -150,13 +186,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.xxl,
   },
-  uploadOptions: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-    marginBottom: spacing.xl,
+  sectionLabel: {
+    ...typography.body1Bold,
+    color: colors.forest[700],
+    marginBottom: spacing.sm,
   },
-  uploadCard: {
-    flex: 1,
+  captureCard: {
     backgroundColor: colors.neutral[100],
     borderRadius: borderRadius.md,
     padding: spacing.xl,
@@ -164,8 +199,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral[200],
     borderStyle: 'dashed',
+    marginBottom: spacing.xl,
   },
-  uploadLabel: {
+  captureLabel: {
     ...typography.body2Bold,
     color: colors.forest[400],
     marginTop: spacing.sm,

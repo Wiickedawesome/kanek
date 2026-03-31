@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -51,11 +51,11 @@ export default function ReportRoadModal() {
 
   const handleSubmit = async () => {
     if (!type) {
-      Alert.alert('Select Type', 'Please select the type of road report.');
+      showAlert('Select Type', 'Please select the type of road report.');
       return;
     }
     if (!userId) {
-      Alert.alert('Not Signed In', 'Please sign in to submit a report.');
+      showAlert('Not Signed In', 'Please sign in to submit a report.');
       return;
     }
 
@@ -69,12 +69,12 @@ export default function ReportRoadModal() {
         description: description.trim() || undefined,
       }).unwrap();
 
-      Alert.alert('Report Submitted', 'Thank you for helping the community!');
+      showAlert('Report Submitted', 'Thank you for helping the community!');
       safeBack();
     } catch (err) {
       console.error('Road report insert error:', err);
       const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'error' in err ? String((err as { error: string }).error) : 'Could not submit report. Please try again.';
-      Alert.alert('Error', msg);
+      showAlert('Error', msg);
     } finally {
       setSubmitting(false);
     }

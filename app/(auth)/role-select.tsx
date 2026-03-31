@@ -3,16 +3,18 @@ import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { supabase } from '@/lib/supabase';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import type { RootState } from '@/store';
+import { profilesApi } from '@/store/api/profilesApi';
+import type { RootState, AppDispatch } from '@/store';
 
 type RoleChoice = 'rider' | 'driver';
 
 export default function RoleSelectScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
   const [selected, setSelected] = useState<RoleChoice | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -39,6 +41,9 @@ export default function RoleSelectScreen() {
       showAlert('Error', error.message);
       return;
     }
+
+    // Invalidate cached profile so auth layout picks up the new first_name
+    dispatch(profilesApi.util.invalidateTags([{ type: 'Profile', id: user.id }]));
 
     router.push({ pathname: '/(auth)/id-upload', params: { role: selected } });
   };

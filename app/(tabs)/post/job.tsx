@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput } from '@/components/forms';
 import { Icon } from '@/components/icons';
@@ -20,7 +19,17 @@ import { useCreatePostMutation } from '@/store/api/postsApi';
 import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal } from '@/lib/helpers';
 import type { RootState } from '@/store';
+import { showAlert } from '@/lib/alert';
+import { showToast } from '@/store/slices/toastSlice';
 import type { JobCategory, PayType, JobTimeline, PaymentMethod } from '@/types/database';
+
+const safeBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/(tabs)/explore');
+  }
+};
 
 const JOB_CATEGORIES: { value: JobCategory; label: string }[] = [
   { value: 'skilled_trade', label: 'Skilled Trade' },
@@ -47,6 +56,7 @@ const TIMELINES: { value: JobTimeline; label: string }[] = [
 ];
 
 export default function JobFormScreen() {
+  const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
 
@@ -104,17 +114,18 @@ export default function JobFormScreen() {
         payment_method: paymentMethod,
       }).unwrap();
 
-      router.back();
+      dispatch(showToast({ title: 'Post created successfully!' }));
+      safeBack();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
-      Alert.alert('Error', message);
+      showAlert('Error', message);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Post a Job</Text>

@@ -172,6 +172,11 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(tabs)/profile/settings')}
           />
           <MenuItem
+            icon="bell"
+            label="Notifications"
+            onPress={() => router.push('/(tabs)/profile/notifications')}
+          />
+          <MenuItem
             icon="clipboard-list"
             label="My Documents"
             onPress={() => router.push('/(tabs)/profile/documents')}
@@ -185,6 +190,11 @@ export default function ProfileScreen() {
             icon="construction"
             label="My Road Reports"
             onPress={() => router.push('/(tabs)/profile/reports')}
+          />
+          <MenuItem
+            icon="compass"
+            label="Offline Maps"
+            onPress={() => router.push('/modals/download-map')}
           />
           <MenuItem
             icon="phone"

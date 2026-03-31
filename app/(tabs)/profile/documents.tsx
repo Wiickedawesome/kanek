@@ -1,11 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -15,14 +14,36 @@ import { Icon } from '@/components/icons';
 import { Button, Card } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
-import { useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { useGetMyProfileQuery, useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
+import type { ReviewStatus } from '@/types/database';
+import { showAlert } from '@/lib/alert';
 
 interface DocItem {
   name: string;
   bucket: string;
   path: string;
   uploaded: boolean;
+}
+
+type DocStatus = 'not_uploaded' | ReviewStatus;
+
+function getStatusLabel(status: DocStatus): string {
+  switch (status) {
+    case 'approved': return 'Approved';
+    case 'rejected': return 'Rejected — please re-upload';
+    case 'pending': return 'Uploaded — pending review';
+    default: return 'Not uploaded';
+  }
+}
+
+function getStatusColor(status: DocStatus): string {
+  switch (status) {
+    case 'approved': return colors.accent.green;
+    case 'rejected': return colors.error;
+    case 'pending': return colors.warning;
+    default: return colors.neutral[400];
+  }
 }
 
 const REQUIRED_DOCS: DocItem[] = [
@@ -36,18 +57,56 @@ const REQUIRED_DOCS: DocItem[] = [
 export default function DocumentsScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', { skip: !userId });
   const [uploading, setUploading] = useState<string | null>(null);
   const [uploadedPaths, setUploadedPaths] = useState<Set<string>>(new Set());
+  const [riderDocStatus, setRiderDocStatus] = useState<ReviewStatus | null>(null);
 
   const isDriver = profile?.role === 'driver';
   const docs = isDriver ? REQUIRED_DOCS : REQUIRED_DOCS.slice(0, 1);
+
+  // Fetch rider_documents status on mount
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('rider_documents')
+      .select('review_status')
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) setRiderDocStatus(data.review_status as ReviewStatus);
+      });
+  }, [userId]);
+
+  const getDocDisplayStatus = useCallback((doc: DocItem): DocStatus => {
+    // Session-uploaded docs are pending
+    if (uploadedPaths.has(doc.path)) return 'pending';
+
+    // ID doc — check rider_documents
+    if (doc.path === 'id-front' && riderDocStatus) return riderDocStatus;
+
+    // Driver docs — check driver_details review_status
+    if (isDriver && driverDetails && doc.path !== 'id-front') {
+      // Check if relevant URL fields are populated
+      const hasUrl =
+        (doc.path === 'license-front' && driverDetails.license_url) ||
+        (doc.path === 'license-back' && driverDetails.license_url) ||
+        (doc.path === 'registration' && driverDetails.id_document_url) ||
+        (doc.path === 'insurance' && driverDetails.insurance_url);
+      if (hasUrl) return driverDetails.review_status;
+    }
+
+    return 'not_uploaded';
+  }, [uploadedPaths, riderDocStatus, isDriver, driverDetails]);
 
   const handleUpload = useCallback(async (doc: DocItem) => {
     if (!userId) return;
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photo library to upload documents.');
+      showAlert('Permission needed', 'Please allow access to your photo library to upload documents.');
       return;
     }
 
@@ -79,9 +138,9 @@ export default function DocumentsScreen() {
       if (error) throw error;
 
       setUploadedPaths((prev) => new Set(prev).add(doc.path));
-      Alert.alert('Uploaded', `${doc.name} has been uploaded for verification.`);
+      showAlert('Uploaded', `${doc.name} has been uploaded for verification.`);
     } catch {
-      Alert.alert('Upload Failed', 'Could not upload document. Please try again.');
+      showAlert('Upload Failed', 'Could not upload document. Please try again.');
     } finally {
       setUploading(null);
     }
@@ -103,7 +162,8 @@ export default function DocumentsScreen() {
         </Text>
 
         {docs.map((doc) => {
-          const isUploaded = uploadedPaths.has(doc.path);
+          const status = getDocDisplayStatus(doc);
+          const isUploaded = status !== 'not_uploaded';
           const isCurrentlyUploading = uploading === doc.path;
 
           return (
@@ -112,12 +172,12 @@ export default function DocumentsScreen() {
                 <Icon
                   name={isUploaded ? 'circle-dot' : 'clipboard-list'}
                   size={20}
-                  color={isUploaded ? colors.accent.green : colors.neutral[400]}
+                  color={getStatusColor(status)}
                 />
                 <View style={styles.docText}>
                   <Text style={styles.docName}>{doc.name}</Text>
-                  <Text style={styles.docStatus}>
-                    {isUploaded ? 'Uploaded — pending review' : 'Not uploaded'}
+                  <Text style={[styles.docStatus, { color: getStatusColor(status) }]}>
+                    {getStatusLabel(status)}
                   </Text>
                 </View>
               </View>

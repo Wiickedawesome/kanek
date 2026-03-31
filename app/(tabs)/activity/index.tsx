@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,19 +7,19 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Card, EmptyState } from '@/components/ui';
 import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useGetMyBookingsQuery, type BookingWithPost } from '@/store/api/bookingsApi';
+import { useGetMyBookingsQuery, useCancelBookingMutation, type BookingWithPost } from '@/store/api/bookingsApi';
 import { useGetMyPostsQuery, useDeletePostMutation, type PostWithAuthor } from '@/store/api/postsApi';
+import { showAlert, showConfirm } from '@/lib/alert';
+import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
 import type { BookingStatus } from '@/types/database';
 
@@ -29,8 +29,12 @@ const ACTIVE_STATUSES: BookingStatus[] = ['pending', 'confirmed'];
 const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
 
 export default function ActivityScreen() {
-  const [tab, setTab] = useState<Tab>('my_posts');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const initialTab = (params.tab === 'active' || params.tab === 'history') ? params.tab : 'my_posts';
+  const [tab, setTab] = useState<Tab>(initialTab);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
+
+  const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
 
   const statuses = tab === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
 
@@ -55,32 +59,47 @@ export default function ActivityScreen() {
   );
 
   const [deletePost] = useDeletePostMutation();
+  const [cancelBooking] = useCancelBookingMutation();
+
+  const { subscribeToBookings, subscribeToContracts } = useRealtime();
+
+  useEffect(() => {
+    const unsubBookings = subscribeToBookings();
+    const unsubContracts = subscribeToContracts();
+    return () => {
+      unsubBookings();
+      unsubContracts();
+    };
+  }, [subscribeToBookings, subscribeToContracts]);
+
+  const handleCancelBooking = useCallback(async (bookingId: string, title: string) => {
+    const confirmed = await showConfirm(
+      'Cancel Booking',
+      `Cancel your booking for "${title}"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await cancelBooking({ bookingId }).unwrap();
+      showAlert('Cancelled', 'Your booking has been cancelled.');
+    } catch (e: any) {
+      const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to cancel booking.';
+      showAlert('Error', msg);
+    }
+  }, [cancelBooking]);
 
   const handleDeletePost = useCallback(async (postId: string, title: string) => {
-    const confirmed = Platform.OS === 'web'
-      ? window.confirm(`Are you sure you want to delete "${title}"?`)
-      : await new Promise<boolean>((resolve) =>
-          Alert.alert(
-            'Delete Post',
-            `Are you sure you want to delete "${title}"?`,
-            [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-            ],
-          ),
-        );
-
+    const confirmed = await showConfirm(
+      'Delete Post',
+      `Are you sure you want to delete "${title}"?`,
+    );
     if (!confirmed) return;
 
     try {
       await deletePost(postId).unwrap();
     } catch (e: any) {
       const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
-      if (Platform.OS === 'web') {
-        window.alert(msg);
-      } else {
-        Alert.alert('Error', msg);
-      }
+      showAlert('Error', msg);
     }
   }, [deletePost]);
 
@@ -93,43 +112,72 @@ export default function ActivityScreen() {
   }, [tab, refetchPosts, refetchBookings]);
 
   const renderBooking = useCallback(
-    ({ item }: { item: BookingWithPost }) => (
-      <Card style={styles.bookingCard}>
-        <View style={styles.cardHeader}>
-          {item.post && <PostTypeBadge type={item.post.type} />}
-          <StatusBadge status={item.status} />
-        </View>
+    ({ item }: { item: BookingWithPost }) => {
+      const hasContract = item.contract?.id;
+      const canCancel = item.status === 'confirmed' || item.status === 'pending';
 
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.post?.title ?? 'Untitled Post'}
-        </Text>
+      const handlePress = () => {
+        if (hasContract) {
+          router.push(`/(tabs)/activity/${item.contract!.id}`);
+        } else {
+          router.push(`/explore/${item.post_id}`);
+        }
+      };
 
-        {item.post?.origin_address && item.post?.dest_address && (
-          <View style={styles.routeInfo}>
-            <Icon name="map-pin" size={14} color={colors.forest[400]} />
-            <Text style={styles.routeText} numberOfLines={1}>
-              {item.post.origin_address} → {item.post.dest_address}
+      return (
+        <Pressable onPress={handlePress}>
+          <Card style={styles.bookingCard}>
+            <View style={styles.cardHeader}>
+              {item.post && <PostTypeBadge type={item.post.type} />}
+              <StatusBadge status={item.status} />
+            </View>
+
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {item.post?.title ?? 'Untitled Post'}
             </Text>
-          </View>
-        )}
 
-        {item.post?.departure_at && (
-          <View style={styles.routeInfo}>
-            <Icon name="clock" size={14} color={colors.forest[400]} />
-            <Text style={styles.routeText}>{formatDeparture(item.post.departure_at)}</Text>
-          </View>
-        )}
+            {item.post?.origin_address && item.post?.dest_address && (
+              <View style={styles.routeInfo}>
+                <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                <Text style={styles.routeText} numberOfLines={1}>
+                  {item.post.origin_address} → {item.post.dest_address}
+                </Text>
+              </View>
+            )}
 
-        <View style={styles.cardFooter}>
-          <Text style={styles.footerText}>
-            {item.seats_booked} seat{item.seats_booked !== 1 ? 's' : ''}
-            {item.payment_method ? ` · ${item.payment_method}` : ''}
-          </Text>
-          <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
-        </View>
-      </Card>
-    ),
-    [],
+            {item.post?.departure_at && (
+              <View style={styles.routeInfo}>
+                <Icon name="clock" size={14} color={colors.forest[400]} />
+                <Text style={styles.routeText}>{formatDeparture(item.post.departure_at)}</Text>
+              </View>
+            )}
+
+            <View style={styles.cardFooter}>
+              <Text style={styles.footerText}>
+                {item.seats_booked} seat{item.seats_booked !== 1 ? 's' : ''}
+                {item.payment_method ? ` · ${item.payment_method}` : ''}
+              </Text>
+              {canCancel ? (
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleCancelBooking(item.id, item.post?.title ?? 'this booking');
+                  }}
+                  hitSlop={8}
+                  style={styles.deleteButton}
+                >
+                  <Icon name="x" size={16} color={colors.error} />
+                  <Text style={styles.deleteText}>Cancel</Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
+              )}
+            </View>
+          </Card>
+        </Pressable>
+      );
+    },
+    [handleCancelBooking],
   );
 
   const renderMyPost = useCallback(
@@ -195,6 +243,14 @@ export default function ActivityScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Activity</Text>
+        <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
+          <Icon name="bell" size={22} color={colors.neutral[0]} />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* Tabs */}
@@ -303,7 +359,9 @@ function StatusBadge({ status }: { status: BookingStatus }) {
 function PostStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; bg: string; fg: string }> = {
     open: { label: 'Open', bg: '#e8f5e9', fg: colors.accent.green },
-    filled: { label: 'Filled', bg: '#fff8e1', fg: colors.warning },
+    activated: { label: 'Activated', bg: '#e3f2fd', fg: '#1565c0' },
+    in_progress: { label: 'In Progress', bg: '#fff8e1', fg: colors.warning },
+    filled: { label: 'Accepted', bg: '#e3f2fd', fg: '#1565c0' },
     completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
     cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
     expired: { label: 'Expired', bg: colors.neutral[200], fg: colors.neutral[500] },
@@ -325,6 +383,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[50],
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     backgroundColor: colors.forest[900],
@@ -425,5 +486,25 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.error,
     fontWeight: '600',
+  },
+  bellButton: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: colors.neutral[0],
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
