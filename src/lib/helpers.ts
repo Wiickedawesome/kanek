@@ -230,3 +230,17 @@ export function safeGoBack(fallback: string) {
     router.navigate(fallback as any);
   }
 }
+
+/** Strip Expo Router group segments so current and target paths can be compared safely. */
+export function normalizeAppPath(path: string): string {
+  const normalized = path
+    .split('?')[0]
+    .replace(/\/\([^/]+\)/g, '')
+    .replace(/\/+/g, '/');
+
+  if (normalized === '' || normalized === '/') {
+    return '/';
+  }
+
+  return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
+}

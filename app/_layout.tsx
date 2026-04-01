@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@/store';
 import { useAuthListener } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -11,6 +12,11 @@ import { InAppToast } from '@/components/ui/InAppToast';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+const ROOT_STACK_OPTIONS = {
+  headerShown: false,
+  contentStyle: { backgroundColor: colors.neutral[50] },
+} as const;
 
 function RootLayoutInner() {
   useAuthListener();
@@ -35,19 +41,7 @@ function RootLayoutInner() {
     <>
       <StatusBar style="light" />
       <InAppToast />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.neutral[50] },
-        }}
-      >
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="modals"
-          options={{ presentation: 'modal' }}
-        />
-      </Stack>
+      <Stack screenOptions={ROOT_STACK_OPTIONS} />
     </>
   );
 }
@@ -55,7 +49,9 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <RootLayoutInner />
+      <SafeAreaProvider>
+        <RootLayoutInner />
+      </SafeAreaProvider>
     </Provider>
   );
 }

@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import type { RootState } from '@/store';
+import type { AppDispatch, RootState } from '@/store';
 
 export default function IdUploadScreen() {
   const [idUri, setIdUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const { role } = useLocalSearchParams<{ role?: string }>();
   const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
+  const { data: profile } = useGetMyProfileQuery(user?.id ?? '', { skip: !user?.id });
 
   const requestCamera = async (): Promise<boolean> => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -68,6 +70,7 @@ export default function IdUploadScreen() {
   const handleSubmit = async () => {
     if (!idUri || !selfieUri || !user) return;
     setIsUploading(true);
+    const resolvedRole = profile?.role ?? 'rider';
 
     const idPath = `${user.id}/id-${Date.now()}.jpg`;
     const selfiePath = `${user.id}/selfie-${Date.now()}.jpg`;
@@ -98,9 +101,14 @@ export default function IdUploadScreen() {
     const { publicUrl } = supabase.storage.from('documents').getPublicUrl(selfiePath).data;
     await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
 
+    dispatch(profilesApi.util.invalidateTags([
+      { type: 'Profile', id: user.id },
+      { type: 'RiderDocument', id: user.id },
+    ]));
+
     setIsUploading(false);
 
-    if (role === 'driver') {
+    if (resolvedRole === 'driver') {
       router.push('/(auth)/driver-docs');
     } else {
       router.replace('/(tabs)/explore');
@@ -156,7 +164,7 @@ export default function IdUploadScreen() {
         </Pressable>
 
         <Text style={styles.note}>
-          Your ID and selfie will be reviewed by the kanek team. Your account will be activated once verified.
+          Your documents have been submitted for review. You can keep using kanek while we verify them.
         </Text>
       </ScrollView>
     </SafeAreaView>

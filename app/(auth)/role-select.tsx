@@ -45,7 +45,7 @@ export default function RoleSelectScreen() {
     // Invalidate cached profile so auth layout picks up the new first_name
     dispatch(profilesApi.util.invalidateTags([{ type: 'Profile', id: user.id }]));
 
-    router.push({ pathname: '/(auth)/id-upload', params: { role: selected } });
+    router.replace('/(auth)/id-upload');
   };
 
   return (

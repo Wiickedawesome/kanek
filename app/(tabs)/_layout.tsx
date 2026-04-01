@@ -1,15 +1,18 @@
 import React from 'react';
-import { Redirect, Tabs } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { Redirect, Tabs, usePathname } from 'expo-router';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { normalizeAppPath } from '@/lib/helpers';
 import { colors } from '@/theme';
-import type { RootState } from '@/store';
 
 export default function TabLayout() {
-  const { session, isLoading } = useSelector((state: RootState) => state.auth);
+  const { session, isLoading, isComplete, nextAuthRoute } = useOnboardingStatus();
+  const pathname = normalizeAppPath(usePathname());
+  const nextPath = nextAuthRoute ? normalizeAppPath(nextAuthRoute) : null;
 
   if (isLoading) return null;
-  if (!session) return <Redirect href="/(auth)/welcome" />;
+  if (!session && pathname !== '/welcome') return <Redirect href="/(auth)/welcome" />;
+  if (!isComplete && nextAuthRoute && pathname !== nextPath) return <Redirect href={nextAuthRoute as any} />;
 
   return (
     <Tabs

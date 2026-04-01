@@ -30,11 +30,21 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   payment_received: 'receipt',
   booking_confirmed: 'clipboard-list',
   booking_cancelled: 'clipboard-list',
+  contract_completed: 'star',
   new_booking: 'user',
+  new_message: 'send',
+  post_cancelled: 'alert-triangle',
   errand_accepted: 'package',
   job_application: 'clipboard-list',
   sos_sent: 'shield-alert',
   driver_verified: 'user',
+  driver_verification_rejected: 'alert-triangle',
+  rider_verified: 'user',
+  rider_document_rejected: 'alert-triangle',
+  account_suspended: 'shield-alert',
+  account_reactivated: 'circle-dot',
+  post_removed: 'alert-triangle',
+  strike_received: 'alert-triangle',
   strike_issued: 'alert-triangle',
 };
 
@@ -50,19 +60,57 @@ export default function NotificationsScreen() {
   const [markRead] = useMarkNotificationReadMutation();
   const [markAllRead] = useMarkAllNotificationsReadMutation();
 
+  const getNotificationRouteData = useCallback((notification: NotificationRow) => {
+    const data = notification.data as Record<string, unknown> | null;
+
+    const contractId =
+      typeof data?.contractId === 'string'
+        ? data.contractId
+        : typeof data?.contract_id === 'string'
+          ? data.contract_id
+          : null;
+
+    const postId =
+      typeof data?.postId === 'string'
+        ? data.postId
+        : typeof data?.post_id === 'string'
+          ? data.post_id
+          : null;
+
+    const ratedId =
+      typeof data?.ratedId === 'string'
+        ? data.ratedId
+        : typeof data?.rated_id === 'string'
+          ? data.rated_id
+          : null;
+
+    return { contractId, postId, ratedId };
+  }, []);
+
   const handlePress = useCallback(
     (notification: NotificationRow) => {
       if (!notification.read) {
         markRead(notification.id);
       }
-      const data = notification.data as { contractId?: string; postId?: string } | null;
-      if (data?.contractId) {
-        router.push(`/(tabs)/activity/${data.contractId}`);
-      } else if (data?.postId) {
-        router.push(`/(tabs)/explore/${data.postId}`);
+
+      if (notification.type === 'post_cancelled') {
+        return;
+      }
+
+      const { contractId, postId, ratedId } = getNotificationRouteData(notification);
+
+      if (contractId && ratedId) {
+        router.push({
+          pathname: '/modals/rate',
+          params: { contractId, ratedId },
+        });
+      } else if (contractId) {
+        router.push(`/(tabs)/activity/${contractId}`);
+      } else if (postId) {
+        router.push(`/(tabs)/explore/${postId}`);
       }
     },
-    [markRead],
+    [getNotificationRouteData, markRead],
   );
 
   const renderNotification = useCallback(
