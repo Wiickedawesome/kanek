@@ -28,6 +28,18 @@ export async function POST(request: NextRequest) {
     .eq('id', userId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  await supabase.from('notifications').insert({
+    user_id: userId,
+    type: action === 'suspend' ? 'account_suspended' : 'account_reactivated',
+    title: action === 'suspend' ? 'Account suspended' : 'Account restored',
+    body: action === 'suspend'
+      ? reason
+        ? `Your account was suspended: ${reason}`
+        : 'Your account was suspended by the kanek team.'
+      : 'Your account is active again.',
+    data: { userId },
+  });
+
   await supabase.from('admin_actions').insert({
     admin_id: user.id,
     action: action === 'suspend' ? 'suspend_user' : 'unsuspend_user',

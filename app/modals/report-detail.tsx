@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
@@ -161,7 +161,7 @@ export default function ReportDetailModal() {
             disabled={upvoting || reporting}
           >
             <Icon name="x" size={20} color={colors.neutral[0]} />
-            <Text style={styles.actionBtnText}>It's Gone</Text>
+            <Text style={styles.actionBtnText}>It&apos;s Gone</Text>
           </Pressable>
         </View>
       </ScrollView>

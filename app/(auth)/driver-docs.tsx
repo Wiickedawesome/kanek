@@ -12,11 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { profilesApi } from '@/store/api/profilesApi';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
-import type { RootState } from '@/store';
+import type { AppDispatch, RootState } from '@/store';
 
 interface VehicleInfo {
   make: string;
@@ -28,6 +29,7 @@ interface VehicleInfo {
 
 export default function DriverDocsScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
   const [licenseUri, setLicenseUri] = useState<string | null>(null);
   const [insuranceUri, setInsuranceUri] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,15 +99,29 @@ export default function DriverDocsScreen() {
       return;
     }
 
-    const { error } = await supabase.from('driver_details').insert({
+    const { data: latestRiderDoc } = await supabase
+      .from('rider_documents')
+      .select('document_url')
+      .eq('user_id', user.id)
+      .order('uploaded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { error } = await supabase.from('driver_details').upsert({
       id: user.id,
       license_url: licensePath,
       insurance_url: insurancePath,
+      id_document_url: latestRiderDoc?.document_url ?? null,
       vehicle_make: vehicle.make.trim(),
       vehicle_model: vehicle.model.trim(),
       vehicle_year: parseInt(vehicle.year, 10),
       vehicle_color: vehicle.color.trim(),
       vehicle_plate: vehicle.plate.trim().toUpperCase(),
+      verified: false,
+      verified_at: null,
+      verified_by: null,
+      rejection_reason: null,
+      review_status: 'pending',
     });
 
     if (error) {
@@ -113,6 +129,11 @@ export default function DriverDocsScreen() {
       setIsSubmitting(false);
       return;
     }
+
+    dispatch(profilesApi.util.invalidateTags([
+      { type: 'DriverDetails', id: user.id },
+      { type: 'RiderDocument', id: user.id },
+    ]));
 
     setIsSubmitting(false);
     router.replace('/(tabs)/explore');
@@ -211,7 +232,7 @@ export default function DriverDocsScreen() {
         </Pressable>
 
         <Text style={styles.note}>
-          Documents will be reviewed by the kanek team. You&apos;ll be notified once approved.
+          Your driver documents were submitted. You can keep using kanek while we review them.
         </Text>
       </ScrollView>
     </SafeAreaView>

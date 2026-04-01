@@ -10,7 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Icon } from '@/components/icons';
@@ -82,6 +81,8 @@ export default function NotificationSettingsScreen() {
     );
   }
 
+  const showPermissionBanner = systemPermission !== 'granted';
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -94,7 +95,7 @@ export default function NotificationSettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* System permission banner */}
-        {systemPermission !== 'granted' && (
+        {showPermissionBanner && (
           <Pressable style={styles.permissionBanner} onPress={requestPermission}>
             <Icon name="bell" size={20} color={colors.warning} />
             <View style={styles.permissionText}>

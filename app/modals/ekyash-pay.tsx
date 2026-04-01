@@ -134,17 +134,19 @@ export default function EkyashPayModal() {
             </Text>
           </View>
           <View style={styles.breakdownRow}>
-            <Text style={styles.breakdownLabel}>Platform fee (2%)</Text>
+            <Text style={styles.breakdownLabel}>Platform fee (3%)</Text>
             <Text style={styles.breakdownValue}>
               {formatBZD(payment.platformFeeCents)}
             </Text>
           </View>
-          <View style={styles.breakdownRow}>
-            <Text style={styles.breakdownLabel}>Community donation (1%)</Text>
-            <Text style={styles.breakdownValue}>
-              {formatBZD(payment.donationCents)}
-            </Text>
-          </View>
+          {payment.donationCents > 0 && (
+            <View style={styles.breakdownRow}>
+              <Text style={styles.breakdownLabel}>Community donation</Text>
+              <Text style={styles.breakdownValue}>
+                {formatBZD(payment.donationCents)}
+              </Text>
+            </View>
+          )}
           <View style={[styles.breakdownRow, styles.breakdownTotal]}>
             <Text style={styles.breakdownTotalLabel}>Total</Text>
             <Text style={styles.breakdownTotalValue}>

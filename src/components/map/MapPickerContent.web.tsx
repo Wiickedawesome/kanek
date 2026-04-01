@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_ACCESS_TOKEN, BELIZE_BOUNDS } from '@/lib/mapbox';
 

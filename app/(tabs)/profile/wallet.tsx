@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Card, EmptyState } from '@/components/ui';

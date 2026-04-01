@@ -1,4 +1,3 @@
-import React from 'react';
 import type { PostType } from '@/types/database';
 
 interface PostPinProps {

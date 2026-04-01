@@ -7,15 +7,20 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
+import {
+  useGetMyProfileQuery,
+  useUpdateProfileMutation,
+  useRequestPhoneChangeMutation,
+  useVerifyPhoneChangeMutation,
+} from '@/store/api/profilesApi';
 import { isValidPhone, normalizePhone, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
@@ -34,6 +39,8 @@ export default function SettingsScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile, isLoading } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation();
+  const [requestPhoneChange, { isLoading: isRequestingPhone }] = useRequestPhoneChangeMutation();
+  const [verifyPhoneChange, { isLoading: isVerifyingPhone }] = useVerifyPhoneChangeMutation();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -42,6 +49,13 @@ export default function SettingsScreen() {
   const [role, setRole] = useState<Role>('rider');
   const [district, setDistrict] = useState<BelizeDistrict | null>(null);
   const [addressLine, setAddressLine] = useState('');
+
+  // Phone change state
+  const [newPhone, setNewPhone] = useState('');
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState('');
+  const [phoneStep, setPhoneStep] = useState<'input' | 'verify'>('input');
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -94,6 +108,8 @@ export default function SettingsScreen() {
       </SafeAreaView>
     );
   }
+
+  const isPhoneInputStep = phoneStep === 'input';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -209,15 +225,29 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* Phone (read-only) */}
+        {/* Phone number — changeable with OTP verification */}
         <View style={styles.field}>
           <Text style={styles.label}>Phone Number</Text>
-          <View style={[styles.input, styles.inputDisabled]}>
-            <Text style={styles.disabledText}>
-              {profile?.phone && profile.phone.startsWith('+') ? profile.phone : '—'}
-            </Text>
+          <View style={styles.phoneRow}>
+            <View style={[styles.input, styles.phoneInput]}>
+              <Text style={styles.phoneText}>
+                {profile?.phone && profile.phone.startsWith('+') ? profile.phone : '—'}
+              </Text>
+            </View>
+            <Pressable
+              style={styles.changeBtn}
+              onPress={() => {
+                setNewPhone('');
+                setPhoneOtp('');
+                setPhoneStep('input');
+                setPhoneError('');
+                setShowPhoneModal(true);
+              }}
+            >
+              <Text style={styles.changeBtnText}>Change</Text>
+            </Pressable>
           </View>
-          <Text style={styles.hint}>Phone number cannot be changed.</Text>
+          <Text style={styles.hint}>Can be changed once every 30 days.</Text>
         </View>
 
         <Button
@@ -226,6 +256,113 @@ export default function SettingsScreen() {
           disabled={isSaving}
         />
       </ScrollView>
+
+      {/* Phone Change Modal */}
+      <Modal
+        visible={showPhoneModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPhoneModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {isPhoneInputStep ? 'Change Phone Number' : 'Verify New Number'}
+            </Text>
+
+            {isPhoneInputStep ? (
+              <>
+                <Text style={styles.modalDesc}>
+                  Enter your new Belize phone number. A verification code will be sent via SMS.
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={newPhone}
+                  onChangeText={setNewPhone}
+                  placeholder="+501 000 0000"
+                  placeholderTextColor={colors.neutral[400]}
+                  keyboardType="phone-pad"
+                  autoFocus
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalDesc}>
+                  Enter the 6-digit code sent to {newPhone}.
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={phoneOtp}
+                  onChangeText={setPhoneOtp}
+                  placeholder="000000"
+                  placeholderTextColor={colors.neutral[400]}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
+              </>
+            )}
+
+            {phoneError ? <Text style={styles.phoneErrorText}>{phoneError}</Text> : null}
+
+            <View style={styles.modalBtns}>
+              <Pressable
+                style={styles.modalCancelBtn}
+                onPress={() => setShowPhoneModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+
+              {isPhoneInputStep ? (
+                <Button
+                  title={isRequestingPhone ? 'Sending...' : 'Send Code'}
+                  onPress={async () => {
+                    if (!userId) return;
+                    setPhoneError('');
+                    const normalized = normalizePhone(newPhone);
+                    if (!normalized || !isValidPhone(normalized)) {
+                      setPhoneError('Enter a valid Belize number (+501 followed by 7 digits).');
+                      return;
+                    }
+                    if (normalized === profile?.phone) {
+                      setPhoneError('This is already your current number.');
+                      return;
+                    }
+                    try {
+                      await requestPhoneChange({ userId, newPhone: normalized }).unwrap();
+                      setNewPhone(normalized);
+                      setPhoneStep('verify');
+                    } catch (err: any) {
+                      setPhoneError(err?.error || err?.data || 'Failed to send code. Try again later.');
+                    }
+                  }}
+                  disabled={isRequestingPhone}
+                />
+              ) : (
+                <Button
+                  title={isVerifyingPhone ? 'Verifying...' : 'Verify'}
+                  onPress={async () => {
+                    if (!userId) return;
+                    setPhoneError('');
+                    if (phoneOtp.length !== 6) {
+                      setPhoneError('Enter the 6-digit code.');
+                      return;
+                    }
+                    try {
+                      await verifyPhoneChange({ userId, newPhone, otp: phoneOtp }).unwrap();
+                      setShowPhoneModal(false);
+                      showAlert('Phone Updated', 'Your phone number has been changed successfully.');
+                    } catch (err: any) {
+                      setPhoneError(err?.error || err?.data || 'Invalid code. Please try again.');
+                    }
+                  }}
+                  disabled={isVerifyingPhone}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -300,4 +437,35 @@ const styles = StyleSheet.create({
     color: colors.accent.green,
     fontWeight: '600',
   },
+
+  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  phoneInput: { flex: 1 },
+  phoneText: { ...typography.body1, color: colors.forest[900] },
+  changeBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.accent.green,
+  },
+  changeBtnText: { ...typography.body2Bold, color: colors.accent.green },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  modalTitle: { ...typography.h3, color: colors.forest[900] },
+  modalDesc: { ...typography.body2, color: colors.neutral[500] },
+  modalBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.md, marginTop: spacing.sm },
+  modalCancelBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  modalCancelText: { ...typography.body2Bold, color: colors.neutral[500] },
+  phoneErrorText: { ...typography.caption, color: colors.error },
 });

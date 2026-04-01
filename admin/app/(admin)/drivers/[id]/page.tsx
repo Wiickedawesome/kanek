@@ -1,8 +1,20 @@
 import { createAdminSupabase } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { DriverActions } from './actions';
+
+async function getDocumentUrl(supabase: any, path: string | null) {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) return null;
+  return data.signedUrl;
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -20,10 +32,24 @@ export default async function DriverDetailPage({ params }: Props) {
 
   if (!driver) notFound();
 
+  const { data: riderDoc } = await supabase
+    .from('rider_documents')
+    .select('document_url')
+    .eq('user_id', id)
+    .order('uploaded_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const [licenseUrl, insuranceUrl, idDocumentUrl] = await Promise.all([
+    getDocumentUrl(supabase, driver.license_url),
+    getDocumentUrl(supabase, driver.insurance_url),
+    getDocumentUrl(supabase, driver.id_document_url ?? riderDoc?.document_url ?? null),
+  ]);
+
   const docs = [
-    { label: "Driver's License", url: driver.license_url },
-    { label: 'Insurance', url: driver.insurance_url },
-    { label: 'ID Document', url: driver.id_document_url },
+    { label: "Driver's License", url: licenseUrl },
+    { label: 'Insurance', url: insuranceUrl },
+    { label: 'ID Document', url: idDocumentUrl },
   ];
 
   return (

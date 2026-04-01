@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';

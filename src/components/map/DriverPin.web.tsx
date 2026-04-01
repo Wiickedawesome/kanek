@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface DriverPinProps {
   coordinate: [number, number];
   heading: number | null;

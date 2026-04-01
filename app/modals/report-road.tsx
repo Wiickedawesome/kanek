@@ -10,18 +10,17 @@ import {
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
-
-const safeBack = () => safeGoBack('/(tabs)/profile/reports');
-import { Button, TextInput , FilterChip } from '@/components/ui';
+import { Button, TextInput, FilterChip } from '@/components/ui';
 import { MapPicker } from '@/components/map';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreateRoadReportMutation } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 import type { RoadReportType } from '@/types/database';
+
+const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 
 const REPORT_TYPES: { label: string; value: RoadReportType; icon: React.ComponentProps<typeof Icon>['name'] }[] = [
   { label: 'Accident', value: 'accident', icon: 'alert-triangle' },

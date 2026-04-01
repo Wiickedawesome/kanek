@@ -44,6 +44,7 @@ export interface Database {
           district: BelizeDistrict | null;
           address_line: string | null;
           push_token: string | null;
+          phone_changed_at: string | null;
           last_active_at: string | null;
           created_at: string;
           updated_at: string;
@@ -65,6 +66,7 @@ export interface Database {
           district?: BelizeDistrict | null;
           address_line?: string | null;
           push_token?: string | null;
+          phone_changed_at?: string | null;
           last_active_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -86,6 +88,7 @@ export interface Database {
           district?: BelizeDistrict | null;
           address_line?: string | null;
           push_token?: string | null;
+          phone_changed_at?: string | null;
           last_active_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -398,6 +401,7 @@ export interface Database {
           stars: number;
           was_on_time: boolean | null;
           comment: string | null;
+          is_anonymous: boolean;
           created_at: string;
         };
         Insert: {
@@ -408,6 +412,7 @@ export interface Database {
           stars: number;
           was_on_time?: boolean | null;
           comment?: string | null;
+          is_anonymous?: boolean;
           created_at?: string;
         };
         Update: {
@@ -418,6 +423,7 @@ export interface Database {
           stars?: number;
           was_on_time?: boolean | null;
           comment?: string | null;
+          is_anonymous?: boolean;
           created_at?: string;
         };
         Relationships: [];

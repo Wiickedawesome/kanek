@@ -34,6 +34,7 @@ interface SubmitRatingArgs {
   stars: number;
   wasOnTime?: boolean | null;
   comment?: string | null;
+  isAnonymous?: boolean;
 }
 
 export const ratingsApi = createApi({
@@ -89,7 +90,7 @@ export const ratingsApi = createApi({
 
     /** Submit a rating (invalidates caches) */
     submitRating: builder.mutation<RatingRow, SubmitRatingArgs>({
-      queryFn: async ({ contractId, raterId, ratedId, stars, wasOnTime, comment }) => {
+      queryFn: async ({ contractId, raterId, ratedId, stars, wasOnTime, comment, isAnonymous }) => {
         const { data, error } = await supabase
           .from('ratings')
           .insert({
@@ -99,6 +100,7 @@ export const ratingsApi = createApi({
             stars,
             was_on_time: wasOnTime ?? null,
             comment: comment ?? null,
+            is_anonymous: isAnonymous ?? false,
           })
           .select()
           .single();

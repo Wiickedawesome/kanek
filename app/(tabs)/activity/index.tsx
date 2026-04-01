@@ -147,7 +147,7 @@ export default function ActivityScreen() {
         if (hasContract) {
           router.push(`/(tabs)/activity/${item.contract!.id}`);
         } else {
-          router.push(`/explore/${item.post_id}`);
+          router.push(`/(tabs)/activity/post/${item.post_id}`);
         }
       };
 
@@ -331,7 +331,7 @@ export default function ActivityScreen() {
 
   const renderMyPost = useCallback(
     ({ item }: { item: PostWithAuthor }) => (
-      <Pressable onPress={() => router.push(`/explore/${item.id}`)}>
+      <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
         <Card style={styles.bookingCard}>
           <View style={styles.cardHeader}>
             <PostTypeBadge type={item.type} />

@@ -20,19 +20,45 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createAdminSupabase();
+  let riderUserId = '';
 
   if (action === 'approve') {
-    const { error } = await supabase
+    const { data: updatedDoc, error } = await supabase
       .from('rider_documents')
       .update({ review_status: 'approved', verified: true, reviewed_by: user.id })
-      .eq('id', docId);
+      .eq('id', docId)
+      .select('user_id')
+      .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    riderUserId = updatedDoc.user_id;
+
+    await supabase.from('profiles').update({ account_status: 'active' }).eq('id', riderUserId);
+    await supabase.from('notifications').insert({
+      user_id: riderUserId,
+      type: 'rider_verified',
+      title: 'ID document approved',
+      body: 'Your ID document was approved. Your account is now verified.',
+      data: { userId: riderUserId },
+    });
   } else {
-    const { error } = await supabase
+    const { data: updatedDoc, error } = await supabase
       .from('rider_documents')
       .update({ review_status: 'rejected', rejection_reason: reason, verified: false, reviewed_by: user.id })
-      .eq('id', docId);
+      .eq('id', docId)
+      .select('user_id')
+      .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    riderUserId = updatedDoc.user_id;
+
+    await supabase.from('notifications').insert({
+      user_id: riderUserId,
+      type: 'rider_document_rejected',
+      title: 'ID document needs changes',
+      body: reason
+        ? `Your ID document was rejected: ${reason}`
+        : 'Your ID document was rejected. Please upload a clearer document and try again.',
+      data: { userId: riderUserId },
+    });
   }
 
   await supabase.from('admin_actions').insert({

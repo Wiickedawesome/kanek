@@ -213,6 +213,7 @@ export const bookingsApi = createApi({
           .single();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
         return { data: data as BookingRow };
       },
       invalidatesTags: (_r, _e, { bookingId }) => [
@@ -242,6 +243,7 @@ export const bookingsApi = createApi({
           .single();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
         return { data: data as BookingRow };
       },
       invalidatesTags: (_r, _e, id) => [{ type: 'Booking', id }, { type: 'Booking', id: 'LIST' }],

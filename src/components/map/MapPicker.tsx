@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, ActivityIndicator, TextInput as RNTextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
@@ -30,10 +30,13 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
   const userLat = useSelector((s: RootState) => s.location.latitude);
   const userLng = useSelector((s: RootState) => s.location.longitude);
 
-  const defaultCenter =
-    initialCoords ??
-    (userLat && userLng ? { latitude: userLat, longitude: userLng } : null) ??
-    { latitude: BELIZE_CENTER.latitude, longitude: BELIZE_CENTER.longitude };
+  const defaultCenter = useMemo(
+    () =>
+      initialCoords ??
+      (userLat != null && userLng != null ? { latitude: userLat, longitude: userLng } : null) ??
+      { latitude: BELIZE_CENTER.latitude, longitude: BELIZE_CENTER.longitude },
+    [initialCoords, userLat, userLng],
+  );
 
   const [center, setCenter] = useState(defaultCenter);
   const [loading, setLoading] = useState(false);

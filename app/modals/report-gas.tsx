@@ -10,17 +10,16 @@ import {
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
-
-const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 import { Button, TextInput } from '@/components/ui';
 import { MapPicker } from '@/components/map';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreateGasPriceMutation } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
+
+const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 
 export default function ReportGasModal() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);

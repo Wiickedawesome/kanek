@@ -4,6 +4,18 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { notFound } from 'next/navigation';
 import { RiderDocActions } from './actions';
 
+async function getDocumentUrl(supabase: any, path: string | null) {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) return null;
+  return data.signedUrl;
+}
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -19,6 +31,8 @@ export default async function RiderDocDetailPage({ params }: Props) {
     .single();
 
   if (!doc) notFound();
+
+  const documentUrl = await getDocumentUrl(supabase, doc.document_url);
 
   return (
     <div>
@@ -59,9 +73,9 @@ export default async function RiderDocDetailPage({ params }: Props) {
           <p className="text-forest-400 text-xs mb-2">
             Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
           </p>
-          {doc.document_url ? (
+          {documentUrl ? (
             <a
-              href={doc.document_url}
+              href={documentUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-accent-green hover:underline text-sm"

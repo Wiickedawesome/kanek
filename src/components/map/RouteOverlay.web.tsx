@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface RouteOverlayProps {
   coordinates: [number, number][];
   color?: string;

@@ -29,7 +29,7 @@ import { useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useSOS } from '@/hooks/useSOS';
-import { formatBZD, formatDeparture, formatDate, openInMaps, safeGoBack } from '@/lib/helpers';
+import { formatBZD, formatDeparture, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
@@ -37,7 +37,9 @@ import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 
 export default function ContractDetailScreen() {
   const { contractId } = useLocalSearchParams<{ contractId: string }>();
-  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const authUser = useSelector((state: RootState) => state.auth.user);
+  const userId = authUser?.id;
+  const payerPhone = authUser?.phone ?? '';
   const { data: contract, isLoading } = useGetContractByIdQuery(contractId ?? '', {
     skip: !contractId,
   });
@@ -117,6 +119,22 @@ export default function ContractDetailScreen() {
       ? [contract.post.dest_lng, contract.post.dest_lat]
       : null;
 
+  const payerId = useMemo(() => {
+    if (!contract?.post || !contract?.booking) return null;
+    return contract.post.type === 'route_offer'
+      ? contract.booking.user_id
+      : contract.post.author_id;
+  }, [contract]);
+
+  const payeeId = useMemo(() => {
+    if (!contract?.post || !contract?.booking) return null;
+    return contract.post.type === 'route_offer'
+      ? contract.post.author_id
+      : contract.booking.user_id;
+  }, [contract]);
+
+  const isPayer = !!userId && payerId === userId;
+
   // Driver: start/stop tracking
   const handleToggleTracking = useCallback(async () => {
     if (!contractId) return;
@@ -160,19 +178,19 @@ export default function ContractDetailScreen() {
   }, [contractId, contract, userId, completeContract]);
 
   const handlePayment = useCallback(() => {
-    if (!contract || !userId) return;
-    const otherParty = contract.parties.find((p) => p !== userId) ?? '';
+    if (!contract || !payerId || !payeeId) return;
     router.push({
-      pathname: '/modals/payment-select',
+      pathname: '/modals/ekyash-pay',
       params: {
         contractId: contract.id,
-        payerId: userId,
-        payeeId: otherParty,
+        payerId,
+        payeeId,
         amountCents: String(contract.agreed_price_cents),
         description: contract.post?.title ?? 'Kanek payment',
+        payerPhone,
       },
     });
-  }, [contract, userId]);
+  }, [contract, payeeId, payerId, payerPhone]);
 
   const handleSend = useCallback(async () => {
     if (!contractId || !userId || !messageText.trim()) return;
@@ -205,6 +223,8 @@ export default function ContractDetailScreen() {
   const isActive = contract.status === 'active';
   const isParty = contract.parties.includes(userId ?? '');
   const statusColor = STATUS_COLORS[contract.status];
+  const showPaymentAction = contract.booking?.payment_method === 'ekyash' && isPayer;
+  const showRateAction = isParty && contract.status === 'completed' && !hasRated && !!otherPartyId;
 
   const renderMessage = ({ item }: { item: MessageWithSender }) => {
     const isMe = item.sender_id === userId;
@@ -237,7 +257,17 @@ export default function ContractDetailScreen() {
         </Text>
         <View style={styles.headerRight}>
           {isActive && (
-            <Pressable onPress={triggerSOS} hitSlop={12} disabled={isSOSSending}>
+            <Pressable
+              onPress={async () => {
+                const confirmed = await showConfirm(
+                  'Emergency SOS',
+                  'This will send your GPS location to your emergency contact via SMS. Continue?',
+                );
+                if (confirmed) triggerSOS();
+              }}
+              hitSlop={12}
+              disabled={isSOSSending}
+            >
               <Icon name="shield-alert" size={24} color={colors.error} />
             </Pressable>
           )}
@@ -288,7 +318,7 @@ export default function ContractDetailScreen() {
             {contract.post?.id && (
               <Pressable
                 style={styles.viewPostLink}
-                onPress={() => router.push(`/explore/${contract.post!.id}`)}
+                onPress={() => router.push(`/(tabs)/activity/post/${contract.post!.id}`)}
               >
                 <Icon name="external-link" size={16} color={colors.accent.green} />
                 <Text style={styles.viewPostText}>View Original Post</Text>
@@ -407,7 +437,7 @@ export default function ContractDetailScreen() {
             {/* Action buttons in expanded details */}
             {isParty && isActive && (
               <View style={styles.detailActions}>
-                {contract.booking?.payment_method === 'ekyash' && (
+                {showPaymentAction && (
                   <Button
                     title="Pay with E-Kyash"
                     variant="outline"
@@ -425,7 +455,7 @@ export default function ContractDetailScreen() {
             )}
 
             {/* Rate prompt */}
-            {isParty && contract.status === 'completed' && !hasRated && otherPartyId && (
+            {showRateAction && (
               <Button
                 title="Rate Trip"
                 onPress={() =>

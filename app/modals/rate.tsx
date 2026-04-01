@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,6 +41,7 @@ export default function RateModal() {
   const [stars, setStars] = useState(0);
   const [wasOnTime, setWasOnTime] = useState<boolean | null>(null);
   const [comment, setComment] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const ratedName = ratedProfile
@@ -66,6 +68,7 @@ export default function RateModal() {
         stars,
         wasOnTime,
         comment: comment.trim() || null,
+        isAnonymous,
       }).unwrap();
 
       showAlert('Thanks!', 'Your rating has been submitted.');
@@ -182,6 +185,20 @@ export default function RateModal() {
             maxLength={300}
           />
 
+          {/* Anonymous toggle */}
+          <View style={styles.anonymousRow}>
+            <View style={styles.anonymousInfo}>
+              <Text style={styles.anonymousLabel}>Submit anonymously</Text>
+              <Text style={styles.anonymousHint}>Your name will be hidden from the review</Text>
+            </View>
+            <Switch
+              value={isAnonymous}
+              onValueChange={setIsAnonymous}
+              trackColor={{ false: colors.neutral[200], true: colors.accent.green }}
+              thumbColor={colors.neutral[0]}
+            />
+          </View>
+
           <Button
             title="Submit Rating"
             onPress={handleSubmit}
@@ -283,5 +300,24 @@ const styles = StyleSheet.create({
     ...typography.body1,
     color: colors.neutral[500],
     textAlign: 'center',
+  },
+  anonymousRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+  },
+  anonymousInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  anonymousLabel: {
+    ...typography.body1Bold,
+    color: colors.forest[900],
+  },
+  anonymousHint: {
+    ...typography.caption,
+    color: colors.neutral[500],
   },
 });

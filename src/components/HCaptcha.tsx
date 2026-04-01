@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, forwardRef } from 'react';
+import { useImperativeHandle, forwardRef } from 'react';
 
 export interface HCaptchaHandle {
   getToken: () => string;

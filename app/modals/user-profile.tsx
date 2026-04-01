@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
@@ -98,15 +98,18 @@ export default function UserProfileModal() {
             <Text style={styles.emptyText}>No reviews yet</Text>
           ) : (
             ratings.map((rating) => {
-              const reviewerName = rating.rater
-                ? `${rating.rater.first_name ?? ''} ${rating.rater.last_name ?? ''}`.trim() ||
-                  'User'
-                : 'User';
+              const isAnon = (rating as any).is_anonymous;
+              const reviewerName = isAnon
+                ? 'Anonymous'
+                : rating.rater
+                  ? `${rating.rater.first_name ?? ''} ${rating.rater.last_name ?? ''}`.trim() ||
+                    'User'
+                  : 'User';
               return (
                 <View key={rating.id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
                     <Avatar
-                      uri={rating.rater?.avatar_url ?? null}
+                      uri={isAnon ? null : rating.rater?.avatar_url ?? null}
                       name={reviewerName}
                       size="sm"
                     />

@@ -6,25 +6,28 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
+import { useSOS } from '@/hooks/useSOS';
 import { formatShortDate } from '@/lib/helpers';
 import type { RootState } from '@/store';
+import type { AccountStatus } from '@/types/database';
 
 export default function ProfileScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { signOut } = useAuth();
+  const { triggerSOS } = useSOS();
 
   const {
     data: profile,
@@ -53,6 +56,53 @@ export default function ProfileScreen() {
     ? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim()
     : 'User';
 
+  const hasRecentReviews = (recentReviews?.length ?? 0) > 0;
+  const recentReviewItems = (recentReviews ?? []).map((review) => {
+    const isAnon = (review as any).is_anonymous;
+    const raterName = isAnon
+      ? 'Anonymous'
+      : review.rater
+        ? `${review.rater.first_name ?? ''} ${review.rater.last_name ?? ''}`.trim() || 'User'
+        : 'User';
+
+    return (
+      <View key={review.id} style={styles.reviewItem}>
+        <View style={styles.reviewHeader}>
+          <Avatar
+            uri={isAnon ? null : review.rater?.avatar_url}
+            name={raterName}
+            size="sm"
+          />
+          <View style={styles.reviewHeaderInfo}>
+            <Text style={styles.reviewerName}>{raterName}</Text>
+            <View style={styles.reviewStars}>
+              {Array.from({ length: 5 }, (_, i) => (
+                <Icon
+                  key={i}
+                  name="star"
+                  size={14}
+                  color={i < review.stars ? colors.accent.green : colors.neutral[200]}
+                />
+              ))}
+              {review.was_on_time && (
+                <View style={styles.onTimeBadge}>
+                  <Icon name="clock" size={12} color={colors.accent.green} />
+                  <Text style={styles.onTimeText}>On time</Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <Text style={styles.reviewDate}>
+            {formatShortDate(review.created_at)}
+          </Text>
+        </View>
+        {review.comment && (
+          <Text style={styles.reviewComment}>{review.comment}</Text>
+        )}
+      </View>
+    );
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -69,11 +119,19 @@ export default function ProfileScreen() {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{fullName || 'Set your name'}</Text>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>
-                {profile?.role === 'driver' ? 'Driver' : 'Rider'}
-              </Text>
+            <View style={styles.badgesRow}>
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleText}>
+                  {profile?.role === 'driver' ? 'Driver' : 'Rider'}
+                </Text>
+              </View>
+              {profile?.account_status && (
+                <VerificationStatus status={profile.account_status} />
+              )}
             </View>
+            {profile?.account_status && profile.account_status !== 'active' && (
+              <Text style={styles.statusHint}>{getStatusHint(profile.account_status)}</Text>
+            )}
           </View>
         </Card>
 
@@ -117,50 +175,10 @@ export default function ProfileScreen() {
         </View>
 
         {/* Recent reviews */}
-        {recentReviews && recentReviews.length > 0 && (
+        {hasRecentReviews && (
           <View style={styles.reviewsSection}>
             <Text style={styles.reviewsSectionTitle}>Recent Reviews</Text>
-            {recentReviews.map((review) => {
-              const raterName = review.rater
-                ? `${review.rater.first_name ?? ''} ${review.rater.last_name ?? ''}`.trim() || 'User'
-                : 'User';
-              return (
-                <View key={review.id} style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Avatar
-                      uri={review.rater?.avatar_url}
-                      name={raterName}
-                      size="sm"
-                    />
-                    <View style={styles.reviewHeaderInfo}>
-                      <Text style={styles.reviewerName}>{raterName}</Text>
-                      <View style={styles.reviewStars}>
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <Icon
-                            key={i}
-                            name="star"
-                            size={14}
-                            color={i < review.stars ? colors.accent.green : colors.neutral[200]}
-                          />
-                        ))}
-                        {review.was_on_time && (
-                          <View style={styles.onTimeBadge}>
-                            <Icon name="clock" size={12} color={colors.accent.green} />
-                            <Text style={styles.onTimeText}>On time</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                    <Text style={styles.reviewDate}>
-                      {formatShortDate(review.created_at)}
-                    </Text>
-                  </View>
-                  {review.comment && (
-                    <Text style={styles.reviewComment}>{review.comment}</Text>
-                  )}
-                </View>
-              );
-            })}
+            {recentReviewItems}
           </View>
         )}
 
@@ -200,7 +218,17 @@ export default function ProfileScreen() {
             icon="phone"
             label="Emergency Contact"
             subtitle={profile?.emergency_contact ?? 'Not set'}
-            onPress={() => router.push('/(tabs)/profile/settings')}
+            onPress={async () => {
+              if (!profile?.emergency_contact) {
+                router.push('/(tabs)/profile/settings');
+                return;
+              }
+              const confirmed = await showConfirm(
+                'Emergency SOS',
+                'This will send your GPS location to your emergency contact via SMS. Continue?',
+              );
+              if (confirmed) triggerSOS();
+            }}
           />
         </View>
 
@@ -213,6 +241,21 @@ export default function ProfileScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function getStatusHint(status: AccountStatus) {
+  switch (status) {
+    case 'pending':
+      return 'Verification is still in review.';
+    case 'restricted':
+      return 'Your account is temporarily restricted while recent reports are reviewed.';
+    case 'suspended':
+      return 'Your account is suspended pending admin review.';
+    case 'dormant':
+      return 'Your account is inactive until you use kanek again.';
+    default:
+      return null;
+  }
 }
 
 function MenuItem({
@@ -277,6 +320,12 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.forest[900],
   },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   roleBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
@@ -288,6 +337,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.neutral[0],
     fontWeight: '600',
+  },
+  statusHint: {
+    ...typography.caption,
+    color: colors.neutral[500],
   },
   statsRow: {
     flexDirection: 'row',

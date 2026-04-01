@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
@@ -13,6 +13,16 @@ export function InAppToast() {
   const toast = useSelector((s: RootState) => s.toast.current);
   const translateY = useRef(new Animated.Value(-120)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const hideToast = useCallback(() => {
+    Animated.timing(translateY, {
+      toValue: -120,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      dispatch(dismissToast());
+    });
+  }, [dispatch, translateY]);
 
   useEffect(() => {
     if (toast) {
@@ -31,17 +41,7 @@ export function InAppToast() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [toast]);
-
-  const hideToast = () => {
-    Animated.timing(translateY, {
-      toValue: -120,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      dispatch(dismissToast());
-    });
-  };
+  }, [toast, hideToast, translateY]);
 
   if (!toast) return null;
 

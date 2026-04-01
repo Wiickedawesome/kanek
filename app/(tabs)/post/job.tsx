@@ -9,7 +9,6 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button } from '@/components/ui';
 import { LocationInput } from '@/components/forms';

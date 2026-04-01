@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.pill,
+    minHeight: 28,
   },
   text: { ...typography.caption, fontWeight: '600' },
 });

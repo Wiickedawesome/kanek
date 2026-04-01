@@ -34,13 +34,47 @@ export const messagesApi = createApi({
 
     sendMessage: builder.mutation<MessageRow, { contractId: string; senderId: string; body: string }>({
       queryFn: async ({ contractId, senderId, body }) => {
+        const trimmedBody = body.trim();
         const { data, error } = await supabase
           .from('contract_messages')
-          .insert({ contract_id: contractId, sender_id: senderId, body: body.trim() })
+          .insert({ contract_id: contractId, sender_id: senderId, body: trimmedBody })
           .select()
           .single();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
+        // Send push notification to the other party (best-effort, don't block on failure)
+        try {
+          const { data: contract } = await supabase
+            .from('contracts')
+            .select('parties')
+            .eq('id', contractId)
+            .single();
+
+          if (contract?.parties) {
+            const recipientId = contract.parties.find((id: string) => id !== senderId);
+            if (recipientId) {
+              const { data: sender } = await supabase
+                .from('profiles')
+                .select('first_name')
+                .eq('id', senderId)
+                .single();
+
+              const senderName = sender?.first_name || 'Someone';
+              supabase.functions.invoke('send-push', {
+                body: {
+                  userId: recipientId,
+                  title: `${senderName} sent you a message`,
+                  body: trimmedBody.length > 100 ? trimmedBody.slice(0, 100) + '…' : trimmedBody,
+                  data: { contract_id: contractId },
+                },
+              });
+            }
+          }
+        } catch {
+          // Push is best-effort — don't fail the mutation
+        }
+
         return { data: data as MessageRow };
       },
       invalidatesTags: (_res, _err, { contractId }) => [{ type: 'Message', id: contractId }],

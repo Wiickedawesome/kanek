@@ -33,7 +33,26 @@ export async function POST(request: NextRequest) {
 
   // Perform the action on the target
   if (action === 'remove_post' && targetType === 'post') {
+    const { data: post } = await supabase
+      .from('posts')
+      .select('author_id, title')
+      .eq('id', targetId)
+      .single();
+
     await supabase.from('posts').update({ status: 'cancelled' }).eq('id', targetId);
+
+    if (post?.author_id) {
+      await supabase.from('notifications').insert({
+        user_id: post.author_id,
+        type: 'post_removed',
+        title: 'Post removed',
+        body: reason
+          ? `One of your posts was removed: ${reason}`
+          : 'One of your posts was removed after moderation review.',
+        data: { postId: targetId },
+      });
+    }
+
     await supabase.from('admin_actions').insert({
       admin_id: user.id,
       action: 'remove_post',
@@ -43,6 +62,15 @@ export async function POST(request: NextRequest) {
     });
   } else if (action === 'suspend_user' && targetType === 'user') {
     await supabase.from('profiles').update({ account_status: 'suspended' }).eq('id', targetId);
+    await supabase.from('notifications').insert({
+      user_id: targetId,
+      type: 'account_suspended',
+      title: 'Account suspended',
+      body: reason
+        ? `Your account was suspended: ${reason}`
+        : 'Your account was suspended after moderation review.',
+      data: { userId: targetId },
+    });
     await supabase.from('admin_actions').insert({
       admin_id: user.id,
       action: 'suspend_user',
@@ -62,6 +90,15 @@ export async function POST(request: NextRequest) {
       type: 'soft',
       reason: 'report',
       auto_generated: false,
+    });
+    await supabase.from('notifications').insert({
+      user_id: strikeUserId,
+      type: 'strike_received',
+      title: 'Strike issued',
+      body: reason
+        ? `A strike was added to your account: ${reason}`
+        : 'A strike was added to your account after moderation review.',
+      data: { userId: strikeUserId, targetId, targetType },
     });
     await supabase.from('admin_actions').insert({
       admin_id: user.id,

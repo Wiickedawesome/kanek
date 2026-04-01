@@ -60,14 +60,14 @@ export function generateOrderId(): string {
   return `kn_${timestamp}_${random}`;
 }
 
-/** Calculate fees: 2% platform + 1% donation */
+/** Calculate fees: 3% platform, donation opt-in defaults to 0 */
 export function calculateFees(amountCents: number): {
   platformFeeCents: number;
   donationCents: number;
 } {
   return {
-    platformFeeCents: Math.round(amountCents * 0.02),
-    donationCents: Math.round(amountCents * 0.01),
+    platformFeeCents: Math.round(amountCents * 0.03),
+    donationCents: 0,
   };
 }
 

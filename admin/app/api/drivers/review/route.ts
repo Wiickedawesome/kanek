@@ -27,12 +27,31 @@ export async function POST(request: NextRequest) {
       .update({ review_status: 'approved', verified: true, verified_at: new Date().toISOString(), verified_by: user.id })
       .eq('id', driverId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await supabase.from('profiles').update({ account_status: 'active' }).eq('id', driverId);
+    await supabase.from('notifications').insert({
+      user_id: driverId,
+      type: 'driver_verified',
+      title: 'Driver documents approved',
+      body: 'Your driver documents were approved. You can now post routes and accept bookings.',
+      data: { userId: driverId },
+    });
   } else {
     const { error } = await supabase
       .from('driver_details')
       .update({ review_status: 'rejected', rejection_reason: reason, verified: false, verified_by: user.id })
       .eq('id', driverId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await supabase.from('notifications').insert({
+      user_id: driverId,
+      type: 'driver_verification_rejected',
+      title: 'Driver documents need changes',
+      body: reason
+        ? `Your driver documents were rejected: ${reason}`
+        : 'Your driver documents were rejected. Please upload updated files and try again.',
+      data: { userId: driverId },
+    });
   }
 
   await supabase.from('admin_actions').insert({
