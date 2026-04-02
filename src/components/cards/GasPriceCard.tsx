@@ -20,7 +20,7 @@ interface GasPriceCardProps {
 
 function formatPrice(cents: number | null): string {
   if (cents == null) return '—';
-  return `$${(cents / 100).toFixed(2)}`;
+  return `$${(cents / 100).toFixed(2)} BZD/gal`;
 }
 
 

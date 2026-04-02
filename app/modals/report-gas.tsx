@@ -105,7 +105,7 @@ export default function ReportGasModal() {
             maxLength={100}
           />
 
-          <Text style={styles.sectionLabel}>Prices per gallon (BZD)</Text>
+          <Text style={styles.sectionLabel}>Prices per Belize gallon (BZD)</Text>
 
           <TextInput
             label="Regular"

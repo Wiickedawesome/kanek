@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { uploadProfileAvatar } from '@/lib/avatar';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { AppDispatch, RootState } from '@/store';
 
@@ -97,9 +98,13 @@ export default function IdUploadScreen() {
       return;
     }
 
-    // Save selfie as avatar
-    const { publicUrl } = supabase.storage.from('documents').getPublicUrl(selfiePath).data;
-    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+    // Save selfie as avatar in the public avatars bucket
+    const avatarUrl = await uploadProfileAvatar({
+      userId: user.id,
+      uri: selfieUri,
+      mimeType: 'image/jpeg',
+    });
+    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id);
 
     dispatch(profilesApi.util.invalidateTags([
       { type: 'Profile', id: user.id },

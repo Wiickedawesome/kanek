@@ -13,15 +13,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
 import { Card, EmptyState } from '@/components/ui';
 import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyBookingsQuery, useGetMyContractsQuery, useCancelBookingMutation, type BookingWithPost, type ContractWithDetails } from '@/store/api/bookingsApi';
-import { useGetMyPostsQuery, useDeletePostMutation, type PostWithAuthor } from '@/store/api/postsApi';
+import { useGetMyPostsQuery, useDeletePostMutation, type ActiveBookingPreview, type MyPostWithBookings } from '@/store/api/postsApi';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
-import type { BookingStatus, ContractStatus } from '@/types/database';
+import type { BookingStatus, ContractStatus, PostType } from '@/types/database';
 
 type Tab = 'active' | 'history' | 'my_posts';
 
@@ -330,58 +331,87 @@ export default function ActivityScreen() {
   );
 
   const renderMyPost = useCallback(
-    ({ item }: { item: PostWithAuthor }) => (
-      <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
-        <Card style={styles.bookingCard}>
-          <View style={styles.cardHeader}>
-            <PostTypeBadge type={item.type} />
-            <PostStatusBadge status={item.status} />
-          </View>
+    ({ item }: { item: MyPostWithBookings }) => {
+      const joinerPreview = item.activeBookings.slice(0, 3);
+      const showJoinerPreview = item.activeBookingsCount > 0;
 
-          <Text style={styles.cardTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-
-          {item.origin_address && item.dest_address && (
-            <View style={styles.routeInfo}>
-              <Icon name="map-pin" size={14} color={colors.forest[400]} />
-              <Text style={styles.routeText} numberOfLines={1}>
-                {item.origin_address} → {item.dest_address}
-              </Text>
+      return (
+        <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
+          <Card style={styles.bookingCard}>
+            <View style={styles.cardHeader}>
+              <PostTypeBadge type={item.type} />
+              <PostStatusBadge status={item.status} />
             </View>
-          )}
 
-          {item.departure_at && (
-            <View style={styles.routeInfo}>
-              <Icon name="clock" size={14} color={colors.forest[400]} />
-              <Text style={styles.routeText}>{formatDeparture(item.departure_at)}</Text>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+
+            {item.origin_address && item.dest_address && (
+              <View style={styles.routeInfo}>
+                <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                <Text style={styles.routeText} numberOfLines={1}>
+                  {item.origin_address} → {item.dest_address}
+                </Text>
+              </View>
+            )}
+
+            {item.departure_at && (
+              <View style={styles.routeInfo}>
+                <Icon name="clock" size={14} color={colors.forest[400]} />
+                <Text style={styles.routeText}>{formatDeparture(item.departure_at)}</Text>
+              </View>
+            )}
+
+            {item.price_cents != null && (
+              <View style={styles.routeInfo}>
+                <Icon name="receipt" size={14} color={colors.forest[400]} />
+                <Text style={styles.routeText}>{formatBZD(item.price_cents)}</Text>
+              </View>
+            )}
+
+            {showJoinerPreview && (
+              <View style={styles.joinerPreview}>
+                <View style={styles.joinerAvatars}>
+                  {joinerPreview.map((booking) => (
+                    <View key={booking.id} style={styles.joinerAvatarWrap}>
+                      <Avatar
+                        uri={booking.user?.avatar_url ?? null}
+                        name={getBookingPreviewName(booking)}
+                        size="sm"
+                      />
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.joinerPreviewTextWrap}>
+                  <Text style={styles.joinerPreviewLabel}>
+                    {getJoinerPreviewLabel(item.type, item.activeBookingsCount)}
+                  </Text>
+                  <Text style={styles.joinerPreviewNames} numberOfLines={1}>
+                    {getJoinerPreviewNames(item.activeBookings)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.cardFooter}>
+              <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleDeletePost(item.id, item.title);
+                }}
+                hitSlop={8}
+                style={styles.deleteButton}
+              >
+                <Icon name="alert-triangle" size={16} color={colors.error} />
+                <Text style={styles.deleteText}>Delete</Text>
+              </Pressable>
             </View>
-          )}
-
-          {item.price_cents != null && (
-            <View style={styles.routeInfo}>
-              <Icon name="receipt" size={14} color={colors.forest[400]} />
-              <Text style={styles.routeText}>{formatBZD(item.price_cents)}</Text>
-            </View>
-          )}
-
-          <View style={styles.cardFooter}>
-            <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                handleDeletePost(item.id, item.title);
-              }}
-              hitSlop={8}
-              style={styles.deleteButton}
-            >
-              <Icon name="alert-triangle" size={16} color={colors.error} />
-              <Text style={styles.deleteText}>Delete</Text>
-            </Pressable>
-          </View>
-        </Card>
-      </Pressable>
-    ),
+          </Card>
+        </Pressable>
+      );
+    },
     [handleDeletePost],
   );
 
@@ -392,6 +422,88 @@ export default function ActivityScreen() {
 
   const isLoading = tab === 'my_posts' ? postsLoading : tab === 'history' ? (bookingsLoading || contractsLoading) : (bookingsLoading || activeContractsLoading);
   const isFetching = tab === 'my_posts' ? postsFetching : tab === 'history' ? (bookingsFetching || contractsFetching) : (bookingsFetching || activeContractsFetching);
+
+  let content: React.ReactNode;
+
+  if (isLoading) {
+    content = (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.accent.green} />
+      </View>
+    );
+  } else if (tab === 'my_posts') {
+    content = (
+      <FlatList
+        data={filteredPosts}
+        renderItem={renderMyPost}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.feed}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching && !isLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.accent.green}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="clipboard-list"
+            title="No posts yet"
+            message="Posts you create will appear here so you can manage them."
+          />
+        }
+      />
+    );
+  } else if (tab === 'history') {
+    content = (
+      <FlatList
+        data={historyItems}
+        renderItem={renderHistoryItem}
+        keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
+        contentContainerStyle={styles.feed}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching && !isLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.accent.green}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="clipboard-list"
+            title="No history yet"
+            message="Your completed and cancelled jobs will show here."
+          />
+        }
+      />
+    );
+  } else {
+    content = (
+      <FlatList
+        data={activeItems}
+        renderItem={renderActiveItem}
+        keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
+        contentContainerStyle={styles.feed}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching && !isLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.accent.green}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="clipboard-list"
+            title="No active bookings"
+            message="When you book a ride or accept an errand, it will appear here."
+          />
+        }
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -435,77 +547,7 @@ export default function ActivityScreen() {
         </Pressable>
       </View>
 
-      {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
-        </View>
-      ) : tab === 'my_posts' ? (
-        <FlatList
-          data={filteredPosts}
-          renderItem={renderMyPost}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.feed}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          refreshControl={
-            <RefreshControl
-              refreshing={isFetching && !isLoading}
-              onRefresh={onRefresh}
-              tintColor={colors.accent.green}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon="clipboard-list"
-              title="No posts yet"
-              message="Posts you create will appear here so you can manage them."
-            />
-          }
-        />
-      ) : tab === 'history' ? (
-        <FlatList
-          data={historyItems}
-          renderItem={renderHistoryItem}
-          keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
-          contentContainerStyle={styles.feed}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          refreshControl={
-            <RefreshControl
-              refreshing={isFetching && !isLoading}
-              onRefresh={onRefresh}
-              tintColor={colors.accent.green}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon="clipboard-list"
-              title="No history yet"
-              message="Your completed and cancelled jobs will show here."
-            />
-          }
-        />
-      ) : (
-        <FlatList
-          data={activeItems}
-          renderItem={renderActiveItem}
-          keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
-          contentContainerStyle={styles.feed}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          refreshControl={
-            <RefreshControl
-              refreshing={isFetching && !isLoading}
-              onRefresh={onRefresh}
-              tintColor={colors.accent.green}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon="clipboard-list"
-              title="No active bookings"
-              message="When you book a ride or accept an errand, it will appear here."
-            />
-          }
-        />
-      )}
+      {content}
     </SafeAreaView>
   );
 }
@@ -563,6 +605,35 @@ function ContractStatusBadge({ status }: { status: ContractStatus }) {
       <Text style={[styles.statusText, { color: c.fg }]}>{c.label}</Text>
     </View>
   );
+}
+
+function getBookingPreviewName(booking: ActiveBookingPreview) {
+  return booking.user
+    ? `${booking.user.first_name ?? ''} ${booking.user.last_name ?? ''}`.trim() || 'Unknown'
+    : 'Unknown';
+}
+
+function getJoinerPreviewLabel(type: PostType, count: number) {
+  switch (type) {
+    case 'route_offer':
+      return count === 1 ? 'Rider joined' : 'Riders joined';
+    case 'route_request':
+      return count === 1 ? 'Driver joined' : 'Drivers joined';
+    case 'job':
+      return count === 1 ? 'Applicant' : 'Applicants';
+    case 'package':
+      return count === 1 ? 'Courier assigned' : 'Couriers assigned';
+    default:
+      return count === 1 ? 'Helper accepted' : 'Helpers accepted';
+  }
+}
+
+function getJoinerPreviewNames(bookings: ActiveBookingPreview[]) {
+  const names = bookings.slice(0, 2).map(getBookingPreviewName);
+  if (bookings.length <= 2) {
+    return names.join(', ');
+  }
+  return `${names.join(', ')} +${bookings.length - 2} more`;
 }
 
 
@@ -640,6 +711,32 @@ const styles = StyleSheet.create({
     ...typography.body2,
     color: colors.forest[500],
     flex: 1,
+  },
+  joinerPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  joinerAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  joinerAvatarWrap: {
+    marginRight: -8,
+  },
+  joinerPreviewTextWrap: {
+    flex: 1,
+    gap: 2,
+    marginLeft: spacing.xs,
+  },
+  joinerPreviewLabel: {
+    ...typography.body2Bold,
+    color: colors.forest[900],
+  },
+  joinerPreviewNames: {
+    ...typography.caption,
+    color: colors.neutral[500],
   },
   cardFooter: {
     flexDirection: 'row',

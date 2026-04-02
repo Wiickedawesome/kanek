@@ -25,6 +25,12 @@ import type { Database } from '@/types/database';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 
+const AUTHOR_POST_NOTIFICATION_TYPES = new Set([
+  'new_booking',
+  'errand_accepted',
+  'job_application',
+]);
+
 const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   payment_sent: 'receipt',
   payment_received: 'receipt',
@@ -104,6 +110,8 @@ export default function NotificationsScreen() {
           pathname: '/modals/rate',
           params: { contractId, ratedId },
         });
+      } else if (postId && AUTHOR_POST_NOTIFICATION_TYPES.has(notification.type)) {
+        router.push(`/(tabs)/activity/post/${postId}`);
       } else if (contractId) {
         router.push(`/(tabs)/activity/${contractId}`);
       } else if (postId) {

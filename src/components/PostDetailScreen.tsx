@@ -112,13 +112,14 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const showExistingBookingBar = !!existingBooking;
   const showOpenBookingBar = isPostOpen && !isOwner && !existingBooking;
   const hasOwnerBookings = (postBookings?.length ?? 0) > 0;
+  const showOwnerResponsesSection = isOwner && hasOwnerBookings;
   const bookerRows = (postBookings ?? []).map((b) => {
     const name = b.user
       ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
       : 'Unknown';
 
-    return (
-      <View key={b.id} style={styles.bookerRow}>
+    const content = (
+      <>
         <Avatar
           uri={b.user?.avatar_url}
           name={name}
@@ -131,7 +132,30 @@ export default function PostDetailScreen({ backFallback }: Props) {
             {b.seats_booked > 1 ? ` · ${b.seats_booked} seats` : ''}
           </Text>
         </View>
-      </View>
+      </>
+    );
+
+    if (!b.user?.id) {
+      return (
+        <View key={b.id} style={styles.bookerRow}>
+          {content}
+        </View>
+      );
+    }
+
+    return (
+      <Pressable
+        key={b.id}
+        style={styles.bookerRow}
+        onPress={() =>
+          router.push({
+            pathname: '/modals/user-profile',
+            params: { userId: b.user!.id },
+          })
+        }
+      >
+        {content}
+      </Pressable>
     );
   });
 
@@ -140,12 +164,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
   if (showOwnerCompletionBar) {
     bottomAction = (
       <View style={styles.bottomBar}>
-        {hasOwnerBookings && (
-          <View style={styles.bookerSection}>
-            <Text style={styles.bookerLabel}>{getAcceptedLabel(post.type)}</Text>
-            {bookerRows}
-          </View>
-        )}
         <Button
           title={isCompleting ? 'Completing...' : 'Mark Complete'}
           disabled={isCompleting}
@@ -477,6 +495,13 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </View>
         )}
 
+        {showOwnerResponsesSection && (
+          <View style={styles.responsesSection}>
+            <Text style={styles.sectionLabel}>{getAcceptedLabel(post.type)}</Text>
+            <View style={styles.responsesList}>{bookerRows}</View>
+          </View>
+        )}
+
         {/* Author card */}
         <View style={styles.authorCard}>
           <Text style={styles.sectionLabel}>Posted by</Text>
@@ -770,6 +795,15 @@ const styles = StyleSheet.create({
     ...typography.body1,
     color: colors.forest[800],
     lineHeight: 24,
+  },
+  responsesSection: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+  },
+  responsesList: {
+    gap: spacing.sm,
   },
   authorCard: {
     gap: spacing.md,

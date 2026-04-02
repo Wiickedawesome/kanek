@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { showConfirm } from '@/lib/alert';
+import * as ImagePicker from 'expo-image-picker';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -16,11 +17,13 @@ import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useSOS } from '@/hooks/useSOS';
+import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { formatShortDate } from '@/lib/helpers';
+import { uploadProfileAvatar } from '@/lib/avatar';
 import type { RootState } from '@/store';
 import type { AccountStatus } from '@/types/database';
 
@@ -28,6 +31,8 @@ export default function ProfileScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { signOut } = useAuth();
   const { triggerSOS } = useSOS();
+  const [updateProfile] = useUpdateProfileMutation();
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const {
     data: profile,
@@ -43,6 +48,57 @@ export default function ProfileScreen() {
     const confirmed = await showConfirm('Sign Out', 'Are you sure you want to sign out?');
     if (confirmed) signOut();
   };
+
+  const handleAvatarUpload = useCallback(async () => {
+    if (!userId) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showAlert('Permission needed', 'Photo library access is required to upload a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
+      showAlert('File too large', 'Profile pictures must be under 5 MB.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const avatarUrl = await uploadProfileAvatar({
+        userId,
+        uri: asset.uri,
+        mimeType: asset.mimeType,
+      });
+
+      await updateProfile({
+        id: userId,
+        updates: { avatar_url: avatarUrl },
+      }).unwrap();
+
+      showAlert('Profile Photo Updated', 'Your profile picture has been updated.');
+    } catch (error) {
+      showAlert(
+        'Upload Failed',
+        error instanceof Error ? error.message : 'Could not upload your profile picture.',
+      );
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [updateProfile, userId]);
 
   if (isLoading) {
     return (
@@ -112,11 +168,25 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile card */}
         <Card style={styles.profileCard}>
-          <Avatar
-            uri={profile?.avatar_url}
-            name={fullName}
-            size="lg"
-          />
+          <View style={styles.avatarColumn}>
+            <Pressable
+              style={styles.avatarButton}
+              onPress={handleAvatarUpload}
+              disabled={isUploadingAvatar}
+            >
+              <Avatar
+                uri={profile?.avatar_url}
+                name={fullName}
+                size="lg"
+              />
+              <View style={styles.avatarBadge}>
+                <Icon name="plus-circle" size={18} color={colors.accent.green} />
+              </View>
+            </Pressable>
+            <Text style={styles.avatarHint}>
+              {isUploadingAvatar ? 'Uploading...' : profile?.avatar_url ? 'Change Photo' : 'Add Photo'}
+            </Text>
+          </View>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{fullName || 'Set your name'}</Text>
             <View style={styles.badgesRow}>
@@ -311,6 +381,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
     padding: spacing.lg,
+  },
+  avatarColumn: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  avatarButton: {
+    position: 'relative',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.neutral[0],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  avatarHint: {
+    ...typography.caption,
+    color: colors.accent.green,
+    fontWeight: '600',
   },
   profileInfo: {
     flex: 1,

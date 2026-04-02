@@ -20,8 +20,29 @@ export const BELIZE_ZOOM = 7;
 
 // ── Mapbox Directions API ────────────────────────────────────────────
 
-/** Average vehicle fuel economy in Belize (km per litre) — typical for Belize roads/vehicles */
-const AVG_KM_PER_LITRE = 8;
+/** Belize pump prices are reported per imperial gallon. */
+const BELIZE_GALLON_LITRES = 4.54609;
+
+/**
+ * Average vehicle fuel economy in Belize (km per litre).
+ * Keep this a bit conservative because many rides are pickups/SUVs and
+ * traffic, A/C usage, and road conditions make 8 km/L feel too optimistic.
+ */
+const AVG_KM_PER_LITRE = 7;
+
+/**
+ * Cushion route fuel estimates so they don't understate stop-and-go usage.
+ * This is still a fuel estimate, not a full operating-cost model.
+ */
+const FUEL_ESTIMATE_BUFFER_MULTIPLIER = 1.1;
+
+/**
+ * Fallback regular fuel price in BZD per Belize/imperial gallon.
+ * Calibrated to current March/April 2026 Belize pricing when no recent
+ * crowd-reported gas prices are available in the database.
+ */
+const DEFAULT_REGULAR_BZD_PER_GALLON = 13.93;
+const DEFAULT_FUEL_PRICE_PER_LITRE = DEFAULT_REGULAR_BZD_PER_GALLON / BELIZE_GALLON_LITRES;
 
 /** How many days of gas price reports to consider "recent" */
 const FUEL_PRICE_LOOKBACK_DAYS = 30;
@@ -30,7 +51,7 @@ const FUEL_PRICE_LOOKBACK_DAYS = 30;
 let _cachedFuelPrice: number | null = null;
 
 /**
- * Fetch the current regular fuel price (BZD per gallon → per litre) from
+ * Fetch the current regular fuel price (BZD per Belize gallon → per litre) from
  * recent community `gas_prices` reports.  Uses the median of all reports
  * from the last 30 days.  Falls back to the single most recent report if
  * no reports exist in that window.
@@ -65,16 +86,16 @@ async function getFuelPricePerLitre(): Promise<number> {
         .single();
 
       if (latest?.regular_cents) {
-        // Stored as cents-per-imperial-gallon → convert to BZD/litre
-        _cachedFuelPrice = latest.regular_cents / 100 / 4.54609;
+        // Stored as cents-per-Belize-gallon → convert to BZD/litre
+        _cachedFuelPrice = latest.regular_cents / 100 / BELIZE_GALLON_LITRES;
         return _cachedFuelPrice;
       }
       // absolute fallback — should rarely happen
-      _cachedFuelPrice = 2.86;
+      _cachedFuelPrice = DEFAULT_FUEL_PRICE_PER_LITRE;
       return _cachedFuelPrice;
     }
 
-    // Median of recent reports (cents per imperial gallon)
+    // Median of recent reports (cents per Belize gallon)
     prices.sort((a, b) => a - b);
     const mid = Math.floor(prices.length / 2);
     const medianCents =
@@ -82,11 +103,11 @@ async function getFuelPricePerLitre(): Promise<number> {
         ? (prices[mid - 1] + prices[mid]) / 2
         : prices[mid];
 
-    // Convert: cents → dollars, imperial gallon → litres
-    _cachedFuelPrice = medianCents / 100 / 4.54609;
+    // Convert: cents → dollars, Belize gallon → litres
+    _cachedFuelPrice = medianCents / 100 / BELIZE_GALLON_LITRES;
     return _cachedFuelPrice;
   } catch {
-    _cachedFuelPrice = 2.86; // last-resort fallback
+    _cachedFuelPrice = DEFAULT_FUEL_PRICE_PER_LITRE; // last-resort fallback
     return _cachedFuelPrice;
   }
 }
@@ -141,7 +162,7 @@ export async function calculateRoute(
   // Fuel cost: distance_km / km_per_litre = litres × price_per_litre = BZD
   const fuelPricePerLitre = await getFuelPricePerLitre();
   const litresUsed = distance_km / AVG_KM_PER_LITRE;
-  const fuelCostBZD = litresUsed * fuelPricePerLitre;
+  const fuelCostBZD = litresUsed * fuelPricePerLitre * FUEL_ESTIMATE_BUFFER_MULTIPLIER;
   const fuel_cost_cents = Math.round(fuelCostBZD * 100);
 
   return { distance_km, duration_minutes, fuel_cost_cents, geometry };

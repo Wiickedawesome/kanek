@@ -1,6 +1,7 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
 import { postsApi } from './postsApi';
+import { getCurrentNotificationActor, notifyUser } from '@/lib/notify';
 import type { Database, BookingStatus, PostType, ContractStatus, PaymentMethod } from '@/types/database';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -82,6 +83,49 @@ interface GetContractsArgs {
   status?: ContractStatus[];
   limit?: number;
   offset?: number;
+}
+
+interface AuthorJoinNotification {
+  type: string;
+  title: string;
+  body: string;
+}
+
+function buildAuthorJoinNotification(
+  postType: PostType,
+  postTitle: string,
+  bookerName: string,
+  seatsBooked: number,
+): AuthorJoinNotification {
+  if (postType === 'route_offer') {
+    return {
+      type: 'new_booking',
+      title: 'Seat Booked!',
+      body: `${bookerName} booked ${seatsBooked} seat(s) on "${postTitle}".`,
+    };
+  }
+
+  if (postType === 'route_request') {
+    return {
+      type: 'new_booking',
+      title: 'Driver Offered!',
+      body: `${bookerName} offered to drive your route "${postTitle}".`,
+    };
+  }
+
+  if (postType === 'job') {
+    return {
+      type: 'job_application',
+      title: 'Job Application!',
+      body: `${bookerName} applied for "${postTitle}".`,
+    };
+  }
+
+  return {
+    type: 'errand_accepted',
+    title: postType === 'package' ? 'Delivery Accepted!' : 'Errand Accepted!',
+    body: `${bookerName} accepted your ${postType} "${postTitle}".`,
+  };
 }
 
 export const bookingsApi = createApi({
@@ -188,13 +232,58 @@ export const bookingsApi = createApi({
       ],
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
-          await queryFulfilled;
+          const { data } = await queryFulfilled;
           // Invalidate post cache so feed + detail reflect seat changes / status
           dispatch(postsApi.util.invalidateTags([
             { type: 'Post', id: arg.postId },
             { type: 'Post', id: 'LIST' },
             { type: 'Post', id: 'MY_LIST' },
           ]));
+
+          const [{ data: post }, { data: contract }, actor] = await Promise.all([
+            supabase
+              .from('posts')
+              .select('author_id, title, type')
+              .eq('id', data.post_id)
+              .maybeSingle(),
+            supabase
+              .from('contracts')
+              .select('id')
+              .eq('booking_id', data.id)
+              .maybeSingle(),
+            getCurrentNotificationActor(),
+          ]);
+
+          if (!post?.author_id || post.author_id === data.user_id) {
+            return;
+          }
+
+          const bookerName = actor?.name ?? 'Someone';
+          const notification = buildAuthorJoinNotification(
+            post.type as PostType,
+            post.title ?? 'this activity',
+            bookerName,
+            data.seats_booked,
+          );
+
+          await notifyUser({
+            userId: post.author_id,
+            type: notification.type,
+            title: notification.title,
+            body: notification.body,
+            data: {
+              postId: data.post_id,
+              bookingId: data.id,
+              bookerId: data.user_id,
+              ...(contract?.id ? { contractId: contract.id } : {}),
+            },
+            dedupe: {
+              postId: data.post_id,
+              bookingId: data.id,
+              bookerId: data.user_id,
+            },
+            sendPush: true,
+          });
         } catch { /* booking failed, no need to invalidate */ }
       },
     }),

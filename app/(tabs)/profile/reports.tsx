@@ -108,13 +108,13 @@ export default function ReportsScreen() {
           )}
         </View>
         {g.regular_cents != null && (
-          <Text style={styles.priceText}>Regular: ${(g.regular_cents / 100).toFixed(2)} BZD/gal</Text>
+          <Text style={styles.priceText}>Regular: ${(g.regular_cents / 100).toFixed(2)} BZD/Belize gal</Text>
         )}
         {g.premium_cents != null && (
-          <Text style={styles.priceText}>Premium: ${(g.premium_cents / 100).toFixed(2)} BZD/gal</Text>
+          <Text style={styles.priceText}>Premium: ${(g.premium_cents / 100).toFixed(2)} BZD/Belize gal</Text>
         )}
         {g.diesel_cents != null && (
-          <Text style={styles.priceText}>Diesel: ${(g.diesel_cents / 100).toFixed(2)} BZD/gal</Text>
+          <Text style={styles.priceText}>Diesel: ${(g.diesel_cents / 100).toFixed(2)} BZD/Belize gal</Text>
         )}
         <View style={styles.cardFooter}>
           <Text style={styles.footerDate}>{getTimeAgo(g.reported_at)}</Text>
