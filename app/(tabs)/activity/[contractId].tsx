@@ -483,7 +483,7 @@ export default function ContractDetailScreen() {
               <Icon name="clipboard-list" size={40} color={colors.neutral[300]} />
               <Text style={styles.emptyChatText}>No messages yet</Text>
               <Text style={styles.emptyChatSubText}>
-                Send a message to coordinate your trip
+                Send a message to coordinate with your contact
               </Text>
             </View>
           }

@@ -17,6 +17,12 @@ export interface BookingWithUser extends BookingRow {
     rating_avg: number;
     punctuality_pct: number;
   } | null;
+  contract: { id: string } | null;
+}
+
+/** Booking with its associated contract (for checking if a chat is available) */
+export interface BookingWithContract extends BookingRow {
+  contract: { id: string } | null;
 }
 
 /** Booking with related post title and author info */
@@ -180,11 +186,11 @@ export const bookingsApi = createApi({
     }),
 
     /** Check if the current user already has an active booking for a post */
-    getBookingForPost: builder.query<BookingRow | null, { postId: string; userId: string }>({
+    getBookingForPost: builder.query<BookingWithContract | null, { postId: string; userId: string }>({
       queryFn: async ({ postId, userId }) => {
         const { data, error } = await supabase
           .from('bookings')
-          .select('*')
+          .select('*, contract:contracts!contracts_booking_id_fkey(id)')
           .eq('post_id', postId)
           .eq('user_id', userId)
           .in('status', ['pending', 'confirmed'])
@@ -192,7 +198,7 @@ export const bookingsApi = createApi({
           .maybeSingle();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: (data as BookingRow) ?? null };
+        return { data: (data as unknown as BookingWithContract) ?? null };
       },
       providesTags: (_r, _e, { postId }) => [{ type: 'Booking', id: `POST_${postId}` }],
     }),
@@ -206,7 +212,8 @@ export const bookingsApi = createApi({
             *,
             user:profiles!bookings_user_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
-            )
+            ),
+            contract:contracts!contracts_booking_id_fkey(id)
           `)
           .eq('post_id', postId)
           .in('status', ['pending', 'confirmed'])

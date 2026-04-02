@@ -26,6 +26,7 @@ import { ChevronRight } from './ChevronRight';
 import { ExternalLink } from './ExternalLink';
 import { Bell } from './Bell';
 import { Send } from './Send';
+import { MessageCircle } from './MessageCircle';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -85,6 +86,7 @@ const iconMap = {
   'external-link': ExternalLink,
   bell: Bell,
   send: Send,
+  'message-circle': MessageCircle,
 } as const;
 
 export type IconName = keyof typeof iconMap;

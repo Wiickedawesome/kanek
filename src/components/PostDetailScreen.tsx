@@ -218,9 +218,19 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </View>
         )}
         {isJobAccepted && (
-          <View style={styles.acceptedBadge}>
-            <Text style={styles.acceptedBadgeText}>Accepted</Text>
-          </View>
+          <>
+            <View style={styles.acceptedBadge}>
+              <Text style={styles.acceptedBadgeText}>Accepted</Text>
+            </View>
+            {b.contract?.id && (
+              <Pressable
+                onPress={() => router.push(`/(tabs)/activity/${b.contract!.id}`)}
+                hitSlop={8}
+              >
+                <Icon name="message-circle" size={20} color={colors.forest[600]} />
+              </Pressable>
+            )}
+          </>
         )}
       </View>
     );
@@ -310,10 +320,46 @@ export default function PostDetailScreen({ backFallback }: Props) {
   } else if (showExistingBookingBar) {
     const isJobPending = post.type === 'job' && existingBooking?.status === 'pending';
     const isJobConfirmed = post.type === 'job' && existingBooking?.status === 'confirmed';
+    const isConfirmed = existingBooking?.status === 'confirmed';
+    const contractId = existingBooking?.contract?.id;
     if (isJobConfirmed) {
-      bottomAction = (
+      bottomAction = contractId ? (
+        <View style={styles.bottomBar}>
+          <View style={styles.bottomBarRow}>
+            <Text style={[styles.bottomSuccessText, styles.bottomSuccessInRow]}>You Got the Job!</Text>
+            <Button
+              title="Message"
+              variant="outline"
+              onPress={() => router.push(`/(tabs)/activity/${contractId}`)}
+              size="lg"
+              style={styles.messageButton}
+            />
+          </View>
+        </View>
+      ) : (
         <View style={styles.bottomBar}>
           <Text style={styles.bottomSuccessText}>You Got the Job!</Text>
+        </View>
+      );
+    } else if (isConfirmed && contractId) {
+      bottomAction = (
+        <View style={styles.bottomBar}>
+          <View style={styles.bottomBarRow}>
+            <Button
+              title={getBookedLabel(post.type)}
+              disabled
+              onPress={() => {}}
+              size="lg"
+              style={styles.actionButtonHalf}
+            />
+            <Button
+              title="Message"
+              variant="outline"
+              onPress={() => router.push(`/(tabs)/activity/${contractId}`)}
+              size="lg"
+              style={styles.messageButton}
+            />
+          </View>
         </View>
       );
     } else {
@@ -1048,5 +1094,20 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.accent.green,
     textAlign: 'center',
+  },
+  bottomBarRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  bottomSuccessInRow: {
+    flex: 1,
+    textAlign: 'left',
+  },
+  actionButtonHalf: {
+    flex: 1,
+  },
+  messageButton: {
+    flex: 1,
   },
 });
