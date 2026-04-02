@@ -18,7 +18,7 @@ import { Button } from '@/components/ui';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
-import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation } from '@/store/api/bookingsApi';
+import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation, useAcceptJobApplicationMutation, useRejectJobApplicationMutation } from '@/store/api/bookingsApi';
 import { supabase } from '@/lib/supabase';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
@@ -28,6 +28,25 @@ import type { RootState } from '@/store';
 const MAP_HEIGHT = 200;
 const MAP_PIXEL_WIDTH = 800; // retina
 const MAP_PIXEL_HEIGHT = MAP_HEIGHT * 2;
+
+const JOB_TIMELINE_LABELS: Record<string, string> = {
+  asap: 'ASAP',
+  today: 'Today',
+  this_week: 'This Week',
+  flexible: 'Flexible',
+};
+
+const JOB_CATEGORY_LABELS: Record<string, string> = {
+  skilled_trade: 'Skilled Trade',
+  cleaning: 'Cleaning',
+  delivery: 'Delivery',
+  childcare: 'Childcare',
+  agriculture: 'Agriculture',
+  construction: 'Construction',
+  hospitality: 'Hospitality',
+  admin: 'Admin',
+  other: 'Other',
+};
 
 interface Props {
   backFallback: string;
@@ -51,8 +70,11 @@ export default function PostDetailScreen({ backFallback }: Props) {
     { postId: postId ?? '' },
     { skip: !postId || !isOwnerCheck(userId, post) },
   );
+  const [acceptJobApplication] = useAcceptJobApplicationMutation();
+  const [rejectJobApplication] = useRejectJobApplicationMutation();
   const [isBooking, setIsBooking] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [actionBookingId, setActionBookingId] = useState<string | null>(null);
 
   const hasCoords =
     post != null &&
@@ -100,8 +122,11 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const isPostOpen = post.status === 'open';
   const isRouteOffer = post.type === 'route_offer';
   const showSeatsInfo = isRouteOffer && post.seats_total != null;
-  const showJobPrice = post.type === 'job' && post.price_cents != null;
-  const jobPriceCents = showJobPrice ? post.price_cents : null;
+  const showJobPrice = post.type === 'job' && post.pay_rate_cents != null;
+  const jobPriceCents = showJobPrice ? post.pay_rate_cents : null;
+  const jobPayType = post.type === 'job' ? post.pay_type : null;
+  const jobTimeline = post.type === 'job' ? post.job_timeline : null;
+  const jobCategory = post.type === 'job' ? post.job_category : null;
   const showOwnerCompletionBar =
     isOwner &&
     !isPostOpen &&
@@ -117,45 +142,87 @@ export default function PostDetailScreen({ backFallback }: Props) {
     const name = b.user
       ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
       : 'Unknown';
+    const isJobOwnerPending = post.type === 'job' && isOwner && post.status === 'open' && b.status === 'pending';
+    const isJobAccepted = post.type === 'job' && b.status === 'confirmed';
+    const isBusy = actionBookingId === b.id;
 
-    const content = (
-      <>
-        <Avatar
-          uri={b.user?.avatar_url}
-          name={name}
-          size="sm"
-        />
-        <View style={styles.bookerInfo}>
-          <Text style={styles.bookerName}>{name}</Text>
-          <Text style={styles.bookerMeta}>
-            {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-            {b.seats_booked > 1 ? ` · ${b.seats_booked} seats` : ''}
-          </Text>
-        </View>
-      </>
-    );
-
-    if (!b.user?.id) {
-      return (
-        <View key={b.id} style={styles.bookerRow}>
-          {content}
-        </View>
-      );
-    }
+    const profilePress = b.user?.id
+      ? () => router.push({ pathname: '/modals/user-profile', params: { userId: b.user!.id } })
+      : undefined;
 
     return (
-      <Pressable
-        key={b.id}
-        style={styles.bookerRow}
-        onPress={() =>
-          router.push({
-            pathname: '/modals/user-profile',
-            params: { userId: b.user!.id },
-          })
-        }
-      >
-        {content}
-      </Pressable>
+      <View key={b.id} style={styles.bookerRow}>
+        <Pressable
+          style={styles.bookerProfilePressable}
+          onPress={profilePress}
+          disabled={!profilePress}
+        >
+          <Avatar uri={b.user?.avatar_url} name={name} size="sm" />
+          <View style={styles.bookerInfo}>
+            <Text style={styles.bookerName}>{name}</Text>
+            <Text style={styles.bookerMeta}>
+              {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+              {b.seats_booked > 1 ? ` · ${b.seats_booked} seats` : ''}
+            </Text>
+          </View>
+        </Pressable>
+        {isJobOwnerPending && (
+          <View style={styles.applicantActions}>
+            <Button
+              title={isBusy ? '...' : 'Accept'}
+              size="sm"
+              disabled={actionBookingId !== null}
+              onPress={async () => {
+                const ok = await showConfirm('Accept Applicant', `Accept ${name} for this job?`);
+                if (!ok) return;
+                setActionBookingId(b.id);
+                try {
+                  await acceptJobApplication({
+                    bookingId: b.id,
+                    postId: post.id,
+                    applicantId: b.user_id,
+                    postTitle: post.title ?? 'this job',
+                  }).unwrap();
+                } catch (e: any) {
+                  const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to accept.';
+                  showAlert('Error', msg);
+                } finally {
+                  setActionBookingId(null);
+                }
+              }}
+              style={styles.acceptButton}
+            />
+            <Button
+              title={isBusy ? '...' : 'Reject'}
+              size="sm"
+              variant="outline"
+              disabled={actionBookingId !== null}
+              onPress={async () => {
+                const ok = await showConfirm('Reject Applicant', `Remove ${name}'s application?`);
+                if (!ok) return;
+                setActionBookingId(b.id);
+                try {
+                  await rejectJobApplication({
+                    bookingId: b.id,
+                    postId: post.id,
+                  }).unwrap();
+                } catch (e: any) {
+                  const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to reject.';
+                  showAlert('Error', msg);
+                } finally {
+                  setActionBookingId(null);
+                }
+              }}
+              style={styles.rejectButton}
+            />
+          </View>
+        )}
+        {isJobAccepted && (
+          <View style={styles.acceptedBadge}>
+            <Text style={styles.acceptedBadgeText}>Accepted</Text>
+          </View>
+        )}
+      </View>
     );
   });
 
@@ -241,17 +308,27 @@ export default function PostDetailScreen({ backFallback }: Props) {
       </View>
     );
   } else if (showExistingBookingBar) {
-    bottomAction = (
-      <View style={styles.bottomBar}>
-        <Button
-          title={getBookedLabel(post.type)}
-          disabled
-          onPress={() => {}}
-          size="lg"
-          style={styles.actionButton}
-        />
-      </View>
-    );
+    const isJobPending = post.type === 'job' && existingBooking?.status === 'pending';
+    const isJobConfirmed = post.type === 'job' && existingBooking?.status === 'confirmed';
+    if (isJobConfirmed) {
+      bottomAction = (
+        <View style={styles.bottomBar}>
+          <Text style={styles.bottomSuccessText}>You Got the Job!</Text>
+        </View>
+      );
+    } else {
+      bottomAction = (
+        <View style={styles.bottomBar}>
+          <Button
+            title={isJobPending ? 'Application Pending' : getBookedLabel(post.type)}
+            disabled
+            onPress={() => {}}
+            size="lg"
+            style={styles.actionButton}
+          />
+        </View>
+      );
+    }
   } else if (showOpenBookingBar) {
     bottomAction = (
       <View style={styles.bottomBar}>
@@ -479,11 +556,25 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </>
         )}
 
-        {/* Job price */}
+        {/* Job pay */}
         {showJobPrice && (
           <View style={styles.infoRow}>
             <Icon name="receipt" size={18} color={colors.forest[400]} />
-            <Text style={styles.infoText}>Pay: {formatBZD(jobPriceCents!)}</Text>
+            <Text style={styles.infoText}>
+              Pay: {formatBZD(jobPriceCents!)}{jobPayType === 'hourly' ? '/hr' : ' fixed'}
+            </Text>
+          </View>
+        )}
+        {jobCategory != null && (
+          <View style={styles.infoRow}>
+            <Icon name="package" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>{JOB_CATEGORY_LABELS[jobCategory] ?? jobCategory}</Text>
+          </View>
+        )}
+        {jobTimeline != null && (
+          <View style={styles.infoRow}>
+            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>{JOB_TIMELINE_LABELS[jobTimeline] ?? jobTimeline}</Text>
           </View>
         )}
 
@@ -599,7 +690,7 @@ function getAcceptedLabel(type: string): string {
     case 'route_request': return 'Driver offered';
     case 'errand': return 'Accepted by';
     case 'package': return 'Delivery by';
-    case 'job': return 'Applied by';
+    case 'job': return 'Applicants';
     default: return 'Responded by';
   }
 }
@@ -927,5 +1018,35 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.forest[400],
     fontWeight: '600',
+  },
+  bookerProfilePressable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  applicantActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  acceptButton: {
+    backgroundColor: colors.accent.green,
+  },
+  rejectButton: {},
+  acceptedBadge: {
+    backgroundColor: colors.accent.green + '22',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+  },
+  acceptedBadgeText: {
+    ...typography.caption,
+    color: colors.forest[600],
+    fontWeight: '700',
+  },
+  bottomSuccessText: {
+    ...typography.h3,
+    color: colors.accent.green,
+    textAlign: 'center',
   },
 });

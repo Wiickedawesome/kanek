@@ -78,6 +78,18 @@ interface CancelBookingArgs {
   reason?: string;
 }
 
+interface AcceptJobApplicationArgs {
+  bookingId: string;
+  postId: string;
+  applicantId: string;
+  postTitle: string;
+}
+
+interface RejectJobApplicationArgs {
+  bookingId: string;
+  postId: string;
+}
+
 interface GetContractsArgs {
   userId: string;
   status?: ContractStatus[];
@@ -322,6 +334,60 @@ export const bookingsApi = createApi({
       },
     }),
 
+    acceptJobApplication: builder.mutation<void, AcceptJobApplicationArgs>({
+      queryFn: async ({ bookingId }) => {
+        const { error } = await (supabase.rpc as any)('accept_job_application', { p_booking_id: bookingId });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: undefined as void };
+      },
+      invalidatesTags: (_r, _e, { postId }) => [
+        { type: 'Booking', id: 'LIST' },
+        { type: 'Booking', id: `POST_${postId}` },
+      ],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(postsApi.util.invalidateTags([
+            { type: 'Post', id: arg.postId },
+            { type: 'Post', id: 'LIST' },
+            { type: 'Post', id: 'MY_LIST' },
+          ]));
+          // Push notification to accepted applicant
+          // DB trigger already inserted the in-app row; dedupe ensures no double-insert
+          await notifyUser({
+            userId: arg.applicantId,
+            type: 'job_accepted',
+            title: 'You Got the Job!',
+            body: `You were accepted for "${arg.postTitle}".`,
+            data: { postId: arg.postId, bookingId: arg.bookingId },
+            dedupe: { bookingId: arg.bookingId },
+            sendPush: true,
+          });
+        } catch { /* mutation failed */ }
+      },
+    }),
+
+    rejectJobApplication: builder.mutation<void, RejectJobApplicationArgs>({
+      queryFn: async ({ bookingId }) => {
+        const { error } = await (supabase.rpc as any)('reject_job_application', { p_booking_id: bookingId });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: undefined as void };
+      },
+      invalidatesTags: (_r, _e, { postId }) => [
+        { type: 'Booking', id: 'LIST' },
+        { type: 'Booking', id: `POST_${postId}` },
+      ],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(postsApi.util.invalidateTags([
+            { type: 'Post', id: arg.postId },
+            { type: 'Post', id: 'LIST' },
+          ]));
+        } catch { /* mutation failed */ }
+      },
+    }),
+
     completeBooking: builder.mutation<BookingRow, string>({
       queryFn: async (bookingId) => {
         const { data, error } = await supabase
@@ -467,6 +533,8 @@ export const {
   useGetPostBookingsQuery,
   useCreateBookingMutation,
   useCancelBookingMutation,
+  useAcceptJobApplicationMutation,
+  useRejectJobApplicationMutation,
   useCompleteBookingMutation,
   useGetMyContractsQuery,
   useGetContractByIdQuery,
