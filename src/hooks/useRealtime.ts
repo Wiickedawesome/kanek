@@ -11,6 +11,7 @@ import { reportsApi } from '@/store/api/reportsApi';
 import { messagesApi } from '@/store/api/messagesApi';
 import type { AppDispatch, RootState } from '@/store';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 const NOTIF_PREFS_KEY = 'kanek_notification_prefs';
 
@@ -50,15 +51,23 @@ export function useRealtime() {
   useEffect(() => {
     if (!userId) return;
 
-    supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
+    const loadNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
         if (data) dispatch(setNotifications(data));
-      });
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    };
+
+    loadNotifications();
   }, [userId, dispatch]);
 
   // Subscribe to user notification channel
@@ -76,17 +85,25 @@ export function useRealtime() {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const notif = payload.new as any;
+          const notif = payload.new as Database['public']['Tables']['notifications']['Row'];
           dispatch(addNotification(notif));
           // Show in-app toast if prefs allow it
-          AsyncStorage.getItem(NOTIF_PREFS_KEY).then((raw) => {
-            const prefs = raw ? JSON.parse(raw) : null;
-            const inAppEnabled = prefs?.inAppEnabled ?? true;
-            if (!inAppEnabled) return;
-            const cat = getNotifCategory(notif.type ?? '');
-            if (cat && prefs && prefs[cat] === false) return;
-            dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body }));
-          });
+          const checkPrefsAndToast = async () => {
+            try {
+              const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);
+              const prefs = raw ? JSON.parse(raw) : null;
+              const inAppEnabled = prefs?.inAppEnabled ?? true;
+              if (!inAppEnabled) return;
+              const cat = getNotifCategory(notif.type ?? '');
+              if (cat && prefs && prefs[cat] === false) return;
+              dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body ?? undefined }));
+            } catch (err) {
+              console.error('Failed to parse notification prefs:', err);
+              // Fallback to showing toast if we can't read prefs securely
+              dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body ?? undefined }));
+            }
+          };
+          checkPrefsAndToast();
           // Invalidate RTK Query caches so screens refresh
           dispatch(notificationsApi.util.invalidateTags([{ type: 'Notification', id: 'LIST' }]));
           dispatch(postsApi.util.invalidateTags([{ type: 'Post', id: 'MY_LIST' }]));

@@ -3,4 +3,4 @@
 
 CREATE POLICY "road_reports_delete_authenticated" ON road_reports
   FOR DELETE TO authenticated
-  USING (true);
+  USING (gone_count >= 5);

@@ -53,10 +53,9 @@ export function useSOS() {
     cooldownRef.current = true;
 
     try {
-      // Call edge function to send emergency SMS
+      // Call edge function to send emergency SMS (userId derived from auth JWT server-side)
       const { data, error } = await supabase.functions.invoke('send-sms-sos', {
         body: {
-          userId,
           latitude: coords?.latitude ?? null,
           longitude: coords?.longitude ?? null,
           emergencyContact: emergencyContact ?? null,

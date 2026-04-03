@@ -5,12 +5,15 @@ import {
   getEkyashApiUrl,
   getEkyashCredentials,
 } from '../_shared/ekyash.ts';
-import { corsHeaders, jsonResponse, errorResponse } from '../_shared/supabase.ts';
+import { corsHeaders, jsonResponse, errorResponse, verifyAuth } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
 
   try {
     const { orderId, invoiceId } = await req.json();

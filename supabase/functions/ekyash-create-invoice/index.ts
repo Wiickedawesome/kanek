@@ -12,12 +12,17 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuth,
 } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
+  const { userId: callerId } = authResult;
 
   try {
     const {
@@ -31,6 +36,11 @@ Deno.serve(async (req) => {
 
     if (!contractId || !payerId || !payeeId || !amountCents) {
       return errorResponse('Missing required fields');
+    }
+
+    // Caller must be the payer
+    if (callerId !== payerId) {
+      return errorResponse('Forbidden: caller is not the payer', 403);
     }
 
     const { sid, pinHash, apiKey } = getEkyashCredentials();

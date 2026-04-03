@@ -5,6 +5,7 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuth,
 } from '../_shared/supabase.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
@@ -14,9 +15,14 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
+  const { userId: callerId } = authResult;
+
   try {
     const { userId, ekyashTxnId, contractId, type } = await req.json();
     if (!userId || !type) return errorResponse('Missing required fields');
+    if (callerId !== userId) return errorResponse('Forbidden', 403);
 
     const supabase = createServiceClient();
 

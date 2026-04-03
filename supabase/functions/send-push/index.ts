@@ -5,6 +5,7 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -20,6 +21,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const authResult = await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
 
   try {
     const { userId, title, body, data } = (await req.json()) as PushPayload;

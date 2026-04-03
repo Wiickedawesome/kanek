@@ -79,7 +79,7 @@ export default function PhoneVerifyScreen() {
       showAlert('Error', error.message);
       return;
     }
-    router.replace('/(auth)/role-select');
+    // Navigation is handled by the (auth) layout guard via useOnboardingStatus()
   };
 
   const handleSwitchMode = () => {

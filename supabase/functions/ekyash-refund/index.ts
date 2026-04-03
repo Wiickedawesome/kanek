@@ -10,6 +10,7 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuth,
 } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
@@ -17,13 +18,17 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
+  const { userId: callerId } = authResult;
+
   try {
     const { orderId, amountCents, reason } = await req.json();
     if (!orderId || !amountCents) return errorResponse('Missing required fields');
 
     const supabase = createServiceClient();
 
-    // Get transaction
+    // Get transaction and verify caller is a party
     const { data: txn, error } = await supabase
       .from('ekyash_transactions')
       .select('*')
@@ -31,6 +36,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (error || !txn) return errorResponse('Transaction not found', 404);
+
+    if (callerId !== txn.payer_id && callerId !== txn.payee_id) {
+      return errorResponse('Forbidden: caller is not a party to this transaction', 403);
+    }
+
     if (txn.status !== 'approved') {
       return errorResponse('Can only refund approved transactions');
     }

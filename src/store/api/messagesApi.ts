@@ -61,7 +61,7 @@ export const messagesApi = createApi({
                 .single();
 
               const senderName = sender?.first_name || 'Someone';
-              supabase.functions.invoke('send-push', {
+              const { error: pushError } = await supabase.functions.invoke('send-push', {
                 body: {
                   userId: recipientId,
                   title: `${senderName} sent you a message`,
@@ -69,6 +69,7 @@ export const messagesApi = createApi({
                   data: { contract_id: contractId },
                 },
               });
+              if (pushError) console.warn('[sendMessage] push notification failed:', pushError);
             }
           }
         } catch {

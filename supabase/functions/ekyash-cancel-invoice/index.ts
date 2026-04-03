@@ -10,6 +10,7 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuth,
 } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
@@ -17,20 +18,30 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
+  const { userId: callerId } = authResult;
+
   try {
     const { orderId } = await req.json();
     if (!orderId) return errorResponse('Missing orderId');
 
     const supabase = createServiceClient();
 
-    // Get the transaction to find invoiceId
+    // Get the transaction to find invoiceId and verify ownership
     const { data: txn, error } = await supabase
       .from('ekyash_transactions')
-      .select('invoice_id, status')
+      .select('invoice_id, status, payer_id, payee_id')
       .eq('order_id', orderId)
       .single();
 
     if (error || !txn) return errorResponse('Transaction not found', 404);
+
+    // Only the payer or payee may cancel
+    if (callerId !== txn.payer_id && callerId !== txn.payee_id) {
+      return errorResponse('Forbidden: caller is not a party to this transaction', 403);
+    }
+
     if (txn.status !== 'pending') {
       return errorResponse('Can only cancel pending invoices');
     }

@@ -5,6 +5,7 @@ import {
   corsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuth,
 } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
@@ -12,9 +13,12 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const authResult = await verifyAuth(req);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult;
+
   try {
-    const { userId, latitude, longitude } = await req.json();
-    if (!userId) return errorResponse('Missing userId');
+    const { latitude, longitude } = await req.json();
 
     const supabase = createServiceClient();
 
