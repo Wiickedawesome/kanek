@@ -16,10 +16,8 @@ CREATE OR REPLACE VIEW profiles_public AS
     account_status,
     rating_avg,
     punctuality_pct,
-    rating_count,
-    is_verified,
     district,
-    address_city,
+    address_line,
     last_active_at,
     created_at
   FROM profiles;
