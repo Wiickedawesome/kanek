@@ -15,6 +15,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button, TextInput } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
@@ -83,13 +85,14 @@ export default function RateModal() {
   if (alreadyRated) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <TopographicBg />
+        <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Rate Trip</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </LinearGradient>
         <View style={styles.alreadyRated}>
           <Icon name="star" size={48} color={colors.accent.green} />
           <Text style={styles.alreadyRatedText}>
@@ -103,13 +106,14 @@ export default function RateModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Rate Trip</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -226,7 +230,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

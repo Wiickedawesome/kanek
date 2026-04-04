@@ -107,8 +107,22 @@ const sizeTextStyles: Record<ButtonSize, TextStyle> = {
 };
 
 const variantStyles: Record<ButtonVariant, ViewStyle> = {
-  primary: { backgroundColor: colors.forest[600] },
-  secondary: { backgroundColor: colors.neutral[100] },
+  primary: {
+    backgroundColor: colors.forest[600],
+    shadowColor: colors.forest[900],
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  secondary: {
+    backgroundColor: colors.neutral[100],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,

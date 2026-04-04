@@ -12,6 +12,8 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
@@ -161,9 +163,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-      </View>
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile card */}
@@ -365,7 +368,6 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h2,

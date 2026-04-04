@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { FilterChip, EmptyState } from '@/components/ui';
+import { FilterChip, EmptyState, TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -247,6 +247,7 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TopographicBg />
       <View style={styles.header}>
         <Text style={styles.greeting}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
@@ -454,6 +455,7 @@ const styles = StyleSheet.create({
   feed: {
     padding: spacing.lg,
     paddingTop: spacing.lg,
+    paddingBottom: 80,
   },
   sectionHeading: {
     ...typography.h3,

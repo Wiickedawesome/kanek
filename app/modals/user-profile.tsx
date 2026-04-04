@@ -12,6 +12,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
@@ -60,13 +62,14 @@ export default function UserProfileModal() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Trust Profile</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User identity */}
@@ -190,7 +193,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

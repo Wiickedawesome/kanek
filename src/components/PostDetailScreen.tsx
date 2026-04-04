@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -444,8 +446,9 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TopographicBg />
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
@@ -453,7 +456,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           Post Details
         </Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.flex}
@@ -817,7 +820,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

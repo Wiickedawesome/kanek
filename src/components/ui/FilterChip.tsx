@@ -35,13 +35,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderWidth: 1,
     borderColor: colors.neutral[200],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
   selected: {
     backgroundColor: colors.forest[600],
     borderColor: colors.forest[600],
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   label: {
     ...typography.body2,

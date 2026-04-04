@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, StyleProp } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors, borderRadius, spacing } from '@/theme';
+
+const SPRING_CONFIG = { damping: 15, stiffness: 300 };
 
 interface CardProps {
   children: React.ReactNode;
@@ -10,6 +13,11 @@ interface CardProps {
 }
 
 export function Card({ children, onPress, style, padded = true }: CardProps) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const content = (
     <View style={[styles.card, padded && styles.padded, style]}>
       {children}
@@ -18,8 +26,14 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-        {content}
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.97, SPRING_CONFIG); }}
+        onPressOut={() => { scale.value = withSpring(1, SPRING_CONFIG); }}
+      >
+        <Animated.View style={animatedStyle}>
+          {content}
+        </Animated.View>
       </Pressable>
     );
   }
@@ -29,18 +43,17 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 3,
   },
   padded: {
     padding: spacing.lg,
-  },
-  pressed: {
-    opacity: 0.92,
   },
 });

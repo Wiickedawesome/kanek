@@ -68,6 +68,11 @@ const styles = StyleSheet.create({
   },
   focused: {
     borderColor: colors.accent.green,
+    shadowColor: colors.accent.green,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
   errorBorder: {
     borderColor: colors.error,

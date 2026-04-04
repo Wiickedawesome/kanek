@@ -33,6 +33,14 @@ export const colors = {
   warning: '#f9a825',
   success: '#51c152',
 
+  // Glass
+  glass: {
+    light: 'rgba(255, 255, 255, 0.15)',
+    border: 'rgba(255, 255, 255, 0.2)',
+    darkBg: 'rgba(20, 40, 0, 0.6)',
+    darkBorder: 'rgba(255, 255, 255, 0.12)',
+  },
+
 } as const;
 
 export type ColorToken = typeof colors;

@@ -14,6 +14,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button, TextInput, FilterChip } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';
@@ -74,13 +76,14 @@ export default function FlagContentModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Content</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -144,7 +147,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

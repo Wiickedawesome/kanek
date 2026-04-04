@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
@@ -179,13 +181,14 @@ export default function EkyashPayModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>E-Kyash Payment</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       {renderContent()}
     </SafeAreaView>
@@ -203,7 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import type { IconName } from '@/components/icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { RootState } from '@/store';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -64,10 +66,11 @@ export default function PostScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <TopographicBg />
+      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
         <Text style={styles.title}>New Post</Text>
         <Text style={styles.subtitle}>What do you need?</Text>
-      </View>
+      </LinearGradient>
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {POST_OPTIONS.map((option) => {
           // Hide driver-only options for non-drivers
@@ -108,7 +111,6 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   title: {
     ...typography.h2,
