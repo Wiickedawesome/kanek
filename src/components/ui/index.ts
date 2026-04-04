@@ -6,4 +6,3 @@ export { SearchBar } from './SearchBar';
 export { FilterChip } from './FilterChip';
 export { Avatar } from './Avatar';
 export { EmptyState } from './EmptyState';
-export { GlassView } from './GlassView';

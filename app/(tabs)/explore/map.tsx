@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
 import { FilterChip } from '@/components/ui';
-import { GlassView } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -128,15 +127,15 @@ export default function ExploreMapScreen() {
           showUserLocation={hasGPS}
         />
 
-        {/* Glass header overlay */}
-        <GlassView intensity={80} style={styles.glassHeader}>
+        {/* Header overlay */}
+        <View style={styles.headerOverlay}>
           <View style={styles.headerRow}>
             <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-              <Icon name="chevron-left" size={24} color={colors.forest[900]} />
+              <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
             </Pressable>
             <Text style={styles.headerTitle}>Map View</Text>
             <Pressable onPress={() => router.push('/(tabs)/explore/')} hitSlop={12}>
-              <Icon name="clipboard-list" size={24} color={colors.forest[900]} />
+              <Icon name="clipboard-list" size={24} color={colors.neutral[0]} />
             </Pressable>
           </View>
 
@@ -154,7 +153,7 @@ export default function ExploreMapScreen() {
               />
             ))}
           </ScrollView>
-        </GlassView>
+        </View>
 
         {/* Legend */}
         <View style={styles.legend}>
@@ -188,12 +187,13 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
   },
-  glassHeader: {
+  headerOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
+    backgroundColor: colors.forest[900],
     paddingBottom: spacing.sm,
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
-    color: colors.forest[900],
+    color: colors.neutral[0],
   },
   districtChips: {
     paddingHorizontal: spacing.lg,

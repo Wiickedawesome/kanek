@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { FilterChip, EmptyState, GlassView } from '@/components/ui';
+import { FilterChip, EmptyState } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -247,7 +247,7 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GlassView intensity={60} style={styles.header}>
+      <View style={styles.header}>
         <Text style={styles.greeting}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
         </Text>
@@ -273,7 +273,7 @@ export default function ExploreScreen() {
             <Icon name="map-pin" size={20} color={colors.forest[900]} />
           </Pressable>
         </View>
-      </GlassView>
+      </View>
 
       <ScrollView
         horizontal
