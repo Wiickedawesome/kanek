@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card, EmptyState } from '@/components/ui';
@@ -506,7 +505,7 @@ export default function ActivityScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GlassView tint="dark" intensity={80} style={styles.header}>
+      <View style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
           <Icon name="bell" size={22} color={colors.neutral[0]} />
@@ -516,10 +515,10 @@ export default function ActivityScreen() {
             </View>
           )}
         </Pressable>
-      </GlassView>
+      </View>
 
       {/* Tabs */}
-      <GlassView style={styles.tabs}>
+      <View style={styles.tabs}>
         <Pressable
           style={[styles.tab, tab === 'my_posts' && styles.tabActive]}
           onPress={() => setTab('my_posts')}
@@ -544,7 +543,7 @@ export default function ActivityScreen() {
             History
           </Text>
         </Pressable>
-      </GlassView>
+      </View>
 
       {content}
     </SafeAreaView>
@@ -647,6 +646,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    backgroundColor: colors.forest[900],
   },
   title: {
     ...typography.h2,
@@ -654,6 +654,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
+    backgroundColor: colors.neutral[0],
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },

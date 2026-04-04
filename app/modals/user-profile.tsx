@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
 import { colors, typography, spacing, borderRadius } from '@/theme';
@@ -61,13 +60,13 @@ export default function UserProfileModal() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-<GlassView tint="dark" intensity={80} style={styles.header}>
-          <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Trust Profile</Text>
-          <View style={{ width: 24 }} />
-        </GlassView>
+      <View style={styles.header}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Trust Profile</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User identity */}
@@ -107,7 +106,7 @@ export default function UserProfileModal() {
                     'User'
                   : 'User';
               return (
-                <GlassView key={rating.id} style={styles.reviewCard}>
+                <View key={rating.id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
                     <Avatar
                       uri={isAnon ? null : rating.rater?.avatar_url ?? null}
@@ -155,7 +154,7 @@ export default function UserProfileModal() {
                   {rating.comment && (
                     <Text style={styles.reviewComment}>{rating.comment}</Text>
                   )}
-                </GlassView>
+                </View>
               );
             })
           )}
@@ -191,6 +190,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
+    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,
@@ -238,9 +238,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   reviewCard: {
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   reviewHeader: {
     flexDirection: 'row',

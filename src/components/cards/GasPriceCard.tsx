@@ -28,7 +28,7 @@ export function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
   const age = getTimeAgo(gasPrice.reported_at);
 
   return (
-    <Card onPress={onPress} style={styles.card} variant="glass">
+    <Card onPress={onPress} style={styles.card}>
       <View style={styles.headerRow}>
         <Icon name="fuel" size={18} color={colors.forest[600]} />
         <Text style={styles.stationName} numberOfLines={1}>

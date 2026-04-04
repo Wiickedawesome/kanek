@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui';
@@ -162,9 +161,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GlassView tint="dark" intensity={80} style={styles.header}>
+      <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-      </GlassView>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile card */}
@@ -366,6 +365,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h2,

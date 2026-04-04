@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { Button, TextInput } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
@@ -84,13 +83,13 @@ export default function RateModal() {
   if (alreadyRated) {
     return (
       <SafeAreaView style={styles.container}>
-        <GlassView tint="dark" intensity={80} style={styles.header}>
+        <View style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Rate Trip</Text>
           <View style={{ width: 24 }} />
-        </GlassView>
+        </View>
         <View style={styles.alreadyRated}>
           <Icon name="star" size={48} color={colors.accent.green} />
           <Text style={styles.alreadyRatedText}>
@@ -104,13 +103,13 @@ export default function RateModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GlassView tint="dark" intensity={80} style={styles.header}>
+      <View style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Rate Trip</Text>
         <View style={{ width: 24 }} />
-      </GlassView>
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -227,6 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
+    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

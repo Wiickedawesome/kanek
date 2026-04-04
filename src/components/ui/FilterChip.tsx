@@ -1,6 +1,5 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, View, ViewStyle } from 'react-native';
-import { GlassView } from '@/components/ui/GlassView';
+import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
 import { colors, typography, borderRadius, spacing } from '@/theme';
 
 interface FilterChipProps {
@@ -11,18 +10,19 @@ interface FilterChipProps {
 }
 
 export function FilterChip({ label, selected = false, onPress, style }: FilterChipProps) {
-  const Wrapper = selected ? View : GlassView;
-
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [pressed && styles.pressed, style]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.selected,
+        pressed && styles.pressed,
+        style,
+      ]}
     >
-      <Wrapper style={[styles.chip, selected && styles.selected]}>
-        <Text style={[styles.label, selected && styles.selectedLabel]}>
-          {label}
-        </Text>
-      </Wrapper>
+      <Text style={[styles.label, selected && styles.selectedLabel]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -32,11 +32,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
   },
   selected: {
     backgroundColor: colors.forest[600],
     borderColor: colors.forest[600],
-    borderWidth: 1,
   },
   pressed: {
     opacity: 0.8,

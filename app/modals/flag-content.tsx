@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { Button, TextInput, FilterChip } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
@@ -75,13 +74,13 @@ export default function FlagContentModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-<GlassView tint="dark" intensity={80} style={styles.header}>
-          <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Report Content</Text>
-          <View style={{ width: 24 }} />
-        </GlassView>
+      <View style={styles.header}>
+        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Report Content</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -145,6 +144,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
+    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

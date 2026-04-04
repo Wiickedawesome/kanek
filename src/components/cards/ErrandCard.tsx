@@ -19,7 +19,7 @@ export function ErrandCard({ post, onPress }: ErrandCardProps) {
     : 'Unknown';
 
   return (
-    <Card onPress={onPress} style={styles.card} variant="glass">
+    <Card onPress={onPress} style={styles.card}>
       <View style={styles.headerRow}>
         <PostTypeBadge type={post.type === 'package' ? 'package' : 'errand'} />
         {post.errand_category && (

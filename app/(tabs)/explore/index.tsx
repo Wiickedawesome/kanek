@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 60 + spacing.xl,
+    bottom: spacing.xl,
     right: spacing.lg,
     gap: spacing.sm,
     alignItems: 'center',

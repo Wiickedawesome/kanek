@@ -23,7 +23,7 @@ export function RouteOfferCard({ post, onPress }: RouteOfferCardProps) {
     : null;
 
   return (
-    <Card onPress={onPress} style={styles.card} variant="glass">
+    <Card onPress={onPress} style={styles.card}>
       <PostTypeBadge type="route_offer" />
 
       <View style={styles.routeRow}>

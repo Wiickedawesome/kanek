@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatDistance, formatDuration } from '@/lib/mapbox';
 import { formatBZD } from '@/lib/helpers';
@@ -26,17 +25,17 @@ function isLoading(props: Props): props is RouteInfoLoadingProps {
 export function RouteInfoCard(props: Props) {
   if (isLoading(props)) {
     return (
-      <GlassView style={styles.card}>
+      <View style={styles.card}>
         <ActivityIndicator size="small" color={colors.accent.green} />
         <Text style={styles.loadingText}>Calculating route…</Text>
-      </GlassView>
+      </View>
     );
   }
 
   const { distanceKm, durationMinutes, fuelCostCents } = props;
 
   return (
-    <GlassView style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.stat}>
         <Icon name="navigation" size={18} color={colors.accent.green} />
         <Text style={styles.value}>{formatDistance(distanceKm)}</Text>
@@ -54,7 +53,7 @@ export function RouteInfoCard(props: Props) {
         <Text style={styles.value}>{formatBZD(fuelCostCents)}</Text>
         <Text style={styles.label}>Est. gas</Text>
       </View>
-    </GlassView>
+    </View>
   );
 }
 
@@ -63,7 +62,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     gap: spacing.md,

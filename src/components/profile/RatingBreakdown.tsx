@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { GlassView } from '@/components/ui/GlassView';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 
 interface RatingBreakdownProps {
@@ -21,7 +20,7 @@ export function RatingBreakdown({
 
   return (
     <View style={styles.container}>
-      <GlassView style={styles.row}>
+      <View style={styles.row}>
         <View style={styles.metric}>
           <Icon name="star" size={20} color={colors.accent.green} />
           <Text style={styles.value}>{ratingAvg.toFixed(1)}</Text>
@@ -49,7 +48,7 @@ export function RatingBreakdown({
           </Text>
           <Text style={styles.label}>Strikes</Text>
         </View>
-      </GlassView>
+      </View>
 
       {strikesHard > 0 && (
         <Text style={styles.warning}>
@@ -64,8 +63,14 @@ const styles = StyleSheet.create({
   container: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   metric: { flex: 1, alignItems: 'center', gap: spacing.xs },
   value: { ...typography.h3, color: colors.forest[900] },
