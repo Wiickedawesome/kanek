@@ -21,7 +21,7 @@ import { LiveTrackingMap } from '@/components/map';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
   useGetContractByIdQuery,
-  useCompleteContractMutation,
+  useCompleteBookingMutation,
 } from '@/store/api/bookingsApi';
 import { useGetMessagesQuery, useSendMessageMutation } from '@/store/api/messagesApi';
 import type { MessageWithSender } from '@/store/api/messagesApi';
@@ -43,7 +43,7 @@ export default function ContractDetailScreen() {
   const { data: contract, isLoading } = useGetContractByIdQuery(contractId ?? '', {
     skip: !contractId,
   });
-  const [completeContract, { isLoading: isCompleting }] = useCompleteContractMutation();
+  const [completeBooking, { isLoading: isCompleting }] = useCompleteBookingMutation();
   const { subscribeToTracking, subscribeToMessages } = useRealtime();
   const { startTracking, stopTracking, isTracking: isDriverTracking } = useDriverTracking();
   const { triggerSOS, isSending: isSOSSending } = useSOS();
@@ -151,6 +151,7 @@ export default function ContractDetailScreen() {
 
   const handleComplete = useCallback(async () => {
     if (!contractId || !contract || !userId) return;
+    if (contract.status !== 'active') return;
 
     // Determine the other party to rate
     const otherPartyId = contract.parties.find((p) => p !== userId);
@@ -162,7 +163,13 @@ export default function ContractDetailScreen() {
     if (!confirmed) return;
 
     try {
-      await completeContract(contractId).unwrap();
+      // Complete the booking — DB trigger cascades to contract + post + notifications
+      const bookingId = contract.booking?.id;
+      if (!bookingId) {
+        showAlert('Error', 'No booking found for this contract.');
+        return;
+      }
+      await completeBooking(bookingId).unwrap();
       if (otherPartyId) {
         router.push({
           pathname: '/modals/rate',
@@ -173,9 +180,9 @@ export default function ContractDetailScreen() {
         });
       }
     } catch {
-      showAlert('Error', 'Could not complete the contract. Please try again.');
+      showAlert('Error', 'Could not complete the trip. Please try again.');
     }
-  }, [contractId, contract, userId, completeContract]);
+  }, [contractId, contract, userId, completeBooking]);
 
   const handlePayment = useCallback(() => {
     if (!contract || !payerId || !payeeId) return;

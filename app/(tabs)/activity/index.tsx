@@ -85,16 +85,14 @@ export default function ActivityScreen() {
   const [deletePost] = useDeletePostMutation();
   const [cancelBooking] = useCancelBookingMutation();
 
-  const { subscribeToBookings, subscribeToContracts } = useRealtime();
+  const { subscribeToBookings } = useRealtime();
 
   useEffect(() => {
     const unsubBookings = subscribeToBookings();
-    const unsubContracts = subscribeToContracts();
     return () => {
       unsubBookings();
-      unsubContracts();
     };
-  }, [subscribeToBookings, subscribeToContracts]);
+  }, [subscribeToBookings]);
 
   const handleCancelBooking = useCallback(async (bookingId: string, title: string) => {
     const confirmed = await showConfirm(

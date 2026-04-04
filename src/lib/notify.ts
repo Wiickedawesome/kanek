@@ -47,3 +47,22 @@ export async function notifyUser(payload: NotifyUserPayload) {
     throw error;
   }
 }
+
+export interface SendPushOnlyPayload {
+  userId: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+}
+
+/** Send a push notification only — no in-app notification row created.
+ *  Use when the DB trigger already handles the in-app notification. */
+export async function sendPushOnly(payload: SendPushOnlyPayload) {
+  const { error } = await supabase.functions.invoke('send-push', {
+    body: payload,
+  });
+
+  if (error) {
+    console.warn('Push send failed:', error.message);
+  }
+}

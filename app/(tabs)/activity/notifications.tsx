@@ -29,6 +29,7 @@ const AUTHOR_POST_NOTIFICATION_TYPES = new Set([
   'new_booking',
   'errand_accepted',
   'job_application',
+  'booking_cancelled',
 ]);
 
 const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
@@ -42,6 +43,9 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   post_cancelled: 'alert-triangle',
   errand_accepted: 'package',
   job_application: 'clipboard-list',
+  job_accepted: 'clipboard-list',
+  job_match_confirmed: 'clipboard-list',
+  route_activated: 'navigation',
   sos_sent: 'shield-alert',
   driver_verified: 'user',
   driver_verification_rejected: 'alert-triangle',
@@ -100,6 +104,15 @@ export default function NotificationsScreen() {
       }
 
       if (notification.type === 'post_cancelled') {
+        return;
+      }
+
+      // route_activated has postId — route to activity post detail
+      if (notification.type === 'route_activated') {
+        const { postId } = getNotificationRouteData(notification);
+        if (postId) {
+          router.push(`/(tabs)/activity/post/${postId}`);
+        }
         return;
       }
 

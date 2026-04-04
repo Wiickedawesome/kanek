@@ -1,7 +1,7 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
 import { postsApi } from './postsApi';
-import { getCurrentNotificationActor, notifyUser } from '@/lib/notify';
+import { getCurrentNotificationActor, sendPushOnly } from '@/lib/notify';
 import type { Database, BookingStatus, PostType, ContractStatus, PaymentMethod } from '@/types/database';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -259,16 +259,12 @@ export const bookingsApi = createApi({
             { type: 'Post', id: 'MY_LIST' },
           ]));
 
-          const [{ data: post }, { data: contract }, actor] = await Promise.all([
+          // DB trigger handles in-app notification; send push only
+          const [{ data: post }, actor] = await Promise.all([
             supabase
               .from('posts')
               .select('author_id, title, type')
               .eq('id', data.post_id)
-              .maybeSingle(),
-            supabase
-              .from('contracts')
-              .select('id')
-              .eq('booking_id', data.id)
               .maybeSingle(),
             getCurrentNotificationActor(),
           ]);
@@ -285,23 +281,10 @@ export const bookingsApi = createApi({
             data.seats_booked,
           );
 
-          await notifyUser({
+          await sendPushOnly({
             userId: post.author_id,
-            type: notification.type,
             title: notification.title,
-            body: notification.body,
-            data: {
-              postId: data.post_id,
-              bookingId: data.id,
-              bookerId: data.user_id,
-              ...(contract?.id ? { contractId: contract.id } : {}),
-            },
-            dedupe: {
-              postId: data.post_id,
-              bookingId: data.id,
-              bookerId: data.user_id,
-            },
-            sendPush: true,
+            body: notification.body ?? '',
           });
         } catch { /* booking failed, no need to invalidate */ }
       },
@@ -359,16 +342,11 @@ export const bookingsApi = createApi({
             { type: 'Post', id: 'LIST' },
             { type: 'Post', id: 'MY_LIST' },
           ]));
-          // Push notification to accepted applicant
-          // DB trigger already inserted the in-app row; dedupe ensures no double-insert
-          await notifyUser({
+          // DB RPC already inserted the in-app notification; send push only
+          await sendPushOnly({
             userId: arg.applicantId,
-            type: 'job_accepted',
             title: 'You Got the Job!',
             body: `You were accepted for "${arg.postTitle}".`,
-            data: { postId: arg.postId, bookingId: arg.bookingId },
-            dedupe: { bookingId: arg.bookingId },
-            sendPush: true,
           });
         } catch { /* mutation failed */ }
       },
@@ -408,7 +386,11 @@ export const bookingsApi = createApi({
 
         return { data: data as BookingRow };
       },
-      invalidatesTags: (_r, _e, id) => [{ type: 'Booking', id }, { type: 'Booking', id: 'LIST' }],
+      invalidatesTags: (_r, _e, id) => [
+        { type: 'Booking', id },
+        { type: 'Booking', id: 'LIST' },
+        { type: 'Contract', id: 'LIST' },
+      ],
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -504,33 +486,6 @@ export const bookingsApi = createApi({
       invalidatesTags: [{ type: 'Contract', id: 'LIST' }],
     }),
 
-    completeContract: builder.mutation<ContractRow, string>({
-      queryFn: async (contractId) => {
-        const { data, error } = await supabase
-          .from('contracts')
-          .update({ status: 'completed', completed_at: new Date().toISOString() })
-          .eq('id', contractId)
-          .select()
-          .single();
-
-        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-
-        // Also mark the associated booking as completed
-        if (data.booking_id) {
-          await supabase
-            .from('bookings')
-            .update({ status: 'completed' })
-            .eq('id', data.booking_id);
-        }
-
-        return { data: data as ContractRow };
-      },
-      invalidatesTags: (_r, _e, id) => [
-        { type: 'Contract', id },
-        { type: 'Contract', id: 'LIST' },
-        { type: 'Booking', id: 'LIST' },
-      ],
-    }),
   }),
 });
 
@@ -546,5 +501,4 @@ export const {
   useGetMyContractsQuery,
   useGetContractByIdQuery,
   useCreateContractMutation,
-  useCompleteContractMutation,
 } = bookingsApi;

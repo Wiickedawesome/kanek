@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
-import { addNotification, setNotifications } from '@/store/slices/notificationsSlice';
+import { addNotification } from '@/store/slices/notificationsSlice';
 import { showToast } from '@/store/slices/toastSlice';
 import { notificationsApi } from '@/store/api/notificationsApi';
 import { postsApi } from '@/store/api/postsApi';
@@ -47,29 +47,6 @@ export function useRealtime() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const channelsRef = useRef<RealtimeChannel[]>([]);
 
-  // Fetch initial notifications on mount
-  useEffect(() => {
-    if (!userId) return;
-
-    const loadNotifications = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (error) throw error;
-        if (data) dispatch(setNotifications(data));
-      } catch (err) {
-        console.error('Failed to load notifications:', err);
-      }
-    };
-
-    loadNotifications();
-  }, [userId, dispatch]);
-
   // Subscribe to user notification channel
   useEffect(() => {
     if (!userId) return;
@@ -108,6 +85,7 @@ export function useRealtime() {
           dispatch(notificationsApi.util.invalidateTags([{ type: 'Notification', id: 'LIST' }]));
           dispatch(postsApi.util.invalidateTags([{ type: 'Post', id: 'MY_LIST' }]));
           dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
+          dispatch(bookingsApi.util.invalidateTags([{ type: 'Contract', id: 'LIST' }]));
         },
       )
       .subscribe();
@@ -245,46 +223,6 @@ export function useRealtime() {
     };
   }, [userId, dispatch]);
 
-  /** Subscribe to contract status changes for contracts involving the current user */
-  const subscribeToContracts = useCallback(() => {
-    if (!userId) return () => {};
-
-    const channel = supabase
-      .channel(`contracts:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contracts',
-          filter: `driver_id=eq.${userId}`,
-        },
-        () => {
-          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contracts',
-          filter: `rider_id=eq.${userId}`,
-        },
-        () => {
-          dispatch(bookingsApi.util.invalidateTags([{ type: 'Booking', id: 'LIST' }]));
-        },
-      )
-      .subscribe();
-
-    channelsRef.current.push(channel);
-
-    return () => {
-      supabase.removeChannel(channel);
-      channelsRef.current = channelsRef.current.filter((c) => c !== channel);
-    };
-  }, [userId, dispatch]);
-
   /** Subscribe to new chat messages for a contract */
   const subscribeToMessages = useCallback(
     (contractId: string) => {
@@ -328,7 +266,6 @@ export function useRealtime() {
     subscribeToPost,
     subscribeToRoadReports,
     subscribeToBookings,
-    subscribeToContracts,
     subscribeToMessages,
   };
 }
