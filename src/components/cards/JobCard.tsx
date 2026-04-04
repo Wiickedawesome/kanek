@@ -42,7 +42,7 @@ export function JobCard({ post, onPress }: JobCardProps) {
     : null;
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} style={styles.card} variant="glass">
       <View style={styles.headerRow}>
         <PostTypeBadge type="job" />
         {post.job_category && (

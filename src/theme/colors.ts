@@ -38,6 +38,8 @@ export const colors = {
     background: 'rgba(255,255,255,0.65)',
     border: 'rgba(255,255,255,0.3)',
     shadow: 'rgba(0,0,0,0.08)',
+    darkBackground: 'rgba(0,0,0,0.3)',
+    darkBorder: 'rgba(255,255,255,0.12)',
   },
 } as const;
 

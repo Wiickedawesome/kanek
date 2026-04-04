@@ -1,20 +1,24 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, StyleProp } from 'react-native';
 import { colors, borderRadius, spacing } from '@/theme';
+import { GlassView } from './GlassView';
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  variant?: 'default' | 'glass';
 }
 
-export function Card({ children, onPress, style, padded = true }: CardProps) {
-  const content = (
-    <View style={[styles.card, padded && styles.padded, style]}>
-      {children}
-    </View>
-  );
+export function Card({ children, onPress, style, padded = true, variant = 'default' }: CardProps) {
+  const Wrapper = variant === 'glass' ? GlassView : View;
+  const wrapperStyle =
+    variant === 'glass'
+      ? [styles.glassCard, padded && styles.padded, style]
+      : [styles.card, padded && styles.padded, style];
+
+  const content = <Wrapper style={wrapperStyle}>{children}</Wrapper>;
 
   if (onPress) {
     return (
@@ -36,6 +40,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  glassCard: {
+    borderRadius: borderRadius.md,
   },
   padded: {
     padding: spacing.lg,

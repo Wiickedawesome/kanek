@@ -8,6 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 
@@ -42,13 +43,13 @@ export default function PaymentSelectModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Pay</Text>
-        <View style={{ width: 24 }} />
-      </View>
+<GlassView tint="dark" intensity={80} style={styles.header}>
+          <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
+            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Pay</Text>
+          <View style={{ width: 24 }} />
+        </GlassView>
 
       <View style={styles.content}>
         <Text style={styles.amount}>{formatBZD(amount)}</Text>
@@ -56,31 +57,35 @@ export default function PaymentSelectModal() {
 
         <View style={styles.options}>
           {/* Cash option */}
-          <Pressable style={styles.option} onPress={handleCash}>
-            <View style={styles.optionIcon}>
-              <Icon name="receipt" size={32} color={colors.forest[900]} />
-            </View>
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Cash</Text>
-              <Text style={styles.optionDesc}>
-                Pay the driver directly in person.
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+          <Pressable style={{ opacity: 1 }} onPress={handleCash}>
+            <GlassView style={styles.option}>
+              <View style={styles.optionIcon}>
+                <Icon name="receipt" size={32} color={colors.forest[900]} />
+              </View>
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>Cash</Text>
+                <Text style={styles.optionDesc}>
+                  Pay the driver directly in person.
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+            </GlassView>
           </Pressable>
 
           {/* E-Kyash option */}
-          <Pressable style={styles.option} onPress={handleEkyash}>
-            <View style={[styles.optionIcon, styles.optionIconEkyash]}>
-              <Icon name="qr-code" size={32} color={colors.accent.green} />
-            </View>
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>E-Kyash</Text>
-              <Text style={styles.optionDesc}>
-                Pay instantly via QR code or deep link.
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+          <Pressable style={{ opacity: 1 }} onPress={handleEkyash}>
+            <GlassView style={styles.option}>
+              <View style={[styles.optionIcon, styles.optionIconEkyash]}>
+                <Icon name="qr-code" size={32} color={colors.accent.green} />
+              </View>
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>E-Kyash</Text>
+                <Text style={styles.optionDesc}>
+                  Pay instantly via QR code or deep link.
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+            </GlassView>
           </Pressable>
         </View>
 
@@ -103,7 +108,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,
@@ -132,7 +136,6 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.lg,

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import type { IconName } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { RootState } from '@/store';
@@ -76,7 +77,7 @@ export default function PostScreen() {
           return (
             <Pressable
               key={option.type}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+              style={({ pressed }) => pressed && { opacity: 0.8 }}
               onPress={() =>
                 router.push({
                   pathname: option.route,
@@ -84,14 +85,16 @@ export default function PostScreen() {
                 })
               }
             >
-              <View style={styles.iconContainer}>
-                <Icon name={option.icon} size={28} color={colors.accent.green} />
-              </View>
-              <View style={styles.cardText}>
-                <Text style={styles.cardTitle}>{option.label}</Text>
-                <Text style={styles.cardDesc}>{option.description}</Text>
-              </View>
-              <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
+              <GlassView style={styles.card}>
+                <View style={styles.iconContainer}>
+                  <Icon name={option.icon} size={28} color={colors.accent.green} />
+                </View>
+                <View style={styles.cardText}>
+                  <Text style={styles.cardTitle}>{option.label}</Text>
+                  <Text style={styles.cardDesc}>{option.description}</Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
+              </GlassView>
             </Pressable>
           );
         })}
@@ -129,14 +132,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-  },
-  cardPressed: {
-    backgroundColor: colors.neutral[100],
   },
   iconContainer: {
     width: 48,

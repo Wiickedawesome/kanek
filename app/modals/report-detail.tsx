@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import {
@@ -42,13 +43,13 @@ export default function ReportDetailModal() {
   if (!report) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <GlassView tint="dark" intensity={80} style={styles.header}>
           <Pressable onPress={safeBack} hitSlop={12}>
             <Icon name="x" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Report</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassView>
         <View style={styles.centered}>
           <Text style={styles.emptyText}>Report not found or has been removed.</Text>
         </View>
@@ -82,13 +83,13 @@ export default function ReportDetailModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <GlassView tint="dark" intensity={80} style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="x" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Detail</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </GlassView>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         {/* Static map */}
@@ -179,7 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
 

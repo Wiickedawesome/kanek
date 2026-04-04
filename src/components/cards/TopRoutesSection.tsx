@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
@@ -96,14 +97,14 @@ function RouteCardCompact({
       )}
 
       {/* Type badge overlaid on map */}
-      <View style={styles.typeBadge}>
+      <GlassView tint="dark" intensity={50} style={styles.typeBadge}>
         <Text style={styles.typeBadgeText}>
           {isOffer ? 'Ride offered' : 'Ride wanted'}
         </Text>
-      </View>
+      </GlassView>
 
-      {/* Info area below — white, like AllTrails */}
-      <View style={styles.infoArea}>
+      {/* Info area below — glass overlay */}
+      <GlassView intensity={70} style={styles.infoArea}>
         <Text style={styles.title} numberOfLines={1}>
           {origin} to {dest}
         </Text>
@@ -131,7 +132,7 @@ function RouteCardCompact({
             </Text>
           )}
         </View>
-      </View>
+      </GlassView>
     </Pressable>
   );
 }
@@ -181,7 +182,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.sm,

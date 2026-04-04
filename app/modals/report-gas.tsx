@@ -12,6 +12,7 @@ import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { safeGoBack } from '@/lib/helpers';
 import { Button, TextInput } from '@/components/ui';
 import { MapPicker } from '@/components/map';
@@ -84,13 +85,13 @@ export default function ReportGasModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={safeBack} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Gas Prices</Text>
-        <View style={{ width: 24 }} />
-      </View>
+<GlassView tint="dark" intensity={80} style={styles.header}>
+          <Pressable onPress={safeBack} hitSlop={12}>
+            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Gas Prices</Text>
+          <View style={{ width: 24 }} />
+        </GlassView>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -181,7 +182,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

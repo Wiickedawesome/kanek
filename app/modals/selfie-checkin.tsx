@@ -13,6 +13,7 @@ import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { Button } from '@/components/ui';
 import { formatDateTime, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
@@ -97,13 +98,13 @@ export default function SelfieCheckinModal() {
   if (!isLoading && existingCheckin) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <GlassView tint="dark" intensity={80} style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Check-In</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassView>
         <View style={styles.doneContainer}>
           <Icon name="shield-alert" size={48} color={colors.accent.green} />
           <Text style={styles.doneTitle}>Already Checked In</Text>
@@ -126,13 +127,13 @@ export default function SelfieCheckinModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Selfie Check-In</Text>
-        <View style={{ width: 24 }} />
-      </View>
+<GlassView tint="dark" intensity={80} style={styles.header}>
+          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
+            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Selfie Check-In</Text>
+          <View style={{ width: 24 }} />
+        </GlassView>
 
       <View style={styles.content}>
         <Text style={styles.instruction}>
@@ -175,7 +176,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.forest[900],
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },

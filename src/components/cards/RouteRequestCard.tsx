@@ -23,7 +23,7 @@ export function RouteRequestCard({ post, onPress }: RouteRequestCardProps) {
     : null;
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} style={styles.card} variant="glass">
       <PostTypeBadge type="route_request" />
 
       <View style={styles.routeInfo}>

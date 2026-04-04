@@ -29,7 +29,7 @@ export function RoadReportCard({ report, onPress }: RoadReportCardProps) {
   const age = getTimeAgo(report.created_at);
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} style={styles.card} variant="glass">
       <View style={styles.headerRow}>
         <Icon name="alert-triangle" size={18} color={colors.warning} />
         <Text style={styles.type}>

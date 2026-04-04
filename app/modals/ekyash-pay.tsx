@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { Button } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
@@ -115,18 +116,18 @@ export default function EkyashPayModal() {
     return (
       <View style={styles.payContent}>
         {/* QR Code */}
-        <View style={styles.qrContainer}>
+        <GlassView style={styles.qrContainer}>
           <Image
             source={{ uri: payment.qrUrl }}
             style={styles.qrImage}
             resizeMode="contain"
           />
-        </View>
+        </GlassView>
 
         <Text style={styles.scanText}>Scan with E-Kyash app to pay</Text>
 
         {/* Amount breakdown */}
-        <View style={styles.breakdown}>
+        <GlassView style={styles.breakdown}>
           <View style={styles.breakdownRow}>
             <Text style={styles.breakdownLabel}>Amount</Text>
             <Text style={styles.breakdownValue}>
@@ -157,7 +158,7 @@ export default function EkyashPayModal() {
               )}
             </Text>
           </View>
-        </View>
+        </GlassView>
 
         {/* Open E-Kyash deep link */}
         {payment.paymentLink && (
@@ -179,13 +180,13 @@ export default function EkyashPayModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
-        </Pressable>
-        <Text style={styles.headerTitle}>E-Kyash Payment</Text>
-        <View style={{ width: 24 }} />
-      </View>
+<GlassView tint="dark" intensity={80} style={styles.header}>
+          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
+            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          </Pressable>
+          <Text style={styles.headerTitle}>E-Kyash Payment</Text>
+          <View style={{ width: 24 }} />
+        </GlassView>
 
       {renderContent()}
     </SafeAreaView>
@@ -203,7 +204,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   qrContainer: {
-    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginTop: spacing.lg,
@@ -247,7 +246,6 @@ const styles = StyleSheet.create({
   },
   breakdown: {
     width: '100%',
-    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,

@@ -22,10 +22,17 @@ export function GlassView({
 
   // Web: BlurView uses CSS backdrop-filter which works well
   // Native: expo-blur uses native blur views
+  const isDark = tint === 'dark';
+
   return (
-    <View style={[styles.wrapper, br != null && { borderRadius: br }, restStyle]}>
+    <View style={[
+      styles.wrapper,
+      isDark && styles.wrapperDark,
+      br != null && { borderRadius: br },
+      restStyle,
+    ]}>
       <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, styles.overlay]} />
+      <View style={[StyleSheet.absoluteFill, isDark ? styles.overlayDark : styles.overlay]} />
       {children}
     </View>
   );
@@ -56,5 +63,11 @@ const styles = StyleSheet.create({
   },
   overlay: {
     backgroundColor: colors.glass.background,
+  },
+  wrapperDark: {
+    borderColor: colors.glass.darkBorder,
+  },
+  overlayDark: {
+    backgroundColor: colors.glass.darkBackground,
   },
 });
