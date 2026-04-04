@@ -1,18 +1,10 @@
 import React from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Redirect, Tabs, usePathname } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { normalizeAppPath } from '@/lib/helpers';
 import { colors } from '@/theme';
-
-function TabBarBackground() {
-  if (Platform.OS === 'web') {
-    return null;
-  }
-  return <BlurView tint="light" intensity={80} style={StyleSheet.absoluteFill} />;
-}
 
 export default function TabLayout() {
   const { session, isLoading, isComplete, nextAuthRoute } = useOnboardingStatus();
@@ -30,14 +22,13 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.accent.green,
         tabBarInactiveTintColor: colors.forest[400],
         tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: Platform.OS === 'web' ? 'rgba(246,246,244,0.92)' : 'transparent',
-          borderTopWidth: 0,
+          backgroundColor: Platform.OS === 'web' ? 'rgba(246,246,244,0.92)' : colors.neutral[50],
+          borderTopWidth: 1,
+          borderTopColor: colors.neutral[200],
           elevation: 0,
           height: 60,
           paddingBottom: 8,
         },
-        tabBarBackground: () => <TabBarBackground />,
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: 'Manrope-Regular',

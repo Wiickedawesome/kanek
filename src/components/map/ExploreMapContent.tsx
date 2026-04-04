@@ -1,9 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, spacing } from '@/theme';
 import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
+import { getDistrictBoundariesGeoJSON } from '@/lib/belizeDistricts';
+import type { BelizeDistrict } from '@/types/database';
 
 MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
@@ -27,6 +29,8 @@ export interface ExploreMapContentProps {
   initialZoom?: number;
   /** Show the blue user-location dot */
   showUserLocation?: boolean;
+  /** District to highlight with a brighter border + fill */
+  highlightDistrict?: BelizeDistrict | null;
 }
 
 export function ExploreMapContent({
@@ -38,24 +42,25 @@ export function ExploreMapContent({
   initialCenter,
   initialZoom,
   showUserLocation = false,
+  highlightDistrict,
 }: ExploreMapContentProps) {
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const center = initialCenter ?? BELIZE_CENTER;
   const zoom = initialZoom ?? BELIZE_ZOOM;
-  const isFirstRender = useRef(true);
 
-  // Fly camera when center/zoom change (skip first render — handled by Camera props)
+  // Fly camera whenever center/zoom change (including after profile loads)
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
     cameraRef.current?.setCamera({
       centerCoordinate: [center.longitude, center.latitude],
       zoomLevel: zoom,
       animationDuration: 600,
     });
   }, [center.latitude, center.longitude, zoom]);
+
+  const districtGeoJSON = useMemo(
+    () => getDistrictBoundariesGeoJSON(highlightDistrict),
+    [highlightDistrict],
+  );
 
   const geoJson: GeoJSON.FeatureCollection = {
     type: 'FeatureCollection',
@@ -110,7 +115,7 @@ export function ExploreMapContent({
         logoEnabled={false}
         attributionEnabled={false}
         compassEnabled
-        compassPosition={{ top: 72, right: 16 }}
+        compassPosition={{ top: 88, right: 16 }}
       >
         <MapboxGL.Camera
           ref={cameraRef}
@@ -121,6 +126,38 @@ export function ExploreMapContent({
         />
 
         {showUserLocation && <MapboxGL.UserLocation visible />}
+
+        {/* District boundary overlay */}
+        <MapboxGL.ShapeSource id="districts" shape={districtGeoJSON}>
+          <MapboxGL.FillLayer
+            id="districts-fill"
+            style={{
+              fillColor: [
+                'case',
+                ['==', ['get', 'highlighted'], true],
+                'rgba(81, 193, 82, 0.18)',
+                'rgba(39, 67, 18, 0.05)',
+              ] as any,
+            }}
+          />
+          <MapboxGL.LineLayer
+            id="districts-border"
+            style={{
+              lineColor: [
+                'case',
+                ['==', ['get', 'highlighted'], true],
+                'rgba(81, 193, 82, 0.90)',
+                'rgba(39, 67, 18, 0.22)',
+              ] as any,
+              lineWidth: [
+                'case',
+                ['==', ['get', 'highlighted'], true],
+                2,
+                1,
+              ] as any,
+            }}
+          />
+        </MapboxGL.ShapeSource>
 
         {geoJson.features.length > 0 && (
           <MapboxGL.ShapeSource

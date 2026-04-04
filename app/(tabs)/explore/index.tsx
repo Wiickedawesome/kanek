@@ -22,7 +22,7 @@ import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation
 import type { PostType, Database, BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
-import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT, DISTANCE_PRESETS, BELIZE_DISTRICTS } from '@/lib/constants';
+import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT, DISTANCE_PRESETS } from '@/lib/constants';
 import { getDistanceKm } from '@/lib/helpers';
 
 /** Map enum values to keywords that may appear in origin_address */
@@ -88,7 +88,6 @@ function getGreeting(): string {
 export default function ExploreScreen() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<FeedFilter>(null);
-  const [districtFilter, setDistrictFilter] = useState<BelizeDistrict | null>(null);
   const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
@@ -131,11 +130,6 @@ export default function ExploreScreen() {
 
     let filteredPosts = posts ?? [];
 
-    // District filter
-    if (districtFilter) {
-      filteredPosts = filteredPosts.filter((p) => postMatchesDistrict(p, districtFilter));
-    }
-
     // Distance radius filter (needs GPS)
     if (distanceFilter && hasGPS) {
       filteredPosts = filteredPosts.filter((p) => {
@@ -175,7 +169,7 @@ export default function ExploreScreen() {
     }
 
     return items;
-  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict, districtFilter, distanceFilter, hasGPS, userLat, userLng]);
+  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict, distanceFilter, hasGPS, userLat, userLng]);
 
   const isLoading = postsLoading || reportsLoading || gasLoading;
   const isFetching = postsFetching;
@@ -288,23 +282,6 @@ export default function ExploreScreen() {
             label={opt.label}
             selected={typeFilter === opt.value}
             onPress={() => setTypeFilter(opt.value)}
-          />
-        ))}
-      </ScrollView>
-
-      {/* District filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filters}
-      >
-        {BELIZE_DISTRICTS.map((d) => (
-          <FilterChip
-            key={d.key}
-            label={d.label}
-            selected={districtFilter === d.key}
-            onPress={() => setDistrictFilter(districtFilter === d.key ? null : d.key)}
           />
         ))}
       </ScrollView>
