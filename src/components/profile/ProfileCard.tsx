@@ -30,7 +30,7 @@ export function ProfileCard({ profile, compact }: ProfileCardProps) {
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Icon name="star" size={14} color={colors.accent.green} />
-              <Text style={styles.statText}>{profile.rating_avg.toFixed(1)}</Text>
+              <Text style={styles.statText}>{(profile.rating_avg ?? 0).toFixed(1)}</Text>
             </View>
             <View style={styles.stat}>
               <Icon name="clock" size={14} color={colors.forest[400]} />

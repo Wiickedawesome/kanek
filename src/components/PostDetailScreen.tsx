@@ -163,7 +163,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             <Text style={styles.bookerName}>{name}</Text>
             <Text style={styles.bookerMeta}>
               {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-              {b.seats_booked > 1 ? ` · ${b.seats_booked} seats` : ''}
+              {(b.seats_booked ?? 1) > 1 ? ` · ${b.seats_booked} seats` : ''}
             </Text>
           </View>
         </Pressable>
@@ -664,7 +664,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
                   <View style={styles.stat}>
                     <Icon name="star" size={14} color={colors.accent.green} />
                     <Text style={styles.statText}>
-                      {post.author.rating_avg.toFixed(1)}
+                      {(post.author.rating_avg ?? 0).toFixed(1)}
                     </Text>
                   </View>
                   <View style={styles.stat}>

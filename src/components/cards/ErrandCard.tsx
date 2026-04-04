@@ -63,7 +63,7 @@ export function ErrandCard({ post, onPress }: ErrandCardProps) {
         {post.author && (
           <View style={styles.stat}>
             <Icon name="star" size={14} color={colors.accent.green} />
-            <Text style={styles.statText}>{post.author.rating_avg.toFixed(1)}</Text>
+            <Text style={styles.statText}>{(post.author.rating_avg ?? 0).toFixed(1)}</Text>
           </View>
         )}
       </View>

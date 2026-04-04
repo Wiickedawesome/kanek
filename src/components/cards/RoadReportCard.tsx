@@ -10,7 +10,7 @@ interface RoadReportCardProps {
     id: string;
     type: string;
     description: string | null;
-    upvotes: number;
+    upvotes: number | null;
     created_at: string;
   };
   onPress?: () => void;
@@ -43,7 +43,7 @@ export function RoadReportCard({ report, onPress }: RoadReportCardProps) {
         </Text>
       )}
       <Text style={styles.upvotes}>
-        Reported by {report.upvotes} {report.upvotes === 1 ? 'user' : 'users'}
+        Reported by {report.upvotes ?? 0} {(report.upvotes ?? 0) === 1 ? 'user' : 'users'}
       </Text>
     </Card>
   );

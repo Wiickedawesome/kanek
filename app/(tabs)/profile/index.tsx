@@ -212,7 +212,7 @@ export default function ProfileScreen() {
             <View style={styles.statIconRow}>
               <Icon name="star" size={20} color={colors.accent.green} />
               <Text style={styles.statValue}>
-                {profile?.rating_avg.toFixed(1) ?? '—'}
+                {(profile?.rating_avg ?? 0).toFixed(1)}
               </Text>
             </View>
             <Text style={styles.statLabel}>Rating</Text>

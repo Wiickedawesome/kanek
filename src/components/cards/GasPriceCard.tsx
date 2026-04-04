@@ -12,7 +12,7 @@ interface GasPriceCardProps {
     regular_cents: number | null;
     premium_cents: number | null;
     diesel_cents: number | null;
-    verified_count: number;
+    verified_count: number | null;
     reported_at: string;
   };
   onPress?: () => void;
@@ -55,8 +55,8 @@ export function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
       </View>
 
       <Text style={styles.verified}>
-        Verified by {gasPrice.verified_count}{' '}
-        {gasPrice.verified_count === 1 ? 'user' : 'users'}
+        Verified by {gasPrice.verified_count ?? 0}{' '}
+        {(gasPrice.verified_count ?? 0) === 1 ? 'user' : 'users'}
       </Text>
     </Card>
   );

@@ -278,7 +278,7 @@ export const bookingsApi = createApi({
             post.type as PostType,
             post.title ?? 'this activity',
             bookerName,
-            data.seats_booked,
+            data.seats_booked ?? 1,
           );
 
           await sendPushOnly({

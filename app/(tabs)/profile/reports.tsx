@@ -101,7 +101,7 @@ export default function ReportsScreen() {
         <View style={styles.cardHeader}>
           <Icon name="fuel" size={18} color={colors.forest[400]} />
           <Text style={styles.reportType}>{g.station_name}</Text>
-          {g.verified_count > 0 && (
+          {(g.verified_count ?? 0) > 0 && (
             <View style={styles.verifiedBadge}>
               <Text style={styles.verifiedText}>Verified</Text>
             </View>
