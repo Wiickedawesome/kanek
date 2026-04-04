@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { FilterChip, EmptyState } from '@/components/ui';
+import { FilterChip, EmptyState, GlassView } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -22,7 +22,8 @@ import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation
 import type { PostType, Database, BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
-import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT } from '@/lib/constants';
+import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT, DISTANCE_PRESETS, BELIZE_DISTRICTS } from '@/lib/constants';
+import { getDistanceKm } from '@/lib/helpers';
 
 /** Map enum values to keywords that may appear in origin_address */
 const DISTRICT_KEYWORDS: Record<BelizeDistrict, string[]> = {
@@ -60,6 +61,23 @@ const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'Reports', value: 'reports' },
 ];
 
+/** Extract lat/lng from any feed item for distance comparison */
+function getPostCoord(item: FeedItem): { lat: number; lng: number } | null {
+  if (item.kind === 'post') {
+    if (item.data.origin_lat != null && item.data.origin_lng != null) {
+      return { lat: item.data.origin_lat, lng: item.data.origin_lng };
+    }
+    return null;
+  }
+  if (item.kind === 'road_report') {
+    return { lat: item.data.lat, lng: item.data.lng };
+  }
+  if (item.kind === 'gas_price') {
+    return { lat: item.data.station_lat, lng: item.data.station_lng };
+  }
+  return null;
+}
+
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -70,8 +88,14 @@ function getGreeting(): string {
 export default function ExploreScreen() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<FeedFilter>(null);
+  const [districtFilter, setDistrictFilter] = useState<BelizeDistrict | null>(null);
+  const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const userLat = useSelector((state: RootState) => state.location.latitude);
+  const userLng = useSelector((state: RootState) => state.location.longitude);
+  const hasGPS = userLat != null && userLng != null;
+
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
   const firstName = profile?.first_name ?? '';
   const userDistrict = profile?.district ?? null;
@@ -105,8 +129,27 @@ export default function ExploreScreen() {
       return items;
     }
 
+    let filteredPosts = posts ?? [];
+
+    // District filter
+    if (districtFilter) {
+      filteredPosts = filteredPosts.filter((p) => postMatchesDistrict(p, districtFilter));
+    }
+
+    // Distance radius filter (needs GPS)
+    if (distanceFilter && hasGPS) {
+      filteredPosts = filteredPosts.filter((p) => {
+        if (p.origin_lat == null || p.origin_lng == null) return false;
+        const d = getDistanceKm(
+          { lat: userLat, lng: userLng },
+          { lat: p.origin_lat, lng: p.origin_lng },
+        );
+        return d <= distanceFilter;
+      });
+    }
+
     const items: FeedItem[] = [];
-    (posts ?? []).forEach((p) => items.push({ kind: 'post', data: p }));
+    filteredPosts.forEach((p) => items.push({ kind: 'post', data: p }));
 
     // When showing "All", weave active road reports and recent gas prices into feed
     if (typeFilter === null) {
@@ -114,8 +157,16 @@ export default function ExploreScreen() {
       (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g) => items.push({ kind: 'gas_price', data: g }));
     }
 
-    // Sort posts from user's district first
-    if (userDistrict) {
+    // Sort by proximity if user has GPS, otherwise fall back to district match
+    if (hasGPS) {
+      items.sort((a, b) => {
+        const aCoord = getPostCoord(a);
+        const bCoord = getPostCoord(b);
+        const aDist = aCoord ? getDistanceKm({ lat: userLat, lng: userLng }, aCoord) : Infinity;
+        const bDist = bCoord ? getDistanceKm({ lat: userLat, lng: userLng }, bCoord) : Infinity;
+        return aDist - bDist;
+      });
+    } else if (userDistrict) {
       items.sort((a, b) => {
         const aMatch = a.kind === 'post' && postMatchesDistrict(a.data, userDistrict) ? 0 : 1;
         const bMatch = b.kind === 'post' && postMatchesDistrict(b.data, userDistrict) ? 0 : 1;
@@ -124,7 +175,7 @@ export default function ExploreScreen() {
     }
 
     return items;
-  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict]);
+  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict, districtFilter, distanceFilter, hasGPS, userLat, userLng]);
 
   const isLoading = postsLoading || reportsLoading || gasLoading;
   const isFetching = postsFetching;
@@ -196,7 +247,7 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <GlassView intensity={60} style={styles.header}>
         <Text style={styles.greeting}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
         </Text>
@@ -222,7 +273,7 @@ export default function ExploreScreen() {
             <Icon name="map-pin" size={20} color={colors.forest[900]} />
           </Pressable>
         </View>
-      </View>
+      </GlassView>
 
       <ScrollView
         horizontal
@@ -239,6 +290,47 @@ export default function ExploreScreen() {
           />
         ))}
       </ScrollView>
+
+      {/* District filter chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filters}
+      >
+        {BELIZE_DISTRICTS.map((d) => (
+          <FilterChip
+            key={d.key}
+            label={d.label}
+            selected={districtFilter === d.key}
+            onPress={() => setDistrictFilter(districtFilter === d.key ? null : d.key)}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Distance radius chips (only when GPS available) */}
+      {hasGPS && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+          contentContainerStyle={styles.filters}
+        >
+          <FilterChip
+            label="All distances"
+            selected={distanceFilter === null}
+            onPress={() => setDistanceFilter(null)}
+          />
+          {DISTANCE_PRESETS.map((km) => (
+            <FilterChip
+              key={km}
+              label={`${km} km`}
+              selected={distanceFilter === km}
+              onPress={() => setDistanceFilter(distanceFilter === km ? null : km)}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <FlatList
         data={feedItems}
@@ -303,7 +395,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
-    backgroundColor: colors.neutral[0],
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
   },
   greeting: {
     ...typography.h2,

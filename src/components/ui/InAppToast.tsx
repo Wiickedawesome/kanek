@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '@/components/icons';
+import { GlassView } from '@/components/ui/GlassView';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { RootState, AppDispatch } from '@/store';
 import { dismissToast } from '@/store/slices/toastSlice';
@@ -52,17 +53,21 @@ export function InAppToast() {
         { transform: [{ translateY }], paddingTop: insets.top + spacing.xs },
       ]}
     >
-      <Pressable style={styles.content} onPress={hideToast}>
-        <View style={styles.iconCircle}>
-          <Icon name="bell" size={18} color={colors.neutral[0]} />
-        </View>
-        <View style={styles.textWrap}>
-          <Text style={styles.title} numberOfLines={1}>{toast.title}</Text>
-          {toast.body ? (
-            <Text style={styles.body} numberOfLines={2}>{toast.body}</Text>
-          ) : null}
-        </View>
-        <Icon name="x" size={16} color={colors.neutral[400]} />
+      <Pressable onPress={hideToast}>
+        <GlassView intensity={80} style={styles.glassContent}>
+          <View style={styles.contentInner}>
+            <View style={styles.iconCircle}>
+              <Icon name="bell" size={18} color={colors.neutral[0]} />
+            </View>
+            <View style={styles.textWrap}>
+              <Text style={styles.title} numberOfLines={1}>{toast.title}</Text>
+              {toast.body ? (
+                <Text style={styles.body} numberOfLines={2}>{toast.body}</Text>
+              ) : null}
+            </View>
+            <Icon name="x" size={16} color={colors.neutral[400]} />
+          </View>
+        </GlassView>
       </Pressable>
     </Animated.View>
   );
@@ -78,20 +83,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+  glassContent: {
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent.green,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent.green,
+  },
+  contentInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   iconCircle: {
     width: 36,

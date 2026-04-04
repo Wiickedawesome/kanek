@@ -19,6 +19,7 @@
     "@rnmapbox/maps": "^10.3.0",
     "@supabase/supabase-js": "^2.49.4",
     "expo": "~55.0.9",
+    "expo-blur": "~55.0.12",
     "expo-constants": "~55.0.9",
     "expo-dev-client": "^55.0.20-canary-20260328-2049187",
     "expo-device": "~55.0.10",

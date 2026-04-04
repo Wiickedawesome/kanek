@@ -32,6 +32,13 @@ export const colors = {
   error: '#d32f2f',
   warning: '#f9a825',
   success: '#51c152',
+
+  // Glass
+  glass: {
+    background: 'rgba(255,255,255,0.65)',
+    border: 'rgba(255,255,255,0.3)',
+    shadow: 'rgba(0,0,0,0.08)',
+  },
 } as const;
 
 export type ColorToken = typeof colors;

@@ -117,6 +117,24 @@ export function isInBelize(lat: number, lng: number): boolean {
   );
 }
 
+/** Haversine distance between two points in kilometres */
+export function getDistanceKm(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+  const h =
+    sinLat * sinLat +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      sinLng * sinLng;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 /** Format cents to BZD display: 1500 → "$15.00" */
 export function formatBZD(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;

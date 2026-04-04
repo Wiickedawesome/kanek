@@ -1,6 +1,8 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Redirect, Tabs, usePathname } from 'expo-router';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
+import { GlassView } from '@/components/ui';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { normalizeAppPath } from '@/lib/helpers';
 import { colors } from '@/theme';
@@ -20,9 +22,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent.green,
         tabBarInactiveTintColor: colors.forest[400],
+        tabBarBackground: () => (
+          <GlassView intensity={80} style={StyleSheet.absoluteFill} />
+        ),
         tabBarStyle: {
-          backgroundColor: colors.neutral[0],
-          borderTopColor: colors.neutral[200],
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
           height: 60,
           paddingBottom: 8,
         },

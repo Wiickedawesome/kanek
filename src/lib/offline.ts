@@ -49,6 +49,24 @@ export const OFFLINE_REGIONS = {
     minZoom: 10,
     maxZoom: 14,
   },
+  corozal: {
+    name: 'Corozal District',
+    bounds: [
+      [-88.70, 18.10],
+      [-88.20, 18.50],
+    ] as [[number, number], [number, number]],
+    minZoom: 10,
+    maxZoom: 14,
+  },
+  toledo: {
+    name: 'Toledo District',
+    bounds: [
+      [-89.20, 15.89],
+      [-88.30, 16.50],
+    ] as [[number, number], [number, number]],
+    minZoom: 10,
+    maxZoom: 14,
+  },
 } as const;
 
 export type OfflineRegionKey = keyof typeof OFFLINE_REGIONS;

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
@@ -21,6 +21,12 @@ export interface ExploreMapContentProps {
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
+  /** Override initial camera center (defaults to BELIZE_CENTER) */
+  initialCenter?: { latitude: number; longitude: number };
+  /** Override initial zoom (defaults to BELIZE_ZOOM) */
+  initialZoom?: number;
+  /** Show the blue user-location dot */
+  showUserLocation?: boolean;
 }
 
 export function ExploreMapContent({
@@ -29,8 +35,27 @@ export function ExploreMapContent({
   gasStations,
   onPinPress,
   onRecenterRef,
+  initialCenter,
+  initialZoom,
+  showUserLocation = false,
 }: ExploreMapContentProps) {
   const cameraRef = useRef<MapboxGL.Camera>(null);
+  const center = initialCenter ?? BELIZE_CENTER;
+  const zoom = initialZoom ?? BELIZE_ZOOM;
+  const isFirstRender = useRef(true);
+
+  // Fly camera when center/zoom change (skip first render — handled by Camera props)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    cameraRef.current?.setCamera({
+      centerCoordinate: [center.longitude, center.latitude],
+      zoomLevel: zoom,
+      animationDuration: 600,
+    });
+  }, [center.latitude, center.longitude, zoom]);
 
   const geoJson: GeoJSON.FeatureCollection = {
     type: 'FeatureCollection',
@@ -68,8 +93,8 @@ export function ExploreMapContent({
 
   const recenter = () => {
     cameraRef.current?.setCamera({
-      centerCoordinate: [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude],
-      zoomLevel: BELIZE_ZOOM,
+      centerCoordinate: [center.longitude, center.latitude],
+      zoomLevel: zoom,
       animationDuration: 600,
     });
   };
@@ -89,11 +114,13 @@ export function ExploreMapContent({
       >
         <MapboxGL.Camera
           ref={cameraRef}
-          centerCoordinate={[BELIZE_CENTER.longitude, BELIZE_CENTER.latitude]}
-          zoomLevel={BELIZE_ZOOM}
+          centerCoordinate={[center.longitude, center.latitude]}
+          zoomLevel={zoom}
           animationMode="moveTo"
           animationDuration={0}
         />
+
+        {showUserLocation && <MapboxGL.UserLocation visible />}
 
         {geoJson.features.length > 0 && (
           <MapboxGL.ShapeSource
