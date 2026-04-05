@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader } from '@/components/ui';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
@@ -130,13 +130,13 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>My Reports</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       {isLoading ? (
         <View style={styles.centered}>
@@ -190,7 +190,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
 

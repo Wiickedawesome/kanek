@@ -13,8 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button, TextInput, FilterChip } from '@/components/ui';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Button, TextInput, FilterChip, ScreenHeader } from '@/components/ui';
 import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
@@ -77,13 +76,13 @@ export default function FlagContentModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Content</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

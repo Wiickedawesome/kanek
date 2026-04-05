@@ -9,8 +9,7 @@ import {
 import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
-import { Button } from '@/components/ui';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Button, ScreenHeader } from '@/components/ui';
 import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { safeGoBack } from '@/lib/helpers';
@@ -132,13 +131,13 @@ export default function DownloadMapModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Offline Maps</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <View style={styles.content}>
         <Text style={styles.description}>

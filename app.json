@@ -19,7 +19,8 @@
         "NSLocationWhenInUseUsageDescription": "kanek needs your location to show routes and posts near you.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "kanek needs your location to share your position during active trips.",
         "NSCameraUsageDescription": "kanek needs camera access for ID verification photos.",
-        "NSPhotoLibraryUsageDescription": "kanek needs photo library access for ID verification uploads."
+        "NSPhotoLibraryUsageDescription": "kanek needs photo library access for ID verification uploads.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -31,10 +32,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "CAMERA"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -60,9 +62,15 @@
       [
         "@rnmapbox/maps",
         {
-          "RNMapboxMapsDownloadToken": "sk.placeholder"
+          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "sk.placeholder"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "71a76ae0-95d7-41de-9ce0-b396dc088437"
+      }
+    }
   }
 }

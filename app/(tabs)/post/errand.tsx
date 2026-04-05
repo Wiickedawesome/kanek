@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
-import { TextInput, Button } from '@/components/ui';
+import { TextInput, Button, ScreenHeader } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
@@ -192,13 +192,13 @@ export default function ErrandFormScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Post an Errand</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -369,7 +369,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

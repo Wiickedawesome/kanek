@@ -8,8 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { TopographicBg, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 
@@ -45,13 +44,13 @@ export default function PaymentSelectModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Pay</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <View style={styles.content}>
         <Text style={styles.amount}>{formatBZD(amount)}</Text>

@@ -1,6 +1,9 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM, BELIZE_BOUNDS } from '@/lib/mapbox';
+import { DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
+import { getDistrictBoundariesGeoJSON } from '@/lib/belizeDistricts';
+import type { BelizeDistrict } from '@/types/database';
 
 // Inject mapbox-gl CSS
 if (typeof document !== 'undefined') {
@@ -28,6 +31,11 @@ export interface ExploreMapContentProps {
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
+  initialCenter?: { latitude: number; longitude: number };
+  initialZoom?: number;
+  showUserLocation?: boolean;
+  highlightDistrict?: BelizeDistrict | null;
+  compassTopOffset?: number;
 }
 
 export function ExploreMapContent({
@@ -36,22 +44,31 @@ export function ExploreMapContent({
   gasStations,
   onPinPress,
   onRecenterRef,
+  initialCenter,
+  initialZoom,
+  showUserLocation = false,
+  highlightDistrict,
+  compassTopOffset = 64,
 }: ExploreMapContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const onPinPressRef = useRef(onPinPress);
   onPinPressRef.current = onPinPress;
 
+  // Capture initial values in refs so map init effect runs only once
+  const initialCenterRef = useRef(initialCenter);
+  const initialZoomRef = useRef(initialZoom);
+
   const postsGeoJson = useMemo(() => toFeatureCollection(posts), [posts]);
   const reportsGeoJson = useMemo(() => toFeatureCollection(reports), [reports]);
   const gasGeoJson = useMemo(() => toFeatureCollection(gasStations), [gasStations]);
 
+  const districtGeoJSON = useMemo(() => getDistrictBoundariesGeoJSON(highlightDistrict), [highlightDistrict]);
+
   const recenter = useCallback(() => {
-    mapRef.current?.flyTo({
-      center: [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude],
-      zoom: BELIZE_ZOOM,
-      duration: 600,
-    });
+    const c = initialCenterRef.current ?? BELIZE_CENTER;
+    const z = initialZoomRef.current ?? BELIZE_ZOOM;
+    mapRef.current?.flyTo({ center: [c.longitude, c.latitude], zoom: z, duration: 600 });
   }, []);
 
   // Expose recenter to parent
@@ -59,15 +76,44 @@ export function ExploreMapContent({
     if (onRecenterRef) onRecenterRef.current = recenter;
   }, [onRecenterRef, recenter]);
 
+  // Fly to initialCenter whenever it changes after mount (profile data loaded late)
+  useEffect(() => {
+    if (!mapRef.current || !initialCenter) return;
+    initialCenterRef.current = initialCenter;
+    initialZoomRef.current = initialZoom;
+    mapRef.current.flyTo({
+      center: [initialCenter.longitude, initialCenter.latitude],
+      zoom: initialZoom ?? DEFAULT_NEARBY_ZOOM,
+      duration: 600,
+    });
+  }, [initialCenter?.latitude, initialCenter?.longitude, initialZoom]);
+
+  // Push NavigationControl below the header overlay
+  useEffect(() => {
+    const ctrl = containerRef.current?.querySelector('.mapboxgl-ctrl-top-right') as HTMLElement | null;
+    if (ctrl) ctrl.style.top = `${compassTopOffset}px`;
+  }, [compassTopOffset]);
+
+  // Update district highlight layer when highlightDistrict changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const src = map.getSource('districts') as mapboxgl.GeoJSONSource | undefined;
+    if (src) src.setData(districtGeoJSON);
+  }, [districtGeoJSON]);
+
   useEffect(() => {
     if (!containerRef.current) return;
     mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 
+    const center = initialCenterRef.current ?? BELIZE_CENTER;
+    const zoom = initialZoomRef.current ?? BELIZE_ZOOM;
+
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude],
-      zoom: BELIZE_ZOOM,
+      center: [center.longitude, center.latitude],
+      zoom,
       minZoom: 6,
       maxZoom: 18,
       maxBounds: [
@@ -77,8 +123,40 @@ export function ExploreMapContent({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    // Push nav control below header immediately after adding
+    const navCtrl = containerRef.current.querySelector('.mapboxgl-ctrl-top-right') as HTMLElement | null;
+    if (navCtrl) navCtrl.style.top = `${compassTopOffset}px`;
+
+    if (showUserLocation) {
+      map.addControl(new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }), 'top-right');
+    }
 
     map.on('load', () => {
+      // District boundary overlay
+      map.addSource('districts', { type: 'geojson', data: districtGeoJSON });
+      map.addLayer({
+        id: 'districts-fill',
+        type: 'fill',
+        source: 'districts',
+        paint: {
+          'fill-color': ['case', ['==', ['get', 'highlighted'], true], 'rgba(81,193,82,0.18)', 'rgba(39,67,18,0.05)'],
+          'fill-opacity': 1,
+        },
+      });
+      map.addLayer({
+        id: 'districts-border',
+        type: 'line',
+        source: 'districts',
+        paint: {
+          'line-color': ['case', ['==', ['get', 'highlighted'], true], 'rgba(81,193,82,0.90)', 'rgba(39,67,18,0.22)'],
+          'line-width': ['case', ['==', ['get', 'highlighted'], true], 2, 1],
+        },
+      });
+
       // Posts layer (clustered)
       map.addSource('posts', {
         type: 'geojson',

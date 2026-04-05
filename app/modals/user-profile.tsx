@@ -12,8 +12,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { TopographicBg, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
@@ -63,13 +62,13 @@ export default function UserProfileModal() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Trust Profile</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User identity */}

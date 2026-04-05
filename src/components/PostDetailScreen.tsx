@@ -11,12 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { TopographicBg, Button, ScreenHeader } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
@@ -448,7 +446,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
     <SafeAreaView style={styles.container}>
       <TopographicBg />
       {/* Header */}
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
@@ -456,7 +454,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           Post Details
         </Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <ScrollView
         style={styles.flex}

@@ -23,6 +23,8 @@ import { Phone } from './Phone';
 import { X } from './X';
 import { ChevronLeft } from './ChevronLeft';
 import { ChevronRight } from './ChevronRight';
+import { ChevronUp } from './ChevronUp';
+import { ChevronDown } from './ChevronDown';
 import { ExternalLink } from './ExternalLink';
 import { Bell } from './Bell';
 import { Send } from './Send';
@@ -56,6 +58,8 @@ export { Phone } from './Phone';
 export { X } from './X';
 export { ChevronLeft } from './ChevronLeft';
 export { ChevronRight } from './ChevronRight';
+export { ChevronUp } from './ChevronUp';
+export { ChevronDown } from './ChevronDown';
 export { ExternalLink } from './ExternalLink';
 export { Bell } from './Bell';
 export { Send } from './Send';
@@ -83,6 +87,8 @@ const iconMap = {
   x: X,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
+  'chevron-up': ChevronUp,
+  'chevron-down': ChevronDown,
   'external-link': ExternalLink,
   bell: Bell,
   send: Send,

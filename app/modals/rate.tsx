@@ -14,9 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button, TextInput } from '@/components/ui';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { Button, TextInput, ScreenHeader, TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
@@ -86,13 +84,13 @@ export default function RateModal() {
     return (
       <SafeAreaView style={styles.container}>
         <TopographicBg />
-        <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+        <ScreenHeader style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Rate Trip</Text>
           <View style={{ width: 24 }} />
-        </LinearGradient>
+        </ScreenHeader>
         <View style={styles.alreadyRated}>
           <Icon name="star" size={48} color={colors.accent.green} />
           <Text style={styles.alreadyRatedText}>
@@ -107,13 +105,13 @@ export default function RateModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Rate Trip</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

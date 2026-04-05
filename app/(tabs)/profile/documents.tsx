@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/icons';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { safeGoBack } from '@/lib/helpers';
@@ -255,13 +255,13 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>My Documents</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.subtitle}>
@@ -331,7 +331,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl },

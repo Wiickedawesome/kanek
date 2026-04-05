@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { FilterChip, EmptyState, TopographicBg } from '@/components/ui';
+import { FilterChip, EmptyState, TopographicBg, ScreenHeader } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -242,20 +242,20 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.greeting}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
         </Text>
 
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
-            <Icon name="search" size={20} color={colors.neutral[400]} />
+            <Icon name="search" size={20} color={'rgba(255,255,255,0.55)'} />
             <TextInput
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
               placeholder="Search routes, errands..."
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={'rgba(255,255,255,0.45)'}
               returnKeyType="search"
             />
           </View>
@@ -265,10 +265,10 @@ export default function ExploreScreen() {
             onPress={() => router.push('/(tabs)/explore/map')}
             hitSlop={8}
           >
-            <Icon name="map-pin" size={20} color={colors.forest[900]} />
+            <Icon name="map-pin" size={20} color={colors.neutral[0]} />
           </Pressable>
         </View>
-      </View>
+      </ScreenHeader>
 
       <ScrollView
         horizontal
@@ -373,12 +373,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
   },
   greeting: {
     ...typography.h2,
-    color: colors.forest[900],
+    color: colors.neutral[0],
     marginBottom: spacing.md,
   },
   searchRow: {
@@ -390,32 +388,32 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: borderRadius.pill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   searchInput: {
     flex: 1,
     ...typography.body2,
-    color: colors.forest[900],
+    color: colors.neutral[0],
     padding: 0,
   },
   iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   iconButtonPressed: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   filters: {
     paddingHorizontal: spacing.lg,

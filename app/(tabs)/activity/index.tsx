@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenHeader } from '@/components/ui';
 import { TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
@@ -508,7 +508,7 @@ export default function ActivityScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
           <Icon name="bell" size={22} color={colors.neutral[0]} />
@@ -518,7 +518,7 @@ export default function ActivityScreen() {
             </View>
           )}
         </Pressable>
-      </LinearGradient>
+      </ScreenHeader>
 
       {/* Tabs */}
       <View style={styles.tabs}>

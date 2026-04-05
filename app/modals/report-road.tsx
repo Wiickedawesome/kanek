@@ -13,10 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
-import { Button, TextInput, FilterChip } from '@/components/ui';
-import { MapPicker } from '@/components/map';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { Button, TextInput, FilterChip, ScreenHeader, TopographicBg } from '@/components/ui';
+import { MapPicker } from '@/components/map/MapPicker';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreateRoadReportMutation } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
@@ -79,13 +77,13 @@ export default function ReportRoadModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Road Report</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

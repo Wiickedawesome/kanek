@@ -10,8 +10,7 @@ import {
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
+import { ScreenHeader, TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
@@ -45,13 +44,13 @@ export default function ReportDetailModal() {
     return (
       <SafeAreaView style={styles.container}>
         <TopographicBg />
-        <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+        <ScreenHeader style={styles.header}>
           <Pressable onPress={safeBack} hitSlop={12}>
             <Icon name="x" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Report</Text>
           <View style={{ width: 24 }} />
-        </LinearGradient>
+        </ScreenHeader>
         <View style={styles.centered}>
           <Text style={styles.emptyText}>Report not found or has been removed.</Text>
         </View>
@@ -86,13 +85,13 @@ export default function ReportDetailModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="x" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Detail</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         {/* Static map */}

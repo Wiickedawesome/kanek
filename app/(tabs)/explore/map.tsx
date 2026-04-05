@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
+import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -39,29 +40,75 @@ export default function ExploreMapScreen() {
   // Profile district as fallback — use explicit district, or infer from address_line
   const userId = useSelector((s: RootState) => s.auth.user?.id);
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
-  const profileDistrict = useMemo<BelizeDistrict | null>(() => {
-    if (profile?.district) return profile.district;
+  // Derive both district (for highlight overlay) and a specific center from address keywords.
+  // Town-level centers are used when available so the camera lands on the actual town,
+  // not the midpoint of a large district.
+  const { profileDistrict, profileCenter } = useMemo<{
+    profileDistrict: BelizeDistrict | null;
+    profileCenter: { latitude: number; longitude: number } | null;
+  }>(() => {
+    // Check address_line FIRST — provides town-level precision.
+    // Only fall back to profile.district (district-center) if no keyword matches.
     const addr = (profile?.address_line ?? '').toLowerCase();
-    if (!addr) return null;
-    if (['cayo', 'san ignacio', 'santa elena', 'belmopan', 'benque', 'spanish lookout'].some((k) => addr.includes(k))) return 'cayo';
-    if (['belize city', 'ladyville', 'hattieville', 'sandhill'].some((k) => addr.includes(k))) return 'belize';
-    if (['corozal'].some((k) => addr.includes(k))) return 'corozal';
-    if (['orange walk'].some((k) => addr.includes(k))) return 'orange_walk';
-    if (['stann creek', 'dangriga', 'hopkins', 'placencia', 'independence'].some((k) => addr.includes(k))) return 'stann_creek';
-    if (['toledo', 'punta gorda', 'big falls'].some((k) => addr.includes(k))) return 'toledo';
-    return null;
+
+    // Cayo — specific towns before the generic "cayo" keyword
+    if (['san ignacio', 'santa elena'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'cayo', profileCenter: { latitude: 17.155, longitude: -89.073 } };
+    if (['belmopan'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'cayo', profileCenter: { latitude: 17.251, longitude: -88.767 } };
+    if (['benque'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'cayo', profileCenter: { latitude: 17.075, longitude: -89.137 } };
+    if (['spanish lookout'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'cayo', profileCenter: { latitude: 17.300, longitude: -88.986 } };
+    if (['cayo'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'cayo', profileCenter: DISTRICT_CENTERS.cayo };
+
+    // Belize district towns
+    if (['belize city'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'belize', profileCenter: { latitude: 17.497, longitude: -88.189 } };
+    if (['ladyville', 'hattieville', 'sandhill', 'belize'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'belize', profileCenter: DISTRICT_CENTERS.belize };
+
+    // Corozal
+    if (['corozal'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'corozal', profileCenter: { latitude: 18.391, longitude: -88.394 } };
+
+    // Orange Walk
+    if (['orange walk'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'orange_walk', profileCenter: { latitude: 18.087, longitude: -88.561 } };
+
+    // Stann Creek
+    if (['dangriga'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'stann_creek', profileCenter: { latitude: 16.969, longitude: -88.230 } };
+    if (['placencia'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'stann_creek', profileCenter: { latitude: 16.525, longitude: -88.368 } };
+    if (['hopkins', 'independence', 'stann creek'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'stann_creek', profileCenter: DISTRICT_CENTERS.stann_creek };
+
+    // Toledo
+    if (['punta gorda'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'toledo', profileCenter: { latitude: 16.100, longitude: -88.806 } };
+    if (['toledo', 'big falls'].some((k) => addr.includes(k)))
+      return { profileDistrict: 'toledo', profileCenter: DISTRICT_CENTERS.toledo };
+
+    // No keyword match — fall back to profile.district field (district-center only)
+    if (profile?.district) {
+      return { profileDistrict: profile.district, profileCenter: DISTRICT_CENTERS[profile.district] };
+    }
+
+    return { profileDistrict: null, profileCenter: null };
   }, [profile?.district, profile?.address_line]);
 
-  // Determine initial camera: GPS → profile district → Belize-wide
+  // Determine initial camera: GPS → profile town/district center → Belize-wide
   const { initialCenter, initialZoom } = useMemo(() => {
     if (hasGPS) {
       return { initialCenter: { latitude: userLat, longitude: userLng }, initialZoom: DEFAULT_NEARBY_ZOOM };
     }
-    if (profileDistrict && DISTRICT_CENTERS[profileDistrict]) {
-      return { initialCenter: DISTRICT_CENTERS[profileDistrict], initialZoom: DEFAULT_NEARBY_ZOOM };
+    if (profileCenter) {
+      return { initialCenter: profileCenter, initialZoom: DEFAULT_NEARBY_ZOOM };
     }
     return { initialCenter: undefined, initialZoom: undefined };
-  }, [hasGPS, userLat, userLng, profileDistrict]);
+  }, [hasGPS, userLat, userLng, profileCenter]);
 
   const postPoints = useMemo(
     () =>
@@ -108,6 +155,8 @@ export default function ExploreMapScreen() {
     router.push(`/(tabs)/explore/${id}`);
   };
 
+  const [headerHeight, setHeaderHeight] = useState(64);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Map fills entire area */}
@@ -121,10 +170,14 @@ export default function ExploreMapScreen() {
           initialZoom={initialZoom}
           showUserLocation={hasGPS}
           highlightDistrict={profileDistrict}
+          compassTopOffset={headerHeight}
         />
 
         {/* Header overlay */}
-        <View style={styles.headerOverlay}>
+        <ScreenHeader
+          style={styles.headerOverlay}
+          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        >
           <View style={styles.headerRow}>
             <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
               <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -134,7 +187,7 @@ export default function ExploreMapScreen() {
               <Icon name="clipboard-list" size={24} color={colors.neutral[0]} />
             </Pressable>
           </View>
-        </View>
+        </ScreenHeader>
 
         {/* Legend */}
         <View style={styles.legend}>
@@ -174,10 +227,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: colors.forest[900],
     paddingBottom: spacing.sm,
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
   },
   headerRow: {
     flexDirection: 'row',

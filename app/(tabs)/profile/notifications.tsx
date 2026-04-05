@@ -16,6 +16,7 @@ import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
+import { ScreenHeader } from '@/components/ui';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
 
@@ -85,13 +86,13 @@ export default function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={8}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* System permission banner */}
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,

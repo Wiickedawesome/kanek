@@ -12,7 +12,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenHeader } from '@/components/ui';
 import { TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { VerificationStatus } from '@/components/profile';
@@ -115,7 +115,11 @@ export default function ProfileScreen() {
     : 'User';
 
   const hasRecentReviews = (recentReviews?.length ?? 0) > 0;
-  const recentReviewItems = (recentReviews ?? []).map((review) => {
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const visibleReviews = showAllReviews
+    ? (recentReviews ?? [])
+    : (recentReviews ?? []).slice(0, 3);
+  const recentReviewItems = visibleReviews.map((review) => {
     const isAnon = (review as any).is_anonymous;
     const raterName = isAnon
       ? 'Anonymous'
@@ -164,9 +168,9 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-      </LinearGradient>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile card */}
@@ -252,6 +256,21 @@ export default function ProfileScreen() {
           <View style={styles.reviewsSection}>
             <Text style={styles.reviewsSectionTitle}>Recent Reviews</Text>
             {recentReviewItems}
+            {(recentReviews?.length ?? 0) > 3 && (
+              <Pressable
+                onPress={() => setShowAllReviews((prev) => !prev)}
+                style={styles.showAllBtn}
+              >
+                <Text style={styles.showAllText}>
+                  {showAllReviews ? 'Show less' : `Show all (${recentReviews!.length})`}
+                </Text>
+                <Icon
+                  name={showAllReviews ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={colors.accent.green}
+                />
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -530,6 +549,19 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     marginTop: spacing.xs,
     marginLeft: 40 + spacing.sm,
+  },
+  showAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[100],
+  },
+  showAllText: {
+    ...typography.body2Bold,
+    color: colors.accent.green,
   },
   menuSection: {
     backgroundColor: colors.neutral[0],

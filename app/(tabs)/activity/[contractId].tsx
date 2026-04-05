@@ -16,7 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { LiveTrackingMap } from '@/components/map';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
@@ -255,7 +255,7 @@ export default function ContractDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
@@ -279,7 +279,7 @@ export default function ContractDetailScreen() {
             </Pressable>
           )}
         </View>
-      </View>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -547,7 +547,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
   headerRight: { width: 24, alignItems: 'flex-end' },

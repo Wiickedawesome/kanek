@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
@@ -113,13 +113,13 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Account Settings</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.field}>
@@ -376,7 +376,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl },

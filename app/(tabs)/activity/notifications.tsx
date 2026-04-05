@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader } from '@/components/ui';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing } from '@/theme';
 import {
@@ -168,7 +168,7 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
@@ -180,7 +180,7 @@ export default function NotificationsScreen() {
         ) : (
           <View style={{ width: 60 }} />
         )}
-      </View>
+      </ScreenHeader>
 
       {isLoading ? (
         <View style={styles.centered}>
@@ -223,7 +223,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0] },
   markAllText: { ...typography.body2Bold, color: colors.accent.green },

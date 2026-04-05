@@ -13,10 +13,8 @@ import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Icon } from '@/components/icons';
-import { Button } from '@/components/ui';
+import { Button, ScreenHeader, TopographicBg } from '@/components/ui';
 import { formatDateTime, safeGoBack } from '@/lib/helpers';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
   useGetCheckinQuery,
@@ -100,13 +98,13 @@ export default function SelfieCheckinModal() {
     return (
       <SafeAreaView style={styles.container}>
         <TopographicBg />
-        <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+        <ScreenHeader style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
           </Pressable>
           <Text style={styles.headerTitle}>Check-In</Text>
           <View style={{ width: 24 }} />
-        </LinearGradient>
+        </ScreenHeader>
         <View style={styles.doneContainer}>
           <Icon name="shield-alert" size={48} color={colors.accent.green} />
           <Text style={styles.doneTitle}>Already Checked In</Text>
@@ -130,13 +128,13 @@ export default function SelfieCheckinModal() {
   return (
     <SafeAreaView style={styles.container}>
       <TopographicBg />
-      <LinearGradient colors={[colors.forest[900], colors.forest[700]]} style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>Selfie Check-In</Text>
         <View style={{ width: 24 }} />
-      </LinearGradient>
+      </ScreenHeader>
 
       <View style={styles.content}>
         <Text style={styles.instruction}>

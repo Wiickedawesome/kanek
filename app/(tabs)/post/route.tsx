@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
-import { TextInput, Button } from '@/components/ui';
+import { TextInput, Button, ScreenHeader } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
@@ -221,7 +221,7 @@ export default function RouteFormScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
@@ -229,7 +229,7 @@ export default function RouteFormScreen() {
           {isOffer ? 'Offer a Route' : 'Request a Route'}
         </Text>
         <View style={{ width: 24 }} />
-      </View>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -485,7 +485,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.forest[900],
   },
   headerTitle: {
     ...typography.h3,
