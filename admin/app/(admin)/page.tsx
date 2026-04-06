@@ -63,12 +63,12 @@ export default async function DashboardPage() {
             href={card.href ?? '#'}
             className={`block rounded-lg p-5 transition-colors ${
               card.urgent
-                ? 'bg-yellow-900/30 border border-yellow-600/40 hover:bg-yellow-900/50'
-                : 'bg-forest-800 border border-forest-700 hover:bg-forest-700'
+                ? 'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100'
+                : 'bg-white border border-gray-200 hover:bg-gray-50 shadow-sm'
             }`}
           >
             <p className="text-sm text-forest-400">{card.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${card.urgent ? 'text-yellow-400' : 'text-white'}`}>
+            <p className={`text-3xl font-bold mt-1 ${card.urgent ? 'text-yellow-600' : 'text-forest-900'}`}>
               {card.value}
             </p>
           </a>
@@ -76,31 +76,31 @@ export default async function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-white mb-3">Recent Admin Actions</h2>
+        <h2 className="text-lg font-semibold text-forest-900 mb-3">Recent Admin Actions</h2>
         {recentActions.length === 0 ? (
           <p className="text-forest-400 text-sm">No admin actions yet.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-forest-400 border-b border-forest-700">
-                  <th className="pb-2 pr-4">Action</th>
-                  <th className="pb-2 pr-4">Target</th>
-                  <th className="pb-2 pr-4">Admin</th>
-                  <th className="pb-2 pr-4">Reason</th>
-                  <th className="pb-2">When</th>
+                <tr className="text-left text-forest-400 border-b border-gray-200">
+                  <th className="px-4 py-3">Action</th>
+                  <th className="px-4 py-3">Target</th>
+                  <th className="px-4 py-3">Admin</th>
+                  <th className="px-4 py-3">Reason</th>
+                  <th className="px-4 py-3">When</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-300">
+              <tbody className="text-forest-900">
                 {recentActions.map((a: any) => (
-                  <tr key={a.id} className="border-b border-forest-800">
-                    <td className="py-2 pr-4 font-mono text-xs">{a.action}</td>
-                    <td className="py-2 pr-4 text-xs">{a.target_type}</td>
-                    <td className="py-2 pr-4">
+                  <tr key={a.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs">{a.action}</td>
+                    <td className="px-4 py-3 text-xs">{a.target_type}</td>
+                    <td className="px-4 py-3">
                       {a.admin?.first_name ?? 'Unknown'} {a.admin?.last_name ?? ''}
                     </td>
-                    <td className="py-2 pr-4 max-w-48 truncate">{a.reason ?? '-'}</td>
-                    <td className="py-2 text-xs text-forest-400">
+                    <td className="px-4 py-3 max-w-48 truncate text-gray-500">{a.reason ?? '-'}</td>
+                    <td className="px-4 py-3 text-xs text-forest-400">
                       {new Date(a.created_at).toLocaleDateString()}
                     </td>
                   </tr>

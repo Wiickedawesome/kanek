@@ -15,35 +15,35 @@ export default async function UsersPage() {
     <div>
       <PageHeader title="Users" description="Manage platform users" />
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-forest-400 border-b border-forest-700">
-              <th className="pb-2 pr-4">Name</th>
-              <th className="pb-2 pr-4">Phone</th>
-              <th className="pb-2 pr-4">Role</th>
-              <th className="pb-2 pr-4">Status</th>
-              <th className="pb-2 pr-4">Rating</th>
-              <th className="pb-2 pr-4">Strikes</th>
-              <th className="pb-2">Actions</th>
+            <tr className="text-left text-forest-400 border-b border-gray-200">
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Rating</th>
+              <th className="px-4 py-3">Strikes</th>
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-gray-300">
+          <tbody className="text-forest-900">
             {(users ?? []).map((u: any) => (
-              <tr key={u.id} className="border-b border-forest-800 hover:bg-forest-800/50">
-                <td className="py-3 pr-4">
+              <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3">
                   {u.first_name ?? 'Unknown'} {u.last_name ?? ''}
                 </td>
-                <td className="py-3 pr-4 text-xs font-mono">{u.phone}</td>
-                <td className="py-3 pr-4 text-xs">{u.role}</td>
-                <td className="py-3 pr-4">
+                <td className="px-4 py-3 text-xs font-mono text-gray-500">{u.phone}</td>
+                <td className="px-4 py-3 text-xs">{u.role}</td>
+                <td className="px-4 py-3">
                   <StatusBadge status={u.account_status} />
                 </td>
-                <td className="py-3 pr-4">{u.rating_avg ?? '0'}</td>
-                <td className="py-3 pr-4 text-xs">
+                <td className="px-4 py-3">{u.rating_avg ?? '0'}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
                   {u.strikes_soft}s / {u.strikes_hard}h
                 </td>
-                <td className="py-3">
+                <td className="px-4 py-3">
                   <Link
                     href={`/users/${u.id}`}
                     className="text-accent-green hover:underline text-xs font-medium"
@@ -55,7 +55,7 @@ export default async function UsersPage() {
             ))}
             {(!users || users.length === 0) && (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-forest-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-forest-400">
                   No users found.
                 </td>
               </tr>

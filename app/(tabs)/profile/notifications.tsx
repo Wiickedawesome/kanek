@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
 import { ScreenHeader } from '@/components/ui';
@@ -254,11 +254,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   sectionTitle: {
     ...typography.body1Bold,

@@ -5,7 +5,7 @@ import { KanekMap } from './KanekMap';
 import { DriverPin } from './DriverPin';
 import { RouteOverlay } from './RouteOverlay';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 
 interface LiveTrackingMapProps {
@@ -159,11 +159,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    ...shadows.sm,
   },
   endpointDot: {
     width: 12,
@@ -185,11 +181,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    ...shadows.md,
   },
   infoText: {
     ...typography.caption,

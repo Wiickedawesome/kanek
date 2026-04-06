@@ -1,37 +1,89 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { navigateToNotification } from '@/lib/helpers';
+import { hapticLight } from '@/lib/haptics';
 import type { RootState, AppDispatch } from '@/store';
 import { dismissToast } from '@/store/slices/toastSlice';
+import type { IconName } from '@/components/icons';
+
+const NOTIFICATION_ICON_MAP: Record<string, IconName> = {
+  payment_sent: 'receipt',
+  payment_received: 'receipt',
+  booking_confirmed: 'clipboard-list',
+  booking_cancelled: 'clipboard-list',
+  contract_completed: 'star',
+  new_booking: 'user',
+  new_message: 'send',
+  post_cancelled: 'alert-triangle',
+  errand_accepted: 'package',
+  job_application: 'clipboard-list',
+  job_accepted: 'clipboard-list',
+  job_match_confirmed: 'clipboard-list',
+  route_activated: 'navigation',
+  sos_sent: 'shield-alert',
+  driver_verified: 'user',
+  driver_verification_rejected: 'alert-triangle',
+  rider_verified: 'user',
+  rider_document_rejected: 'alert-triangle',
+  account_suspended: 'shield-alert',
+  account_reactivated: 'circle-dot',
+  post_removed: 'alert-triangle',
+  strike_received: 'alert-triangle',
+  strike_issued: 'alert-triangle',
+  seat_booked: 'user',
+};
 
 export function InAppToast() {
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
   const toast = useSelector((s: RootState) => s.toast.current);
-  const translateY = useRef(new Animated.Value(-120)).current;
+  const translateY = useSharedValue(-120);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const clearToast = useCallback(() => {
+    dispatch(dismissToast());
+  }, [dispatch]);
+
   const hideToast = useCallback(() => {
-    Animated.timing(translateY, {
-      toValue: -120,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      dispatch(dismissToast());
+    translateY.value = withTiming(-120, { duration: 250 }, (finished) => {
+      if (finished) runOnJS(clearToast)();
     });
-  }, [dispatch, translateY]);
+  }, [translateY, clearToast]);
+
+  const handleTap = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    // Animate out then navigate
+    translateY.value = withTiming(-120, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(clearToast)();
+        runOnJS(navigateToNotification)(
+          toast?.notificationType,
+          toast?.data ?? null,
+        );
+      }
+    });
+  }, [translateY, clearToast, toast]);
+
+  const handleDismiss = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    hideToast();
+  }, [hideToast]);
 
   useEffect(() => {
     if (toast) {
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 80,
-        friction: 12,
-      }).start();
+      hapticLight();
+      translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
 
       timerRef.current = setTimeout(() => {
         hideToast();
@@ -43,18 +95,26 @@ export function InAppToast() {
     };
   }, [toast, hideToast, translateY]);
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
   if (!toast) return null;
 
+  const iconName: IconName =
+    (toast.notificationType && NOTIFICATION_ICON_MAP[toast.notificationType]) || 'bell';
+
   return (
-    <Animated.View
+    <ReAnimated.View
       style={[
         styles.container,
-        { transform: [{ translateY }], paddingTop: insets.top + spacing.xs },
+        { paddingTop: insets.top + spacing.xs },
+        animatedStyle,
       ]}
     >
-      <Pressable style={styles.content} onPress={hideToast}>
+      <Pressable style={styles.content} onPress={handleTap}>
         <View style={styles.iconCircle}>
-          <Icon name="bell" size={18} color={colors.neutral[0]} />
+          <Icon name={iconName} size={18} color={colors.neutral[0]} />
         </View>
         <View style={styles.textWrap}>
           <Text style={styles.title} numberOfLines={1}>{toast.title}</Text>
@@ -62,9 +122,11 @@ export function InAppToast() {
             <Text style={styles.body} numberOfLines={2}>{toast.body}</Text>
           ) : null}
         </View>
-        <Icon name="x" size={16} color={colors.neutral[400]} />
+        <Pressable onPress={handleDismiss} hitSlop={8}>
+          <Icon name="x" size={16} color={colors.neutral[400]} />
+        </Pressable>
       </Pressable>
-    </Animated.View>
+    </ReAnimated.View>
   );
 }
 
@@ -85,11 +147,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     gap: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    ...shadows.lg,
     borderLeftWidth: 4,
     borderLeftColor: colors.accent.green,
   },

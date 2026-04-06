@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
 import { Icon } from '@/components/icons';
 import { MapPicker } from '@/components/map/MapPicker';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import { BELIZE_BBOX } from '@/lib/constants';
 
@@ -249,11 +249,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral[200],
     marginTop: 4,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    ...shadows.md,
     zIndex: 200,
   },
   suggestionItem: {

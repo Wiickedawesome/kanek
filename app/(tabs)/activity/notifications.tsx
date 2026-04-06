@@ -9,11 +9,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Card, EmptyState, ScreenHeader } from '@/components/ui';
-import { getTimeAgo, safeGoBack } from '@/lib/helpers';
+import { getTimeAgo, safeGoBack, navigateToNotification } from '@/lib/helpers';
 import { colors, typography, spacing } from '@/theme';
 import {
   useGetNotificationsQuery,
@@ -24,13 +23,6 @@ import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
-
-const AUTHOR_POST_NOTIFICATION_TYPES = new Set([
-  'new_booking',
-  'errand_accepted',
-  'job_application',
-  'booking_cancelled',
-]);
 
 const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   payment_sent: 'receipt',
@@ -70,68 +62,17 @@ export default function NotificationsScreen() {
   const [markRead] = useMarkNotificationReadMutation();
   const [markAllRead] = useMarkAllNotificationsReadMutation();
 
-  const getNotificationRouteData = useCallback((notification: NotificationRow) => {
-    const data = notification.data as Record<string, unknown> | null;
-
-    const contractId =
-      typeof data?.contractId === 'string'
-        ? data.contractId
-        : typeof data?.contract_id === 'string'
-          ? data.contract_id
-          : null;
-
-    const postId =
-      typeof data?.postId === 'string'
-        ? data.postId
-        : typeof data?.post_id === 'string'
-          ? data.post_id
-          : null;
-
-    const ratedId =
-      typeof data?.ratedId === 'string'
-        ? data.ratedId
-        : typeof data?.rated_id === 'string'
-          ? data.rated_id
-          : null;
-
-    return { contractId, postId, ratedId };
-  }, []);
-
   const handlePress = useCallback(
     (notification: NotificationRow) => {
       if (!notification.read) {
         markRead(notification.id);
       }
-
-      if (notification.type === 'post_cancelled') {
-        return;
-      }
-
-      // route_activated has postId — route to activity post detail
-      if (notification.type === 'route_activated') {
-        const { postId } = getNotificationRouteData(notification);
-        if (postId) {
-          router.push(`/(tabs)/activity/post/${postId}`);
-        }
-        return;
-      }
-
-      const { contractId, postId, ratedId } = getNotificationRouteData(notification);
-
-      if (contractId && ratedId) {
-        router.push({
-          pathname: '/modals/rate',
-          params: { contractId, ratedId },
-        });
-      } else if (postId && AUTHOR_POST_NOTIFICATION_TYPES.has(notification.type)) {
-        router.push(`/(tabs)/activity/post/${postId}`);
-      } else if (contractId) {
-        router.push(`/(tabs)/activity/${contractId}`);
-      } else if (postId) {
-        router.push(`/(tabs)/explore/${postId}`);
-      }
+      navigateToNotification(
+        notification.type,
+        notification.data as Record<string, unknown> | null,
+      );
     },
-    [getNotificationRouteData, markRead],
+    [markRead],
   );
 
   const renderNotification = useCallback(

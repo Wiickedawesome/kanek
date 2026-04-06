@@ -1,12 +1,12 @@
 {
   "name": "kanek",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
@@ -25,6 +25,7 @@
     "expo-device": "~55.0.12",
     "expo-file-system": "~55.0.12",
     "expo-font": "~55.0.4",
+    "expo-haptics": "~55.0.11",
     "expo-image-picker": "~55.0.16",
     "expo-linear-gradient": "~55.0.11",
     "expo-linking": "~55.0.11",

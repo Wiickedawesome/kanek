@@ -249,7 +249,7 @@ export default function PackageFormScreen() {
                 style={[styles.chip, paymentMethod === 'ekyash' && styles.chipSelected]}
                 onPress={() => setPaymentMethod('ekyash')}
               >
-                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>eKyash</Text>
+                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>E-Kyash</Text>
               </Pressable>
             </View>
           </View>

@@ -262,3 +262,78 @@ export function normalizeAppPath(path: string): string {
 
   return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
 }
+
+// ── Notification routing ─────────────────────────────────────────────
+
+const AUTHOR_POST_NOTIFICATION_TYPES = new Set([
+  'new_booking',
+  'errand_accepted',
+  'job_application',
+  'booking_cancelled',
+]);
+
+/** Extract routing IDs from notification data payload */
+export function getNotificationRouteData(data: Record<string, unknown> | null | undefined) {
+  const contractId =
+    typeof data?.contractId === 'string'
+      ? data.contractId
+      : typeof data?.contract_id === 'string'
+        ? data.contract_id
+        : null;
+
+  const postId =
+    typeof data?.postId === 'string'
+      ? data.postId
+      : typeof data?.post_id === 'string'
+        ? data.post_id
+        : null;
+
+  const ratedId =
+    typeof data?.ratedId === 'string'
+      ? data.ratedId
+      : typeof data?.rated_id === 'string'
+        ? data.rated_id
+        : null;
+
+  return { contractId, postId, ratedId };
+}
+
+/** Navigate to the appropriate screen for a notification type + data payload */
+export function navigateToNotification(
+  notificationType: string | undefined,
+  data: Record<string, unknown> | null | undefined,
+) {
+  if (!notificationType) {
+    router.push('/(tabs)/activity/notifications');
+    return;
+  }
+
+  if (notificationType === 'post_cancelled') return;
+
+  if (notificationType === 'route_activated') {
+    const { postId } = getNotificationRouteData(data);
+    if (postId) {
+      router.push(`/(tabs)/activity/post/${postId}` as any);
+    }
+    return;
+  }
+
+  const { contractId, postId, ratedId } = getNotificationRouteData(data);
+
+  if (contractId && ratedId) {
+    router.push({
+      pathname: '/modals/rate',
+      params: { contractId, ratedId },
+    });
+  } else if (postId && AUTHOR_POST_NOTIFICATION_TYPES.has(notificationType)) {
+    router.push(`/(tabs)/activity/post/${postId}` as any);
+  } else if (contractId) {
+    router.push(`/(tabs)/activity/${contractId}` as any);
+  } else if (postId) {
+    router.push(`/(tabs)/explore/${postId}` as any);
+  } else {
+    // Fallback: open notifications list
+    router.push('/(tabs)/activity/notifications' as any);
+  }
+}
+

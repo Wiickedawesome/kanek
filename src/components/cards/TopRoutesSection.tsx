@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { Icon } from '@/components/icons';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture } from '@/lib/helpers';
@@ -149,17 +149,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 
-  // Card container — white card like AllTrails
+  // Card container — matte frosted card
   card: {
     width: CARD_WIDTH,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    ...shadows.sm,
   },
   cardPressed: {
     opacity: 0.92,

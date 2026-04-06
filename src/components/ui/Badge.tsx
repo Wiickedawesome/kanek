@@ -79,12 +79,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
   },
   label: {
     ...typography.caption,
     fontWeight: '600',
+    fontSize: 11,
   },
 });

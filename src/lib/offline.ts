@@ -1,5 +1,6 @@
 import MapboxGL from '@rnmapbox/maps';
 import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
 import { BELIZE_BOUNDS } from '@/lib/mapbox';
 
 /** Predefined regions for offline download */
@@ -90,6 +91,11 @@ export function downloadOfflinePack(
   onComplete: () => void,
   onError: (error: Error) => void,
 ): () => void {
+  if (Platform.OS === 'web') {
+    onError(new Error('Offline maps are not available on web'));
+    return () => {};
+  }
+
   const region = OFFLINE_REGIONS[regionKey];
 
   const pack = MapboxGL.offlineManager.createPack(
@@ -123,11 +129,13 @@ export function downloadOfflinePack(
 
 /** Delete a downloaded offline pack */
 export async function deleteOfflinePack(regionKey: OfflineRegionKey): Promise<void> {
+  if (Platform.OS === 'web') return;
   await MapboxGL.offlineManager.deletePack(regionKey);
 }
 
 /** Get list of downloaded packs */
 export async function getOfflinePacks(): Promise<string[]> {
+  if (Platform.OS === 'web') return [];
   const packs = await MapboxGL.offlineManager.getPacks();
   return packs?.map((p: { name: string }) => p.name) ?? [];
 }

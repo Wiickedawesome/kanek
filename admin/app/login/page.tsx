@@ -1,22 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+type AuthMethod = 'email' | 'phone';
+type Step = 'credentials' | 'otp';
+
+function LoginForm() {
   const searchParams = useSearchParams();
   const unauthorized = searchParams.get('error') === 'unauthorized';
 
+  const [method, setMethod] = useState<AuthMethod>('email');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [step, setStep] = useState<Step>('credentials');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     unauthorized ? 'Access denied. Admin accounts only.' : null,
   );
 
   const supabase = createClient();
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+    } else {
+      window.location.href = '/';
+    }
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,17 +74,49 @@ export default function LoginPage() {
       setError(verifyError.message);
       setLoading(false);
     } else {
-      // Middleware will check admin role on redirect
       window.location.href = '/';
     }
+  };
+
+  const switchMethod = (m: AuthMethod) => {
+    setMethod(m);
+    setStep('credentials');
+    setError(null);
+    setOtp('');
   };
 
   return (
     <div className="min-h-screen bg-forest-900 flex items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-forest-900">kanek</h1>
           <p className="text-forest-400 mt-1 text-sm">Admin Panel</p>
+        </div>
+
+        {/* Method toggle */}
+        <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => switchMethod('email')}
+            className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
+              method === 'email'
+                ? 'bg-white text-forest-900 shadow-sm'
+                : 'text-forest-400 hover:text-forest-600'
+            }`}
+          >
+            Email
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMethod('phone')}
+            className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
+              method === 'phone'
+                ? 'bg-white text-forest-900 shadow-sm'
+                : 'text-forest-400 hover:text-forest-600'
+            }`}
+          >
+            Phone
+          </button>
         </div>
 
         {error && (
@@ -69,7 +125,49 @@ export default function LoginPage() {
           </div>
         )}
 
-        {step === 'phone' ? (
+        {/* Email login */}
+        {method === 'email' && (
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-forest-800 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-forest-800 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !email || !password}
+              className="w-full bg-accent-green text-white font-semibold py-2.5 rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        )}
+
+        {/* Phone OTP — step 1 */}
+        {method === 'phone' && step === 'credentials' && (
           <form onSubmit={handleSendOTP} className="space-y-4">
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-forest-800 mb-1">
@@ -99,7 +197,10 @@ export default function LoginPage() {
               {loading ? 'Sending...' : 'Send Verification Code'}
             </button>
           </form>
-        ) : (
+        )}
+
+        {/* Phone OTP — step 2 */}
+        {method === 'phone' && step === 'otp' && (
           <form onSubmit={handleVerifyOTP} className="space-y-4">
             <p className="text-sm text-forest-400 text-center">
               Code sent to <strong className="text-forest-900">{phone.startsWith('+') ? phone : `+501${phone}`}</strong>
@@ -129,7 +230,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => { setStep('phone'); setOtp(''); }}
+              onClick={() => { setStep('credentials'); setOtp(''); }}
               className="w-full text-sm text-forest-400 hover:text-forest-900 transition-colors"
             >
               ← Change number
@@ -140,3 +241,19 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-forest-900 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-8 text-center">
+          <h1 className="text-2xl font-bold text-forest-900">kanek</h1>
+          <p className="text-forest-400 mt-1 text-sm">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
+

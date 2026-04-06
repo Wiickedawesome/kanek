@@ -322,7 +322,7 @@ export default function ErrandFormScreen() {
                 style={[styles.categoryChip, paymentMethod === 'ekyash' && styles.categoryChipSelected]}
                 onPress={() => setPaymentMethod('ekyash')}
               >
-                <Text style={[styles.categoryText, paymentMethod === 'ekyash' && styles.categoryTextSelected]}>eKyash</Text>
+                <Text style={[styles.categoryText, paymentMethod === 'ekyash' && styles.categoryTextSelected]}>E-Kyash</Text>
               </Pressable>
             </View>
           </View>

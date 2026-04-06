@@ -27,12 +27,22 @@ export function FlagActions({ flagId, targetType, targetId, currentStatus }: Pro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flagId, targetType, targetId, action, reason: reason.trim() || undefined }),
       });
+
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        alert('Session expired. Please refresh the page and try again.');
+        return;
+      }
+
+      const body = await res.json();
       if (!res.ok) {
-        const body = await res.json();
         alert(body.error ?? 'Action failed');
         return;
       }
       router.refresh();
+    } catch (err) {
+      console.error('Flag action failed:', err);
+      alert('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -44,7 +54,7 @@ export function FlagActions({ flagId, targetType, targetId, currentStatus }: Pro
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder="Reason / notes"
-        className="w-full bg-forest-900 border border-forest-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-forest-500 focus:outline-none focus:border-accent-green"
+        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
         rows={2}
       />
       <div className="flex flex-wrap gap-3">

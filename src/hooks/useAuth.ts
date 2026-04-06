@@ -11,6 +11,7 @@ import { ekyashApi } from '@/store/api/ekyashApi';
 import { reportsApi } from '@/store/api/reportsApi';
 import { notificationsApi } from '@/store/api/notificationsApi';
 import { checkinsApi } from '@/store/api/checkinsApi';
+import { messagesApi } from '@/store/api/messagesApi';
 import type { AppDispatch } from '@/store';
 
 /**
@@ -75,6 +76,7 @@ export function useAuth() {
     dispatch(reportsApi.util.resetApiState());
     dispatch(notificationsApi.util.resetApiState());
     dispatch(checkinsApi.util.resetApiState());
+    dispatch(messagesApi.util.resetApiState());
     // Clear Supabase session from server + AsyncStorage
     try {
       await supabase.auth.signOut();

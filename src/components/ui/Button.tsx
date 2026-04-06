@@ -7,7 +7,15 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, typography, borderRadius, spacing } from '@/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { colors, typography, borderRadius, spacing, shadows } from '@/theme';
+import { hapticLight } from '@/lib/haptics';
+
+const SPRING_CONFIG = { damping: 15, stiffness: 350 };
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -34,40 +42,61 @@ export function Button({
   style,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    if (!isDisabled) {
+      hapticLight();
+      onPress();
+    }
+  };
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        variantStyles[variant],
-        pressed && !isDisabled && styles.pressed,
-        isDisabled && styles.disabled,
-        style,
-      ]}
+      onPressIn={() => {
+        if (!isDisabled) scale.value = withSpring(0.96, SPRING_CONFIG);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, SPRING_CONFIG);
+      }}
     >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? colors.neutral[0] : colors.forest[600]}
-        />
-      ) : (
-        <>
-          {icon}
-          <Text
-            style={[
-              styles.text,
-              sizeTextStyles[size],
-              variantTextStyles[variant],
-              isDisabled && styles.disabledText,
-            ]}
-          >
-            {title}
-          </Text>
-        </>
-      )}
+      <Animated.View
+        style={[
+          styles.base,
+          sizeStyles[size],
+          variantStyles[variant],
+          isDisabled && styles.disabled,
+          style,
+          animatedStyle,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'primary' ? colors.neutral[0] : colors.forest[600]}
+          />
+        ) : (
+          <>
+            {icon}
+            <Text
+              style={[
+                styles.text,
+                sizeTextStyles[size],
+                variantTextStyles[variant],
+                isDisabled && styles.disabledText,
+              ]}
+            >
+              {title}
+            </Text>
+          </>
+        )}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -82,9 +111,6 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.body1Bold,
-  },
-  pressed: {
-    opacity: 0.85,
   },
   disabled: {
     opacity: 0.5,
@@ -110,18 +136,14 @@ const variantStyles: Record<ButtonVariant, ViewStyle> = {
   primary: {
     backgroundColor: colors.forest[600],
     shadowColor: colors.forest[900],
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   secondary: {
     backgroundColor: colors.neutral[100],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...shadows.sm,
   },
   outline: {
     backgroundColor: 'transparent',

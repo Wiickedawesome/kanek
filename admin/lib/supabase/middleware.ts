@@ -29,6 +29,12 @@ export async function updateSession(request: NextRequest) {
 
   // Public paths that don't need auth
   const isLoginPage = request.nextUrl.pathname === '/login';
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+
+  // API routes handle their own auth — don't redirect them
+  if (isApiRoute) {
+    return supabaseResponse;
+  }
 
   if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();

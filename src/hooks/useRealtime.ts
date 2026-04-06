@@ -73,11 +73,21 @@ export function useRealtime() {
               if (!inAppEnabled) return;
               const cat = getNotifCategory(notif.type ?? '');
               if (cat && prefs && prefs[cat] === false) return;
-              dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body ?? undefined }));
+              dispatch(showToast({
+                title: notif.title ?? 'New notification',
+                body: notif.body ?? undefined,
+                notificationType: notif.type ?? undefined,
+                data: (notif.data as Record<string, unknown>) ?? undefined,
+              }));
             } catch (err) {
               console.error('Failed to parse notification prefs:', err);
               // Fallback to showing toast if we can't read prefs securely
-              dispatch(showToast({ title: notif.title ?? 'New notification', body: notif.body ?? undefined }));
+              dispatch(showToast({
+                title: notif.title ?? 'New notification',
+                body: notif.body ?? undefined,
+                notificationType: notif.type ?? undefined,
+                data: (notif.data as Record<string, unknown>) ?? undefined,
+              }));
             }
           };
           checkPrefsAndToast();

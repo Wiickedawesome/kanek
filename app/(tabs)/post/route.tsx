@@ -316,7 +316,7 @@ export default function RouteFormScreen() {
                   style={[styles.pickupOption, paymentMethod === 'ekyash' && styles.pickupSelected]}
                   onPress={() => setPaymentMethod('ekyash')}
                 >
-                  <Text style={[styles.pickupText, paymentMethod === 'ekyash' && styles.pickupTextSelected]}>eKyash</Text>
+                  <Text style={[styles.pickupText, paymentMethod === 'ekyash' && styles.pickupTextSelected]}>E-Kyash</Text>
                 </Pressable>
               </View>
             </View>

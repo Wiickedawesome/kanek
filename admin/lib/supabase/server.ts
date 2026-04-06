@@ -20,6 +20,9 @@ export async function createServerSupabase() {
           }
         },
       },
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+      },
     },
   );
 }
@@ -43,6 +46,9 @@ export async function createAdminSupabase() {
             cookieStore.set(name, value, options);
           }
         },
+      },
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
       },
     },
   );

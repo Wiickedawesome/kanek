@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "kanek",
+    "name": "Kanek",
     "slug": "kanek",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,10 +16,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "bz.kanek.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "kanek needs your location to show routes and posts near you.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "kanek needs your location to share your position during active trips.",
-        "NSCameraUsageDescription": "kanek needs camera access for ID verification photos.",
-        "NSPhotoLibraryUsageDescription": "kanek needs photo library access for ID verification uploads.",
+        "NSLocationWhenInUseUsageDescription": "Kanek needs your location to show routes and posts near you.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Kanek needs your location to share your position during active trips.",
+        "NSCameraUsageDescription": "Kanek needs camera access for ID verification photos.",
+        "NSPhotoLibraryUsageDescription": "Kanek needs photo library access for ID verification uploads.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -35,8 +35,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -47,22 +46,28 @@
       "expo-font",
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "color": "#142800"
+        }
+      ],
+      [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "kanek needs your location to share your position during active trips."
+          "locationAlwaysAndWhenInUsePermission": "Kanek needs your location to share your position during active trips."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "kanek needs photo library access for ID verification uploads.",
-          "cameraPermission": "kanek needs camera access for ID verification photos."
+          "photosPermission": "Kanek needs photo library access for ID verification uploads.",
+          "cameraPermission": "Kanek needs camera access for ID verification photos."
         }
       ],
       [
         "@rnmapbox/maps",
         {
-          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "sk.placeholder"
+          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "${MAPBOX_DOWNLOAD_TOKEN}"
         }
       ]
     ],

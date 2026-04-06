@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { MapPickerContent } from './MapPickerContent';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { reverseGeocode, BELIZE_CENTER, MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import { BELIZE_BBOX } from '@/lib/constants';
 import type { RootState } from '@/store';
@@ -276,11 +276,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral[200],
     marginTop: spacing.xs,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    ...shadows.md,
   },
   resultItem: {
     flexDirection: 'row',

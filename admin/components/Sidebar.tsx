@@ -11,6 +11,7 @@ import {
   IconFlag,
   IconClipboard,
   IconReceipt,
+  IconShield,
   IconLogOut,
 } from './Icons';
 import { ComponentType } from 'react';
@@ -23,6 +24,7 @@ const navItems: { href: string; label: string; Icon: ComponentType<{ className?:
   { href: '/flags', label: 'Flags', Icon: IconFlag },
   { href: '/posts', label: 'Posts', Icon: IconClipboard },
   { href: '/transactions', label: 'Transactions', Icon: IconReceipt },
+  { href: '/admins', label: 'Admins', Icon: IconShield },
 ];
 
 export function Sidebar() {

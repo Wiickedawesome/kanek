@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
-import { colors } from '@/theme';
+import { colors, shadows } from '@/theme';
 
 interface DriverPinProps {
   /** [longitude, latitude] */
@@ -49,11 +49,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.green,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    ...shadows.sm,
   },
   arrowInner: {
     width: 0,

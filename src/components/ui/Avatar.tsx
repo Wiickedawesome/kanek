@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
-import { colors, typography } from '@/theme';
+import { View, Text, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { colors, typography, shadows } from '@/theme';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -25,36 +26,68 @@ function getInitials(name?: string | null): string {
 
 export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
   const dim = sizeMap[size];
+  const ringWidth = size === 'lg' ? 2.5 : 2;
 
   if (uri) {
     return (
-      <Image
-        source={{ uri }}
+      <View
         style={[
-          styles.image,
-          { width: dim, height: dim, borderRadius: dim / 2 } as ImageStyle,
-          style as ImageStyle,
+          styles.ring,
+          {
+            width: dim + ringWidth * 2,
+            height: dim + ringWidth * 2,
+            borderRadius: (dim + ringWidth * 2) / 2,
+            borderWidth: ringWidth,
+          },
+          style,
         ]}
-      />
+      >
+        <Animated.Image
+          entering={FadeIn.duration(300)}
+          source={{ uri }}
+          style={[
+            styles.image,
+            { width: dim, height: dim, borderRadius: dim / 2 } as ImageStyle,
+          ]}
+        />
+      </View>
     );
   }
 
   return (
     <View
       style={[
-        styles.fallback,
-        { width: dim, height: dim, borderRadius: dim / 2 },
+        styles.ring,
+        {
+          width: dim + ringWidth * 2,
+          height: dim + ringWidth * 2,
+          borderRadius: (dim + ringWidth * 2) / 2,
+          borderWidth: ringWidth,
+        },
         style,
       ]}
     >
-      <Text style={[styles.initials, size === 'sm' && styles.initialsSmall]}>
-        {getInitials(name)}
-      </Text>
+      <View
+        style={[
+          styles.fallback,
+          { width: dim, height: dim, borderRadius: dim / 2 },
+        ]}
+      >
+        <Text style={[styles.initials, size === 'sm' && styles.initialsSmall]}>
+          {getInitials(name)}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  ring: {
+    borderColor: colors.neutral[0],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
   image: {
     backgroundColor: colors.neutral[200],
   },

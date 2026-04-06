@@ -46,3 +46,8 @@ android/
 ios/
 *.ipa
 .idea/
+
+# Store credentials (never commit)
+google-services.json
+play-store-service-account.json
+

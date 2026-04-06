@@ -13,7 +13,7 @@ import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
 import { TopographicBg, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { formatMonthYear, formatShortDate, safeGoBack } from '@/lib/helpers';
@@ -243,11 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   reviewHeader: {
     flexDirection: 'row',

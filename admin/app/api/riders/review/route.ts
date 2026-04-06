@@ -1,4 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -20,17 +21,26 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createAdminSupabase();
-  let riderUserId = '';
+
+  // Get the document first to find user_id
+  const { data: doc, error: fetchError } = await supabase
+    .from('rider_documents')
+    .select('user_id')
+    .eq('id', docId)
+    .single();
+
+  if (fetchError || !doc) {
+    return NextResponse.json({ error: fetchError?.message ?? 'Document not found' }, { status: 404 });
+  }
+
+  const riderUserId = doc.user_id;
 
   if (action === 'approve') {
-    const { data: updatedDoc, error } = await supabase
+    const { error } = await supabase
       .from('rider_documents')
       .update({ review_status: 'approved', verified: true, reviewed_by: user.id })
-      .eq('id', docId)
-      .select('user_id')
-      .single();
+      .eq('id', docId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    riderUserId = updatedDoc.user_id;
 
     await supabase.from('profiles').update({ account_status: 'active' }).eq('id', riderUserId);
     await supabase.from('notifications').insert({
@@ -41,14 +51,11 @@ export async function POST(request: NextRequest) {
       data: { userId: riderUserId },
     });
   } else {
-    const { data: updatedDoc, error } = await supabase
+    const { error } = await supabase
       .from('rider_documents')
       .update({ review_status: 'rejected', rejection_reason: reason, verified: false, reviewed_by: user.id })
-      .eq('id', docId)
-      .select('user_id')
-      .single();
+      .eq('id', docId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    riderUserId = updatedDoc.user_id;
 
     await supabase.from('notifications').insert({
       user_id: riderUserId,
@@ -68,6 +75,9 @@ export async function POST(request: NextRequest) {
     target_id: docId,
     reason: reason ?? null,
   });
+
+  revalidatePath(`/riders/${docId}`);
+  revalidatePath('/riders');
 
   return NextResponse.json({ ok: true });
 }

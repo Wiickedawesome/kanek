@@ -18,7 +18,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
-import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation, useAcceptJobApplicationMutation, useRejectJobApplicationMutation } from '@/store/api/bookingsApi';
+import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation, useAcceptApplicantMutation, useRejectApplicantMutation } from '@/store/api/bookingsApi';
+import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { supabase } from '@/lib/supabase';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
@@ -56,6 +57,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const authUser = useSelector((state: RootState) => state.auth.user);
   const userId = authUser?.id;
+  const { data: myProfile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const isAccountActive = myProfile?.account_status === 'active';
   const { data: post, isLoading, error } = useGetPostByIdQuery(postId ?? '', {
     skip: !postId,
   });
@@ -70,8 +73,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
     { postId: postId ?? '' },
     { skip: !postId || !isOwnerCheck(userId, post) },
   );
-  const [acceptJobApplication] = useAcceptJobApplicationMutation();
-  const [rejectJobApplication] = useRejectJobApplicationMutation();
+  const [acceptApplicant] = useAcceptApplicantMutation();
+  const [rejectApplicant] = useRejectApplicantMutation();
   const [isBooking, setIsBooking] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [actionBookingId, setActionBookingId] = useState<string | null>(null);
@@ -138,12 +141,17 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const showOpenBookingBar = isPostOpen && !isOwner && !existingBooking;
   const hasOwnerBookings = (postBookings?.length ?? 0) > 0;
   const showOwnerResponsesSection = isOwner && hasOwnerBookings;
+  const pendingCount = (postBookings ?? []).filter((b) => b.status === 'pending').length;
+  const confirmedCount = (postBookings ?? []).filter((b) => b.status === 'confirmed').length;
+  const confirmedSeats = (postBookings ?? [])
+    .filter((b) => b.status === 'confirmed')
+    .reduce((sum, b) => sum + (b.seats_booked ?? 1), 0);
   const bookerRows = (postBookings ?? []).map((b) => {
     const name = b.user
       ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
       : 'Unknown';
-    const isJobOwnerPending = post.type === 'job' && isOwner && post.status === 'open' && b.status === 'pending';
-    const isJobAccepted = post.type === 'job' && b.status === 'confirmed';
+    const isOwnerPending = isOwner && post.status === 'open' && b.status === 'pending';
+    const isAccepted = b.status === 'confirmed';
     const isBusy = actionBookingId === b.id;
 
     const profilePress = b.user?.id
@@ -160,28 +168,37 @@ export default function PostDetailScreen({ backFallback }: Props) {
           <Avatar uri={b.user?.avatar_url} name={name} size="sm" />
           <View style={styles.bookerInfo}>
             <Text style={styles.bookerName}>{name}</Text>
-            <Text style={styles.bookerMeta}>
-              {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-              {(b.seats_booked ?? 1) > 1 ? ` · ${b.seats_booked} seats` : ''}
-            </Text>
+            <View style={styles.bookerMetaRow}>
+              <Text style={styles.bookerMeta}>
+                {b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                {post.type === 'route_offer' && (b.seats_booked ?? 1) > 1 ? ` · ${b.seats_booked} seats` : ''}
+              </Text>
+              {b.user?.rating_avg != null && b.user.rating_avg > 0 && (
+                <View style={styles.bookerRating}>
+                  <Icon name="star" size={12} color={colors.accent.green} />
+                  <Text style={styles.bookerRatingText}>{b.user.rating_avg.toFixed(1)}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </Pressable>
-        {isJobOwnerPending && (
+        {isOwnerPending && (
           <View style={styles.applicantActions}>
             <Button
               title={isBusy ? '...' : 'Accept'}
               size="sm"
               disabled={actionBookingId !== null}
               onPress={async () => {
-                const ok = await showConfirm('Accept Applicant', `Accept ${name} for this job?`);
+                const ok = await showConfirm('Accept Applicant', getAcceptConfirmMessage(post.type, name));
                 if (!ok) return;
                 setActionBookingId(b.id);
                 try {
-                  await acceptJobApplication({
+                  await acceptApplicant({
                     bookingId: b.id,
                     postId: post.id,
                     applicantId: b.user_id,
-                    postTitle: post.title ?? 'this job',
+                    postTitle: post.title ?? 'this post',
+                    postType: post.type,
                   }).unwrap();
                 } catch (e: any) {
                   const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to accept.';
@@ -198,13 +215,16 @@ export default function PostDetailScreen({ backFallback }: Props) {
               variant="outline"
               disabled={actionBookingId !== null}
               onPress={async () => {
-                const ok = await showConfirm('Reject Applicant', `Remove ${name}'s application?`);
+                const ok = await showConfirm('Reject Applicant', `Remove ${name}'s request?`);
                 if (!ok) return;
                 setActionBookingId(b.id);
                 try {
-                  await rejectJobApplication({
+                  await rejectApplicant({
                     bookingId: b.id,
                     postId: post.id,
+                    applicantId: b.user_id,
+                    postTitle: post.title ?? 'this post',
+                    postType: post.type,
                   }).unwrap();
                 } catch (e: any) {
                   const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to reject.';
@@ -217,7 +237,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             />
           </View>
         )}
-        {isJobAccepted && (
+        {isAccepted && (
           <>
             <View style={styles.acceptedBadge}>
               <Text style={styles.acceptedBadgeText}>Accepted</Text>
@@ -318,40 +338,16 @@ export default function PostDetailScreen({ backFallback }: Props) {
       </View>
     );
   } else if (showExistingBookingBar) {
-    const isJobPending = post.type === 'job' && existingBooking?.status === 'pending';
-    const isJobConfirmed = post.type === 'job' && existingBooking?.status === 'confirmed';
+    const isPending = existingBooking?.status === 'pending';
     const isConfirmed = existingBooking?.status === 'confirmed';
     const contractId = existingBooking?.contract?.id;
-    if (isJobConfirmed) {
-      bottomAction = contractId ? (
-        <View style={styles.bottomBar}>
-          <View style={styles.bottomBarRow}>
-            <Text style={[styles.bottomSuccessText, styles.bottomSuccessInRow]}>You Got the Job!</Text>
-            <Button
-              title="Message"
-              variant="outline"
-              onPress={() => router.push(`/(tabs)/activity/${contractId}`)}
-              size="lg"
-              style={styles.messageButton}
-            />
-          </View>
-        </View>
-      ) : (
-        <View style={styles.bottomBar}>
-          <Text style={styles.bottomSuccessText}>You Got the Job!</Text>
-        </View>
-      );
-    } else if (isConfirmed && contractId) {
+    if (isConfirmed && contractId) {
       bottomAction = (
         <View style={styles.bottomBar}>
           <View style={styles.bottomBarRow}>
-            <Button
-              title={getBookedLabel(post.type)}
-              disabled
-              onPress={() => {}}
-              size="lg"
-              style={styles.actionButtonHalf}
-            />
+            <Text style={[styles.bottomSuccessText, styles.bottomSuccessInRow]}>
+              {getAcceptedMessage(post.type)}
+            </Text>
             <Button
               title="Message"
               variant="outline"
@@ -360,13 +356,19 @@ export default function PostDetailScreen({ backFallback }: Props) {
               style={styles.messageButton}
             />
           </View>
+        </View>
+      );
+    } else if (isConfirmed) {
+      bottomAction = (
+        <View style={styles.bottomBar}>
+          <Text style={styles.bottomSuccessText}>{getAcceptedMessage(post.type)}</Text>
         </View>
       );
     } else {
       bottomAction = (
         <View style={styles.bottomBar}>
           <Button
-            title={isJobPending ? 'Application Pending' : getBookedLabel(post.type)}
+            title={isPending ? getPendingLabel(post.type) : getBookedLabel(post.type)}
             disabled
             onPress={() => {}}
             size="lg"
@@ -387,6 +389,14 @@ export default function PostDetailScreen({ backFallback }: Props) {
               return;
             }
 
+            if (!isAccountActive) {
+              showAlert(
+                'Account Pending',
+                'Your account is still being reviewed. You can browse posts, but you cannot book or apply until your documents are approved.',
+              );
+              return;
+            }
+
             const confirmed = await showConfirm(
               getActionLabel(post.type),
               getConfirmMessage(post.type),
@@ -395,7 +405,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
             setIsBooking(true);
             try {
-              const booking = await createBooking({
+              await createBooking({
                 postId: post.id,
                 userId,
                 role: getBookingRole(post.type),
@@ -403,25 +413,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
                 paymentMethod: post.payment_method ?? 'cash',
               }).unwrap();
 
-              const shouldOpenPayment = shouldOpenPaymentAfterBooking(post.type, post.payment_method);
-              const { data: contract } = await supabase
-                .from('contracts')
-                .select('id')
-                .eq('booking_id', booking.id)
-                .maybeSingle();
-
-              showAlert(
-                'Success',
-                shouldOpenPayment
-                  ? 'Seat booked. Continue to your contract to complete the E-Kyash payment.'
-                  : getSuccessMessage(post.type),
-              );
-
-              if (shouldOpenPayment && contract?.id) {
-                router.replace(`/(tabs)/activity/${contract.id}`);
-              } else {
-                router.replace({ pathname: '/(tabs)/activity', params: { tab: 'active' } });
-              }
+              showAlert('Success', getSuccessMessage(post.type));
+              router.replace({ pathname: '/(tabs)/activity', params: { tab: 'active' } });
             } catch (e: any) {
               const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Something went wrong';
               showAlert('Error', msg);
@@ -731,6 +724,39 @@ function getBookedLabel(type: string): string {
   }
 }
 
+function getPendingLabel(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Seat Pending';
+    case 'route_request': return 'Offer Pending';
+    case 'errand': return 'Errand Pending';
+    case 'package': return 'Delivery Pending';
+    case 'job': return 'Application Pending';
+    default: return 'Pending';
+  }
+}
+
+function getAcceptedMessage(type: string): string {
+  switch (type) {
+    case 'route_offer': return 'Your seat is confirmed!';
+    case 'route_request': return 'Your drive offer was accepted!';
+    case 'errand': return 'You were accepted for this errand!';
+    case 'package': return 'You were accepted for this delivery!';
+    case 'job': return 'You got the job!';
+    default: return 'You were accepted!';
+  }
+}
+
+function getAcceptConfirmMessage(type: string, name: string): string {
+  switch (type) {
+    case 'route_offer': return `Confirm ${name}'s seat booking?`;
+    case 'route_request': return `Accept ${name} as your driver?`;
+    case 'errand': return `Accept ${name} for this errand?`;
+    case 'package': return `Accept ${name} for this delivery?`;
+    case 'job': return `Accept ${name} for this job?`;
+    default: return `Accept ${name}'s request?`;
+  }
+}
+
 function getAcceptedLabel(type: string): string {
   switch (type) {
     case 'route_offer': return 'Booked by';
@@ -1035,6 +1061,21 @@ const styles = StyleSheet.create({
   bookerMeta: {
     ...typography.caption,
     color: colors.neutral[500],
+  },
+  bookerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  bookerRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  bookerRatingText: {
+    ...typography.caption,
+    color: colors.forest[600],
+    fontWeight: '600',
   },
   openMapsBtn: {
     position: 'absolute',

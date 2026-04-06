@@ -1,4 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -61,6 +62,9 @@ export async function POST(request: NextRequest) {
     target_id: driverId,
     reason: reason ?? null,
   });
+
+  revalidatePath(`/drivers/${driverId}`);
+  revalidatePath('/drivers');
 
   return NextResponse.json({ ok: true });
 }

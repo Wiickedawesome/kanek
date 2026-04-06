@@ -16,31 +16,31 @@ export default async function RidersPage() {
     <div>
       <PageHeader title="Rider Documents" description="Review and verify rider identity documents" />
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-forest-400 border-b border-forest-700">
-              <th className="pb-2 pr-4">Rider</th>
-              <th className="pb-2 pr-4">Phone</th>
-              <th className="pb-2 pr-4">Uploaded</th>
-              <th className="pb-2 pr-4">Status</th>
-              <th className="pb-2">Actions</th>
+            <tr className="text-left text-forest-400 border-b border-gray-200">
+              <th className="px-4 py-3">Rider</th>
+              <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">Uploaded</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-gray-300">
+          <tbody className="text-forest-900">
             {(docs ?? []).map((d: any) => (
-              <tr key={d.id} className="border-b border-forest-800 hover:bg-forest-800/50">
-                <td className="py-3 pr-4">
+              <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3">
                   {d.user?.first_name ?? 'Unknown'} {d.user?.last_name ?? ''}
                 </td>
-                <td className="py-3 pr-4 text-xs font-mono">{d.user?.phone}</td>
-                <td className="py-3 pr-4 text-xs text-forest-400">
+                <td className="px-4 py-3 text-xs font-mono text-gray-500">{d.user?.phone}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
                   {new Date(d.uploaded_at).toLocaleDateString()}
                 </td>
-                <td className="py-3 pr-4">
+                <td className="px-4 py-3">
                   <StatusBadge status={d.review_status} />
                 </td>
-                <td className="py-3">
+                <td className="px-4 py-3">
                   <Link
                     href={`/riders/${d.id}`}
                     className="text-accent-green hover:underline text-xs font-medium"
@@ -52,7 +52,7 @@ export default async function RidersPage() {
             ))}
             {(!docs || docs.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-forest-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-forest-400">
                   No rider documents found.
                 </td>
               </tr>

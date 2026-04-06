@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 
 interface RatingBreakdownProps {
   ratingAvg: number;
@@ -66,11 +66,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   metric: { flex: 1, alignItems: 'center', gap: spacing.xs },
   value: { ...typography.h3, color: colors.forest[900] },

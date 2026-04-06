@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, Pressable, StyleProp } from 'react-native';
+import { View, StyleSheet, ViewStyle, Pressable, StyleProp, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { colors, borderRadius, spacing } from '@/theme';
+import { colors, borderRadius, spacing, shadows } from '@/theme';
+import { hapticLight } from '@/lib/haptics';
 
 const SPRING_CONFIG = { damping: 15, stiffness: 300 };
 
@@ -27,7 +28,10 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
   if (onPress) {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={() => {
+          hapticLight();
+          onPress();
+        }}
         onPressIn={() => { scale.value = withSpring(0.97, SPRING_CONFIG); }}
         onPressOut={() => { scale.value = withSpring(1, SPRING_CONFIG); }}
       >
@@ -43,15 +47,12 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.07)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 14,
-    elevation: 3,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    ...shadows.sm,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any : {}),
   },
   padded: {
     padding: spacing.lg,

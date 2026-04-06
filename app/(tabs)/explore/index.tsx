@@ -9,11 +9,12 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
-import { colors, typography, spacing, borderRadius } from '@/theme';
-import { FilterChip, EmptyState, TopographicBg, ScreenHeader } from '@/components/ui';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { FilterChip, EmptyState, TopographicBg, ScreenHeader, FeedListSkeleton } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
@@ -200,39 +201,54 @@ export default function ExploreScreen() {
     router.push(`/(tabs)/explore/${id}`);
   }, []);
 
-  const renderItem = useCallback(({ item }: { item: FeedItem }) => {
+  const renderItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => {
+    let content: React.ReactNode;
+
     switch (item.kind) {
       case 'road_report':
-        return (
+        content = (
           <RoadReportCard
             report={item.data}
             onPress={() => router.push({ pathname: '/modals/report-detail', params: { id: item.data.id } })}
           />
         );
+        break;
       case 'gas_price':
-        return (
+        content = (
           <GasPriceCard
             gasPrice={item.data}
             onPress={() => verifyGasPrice(item.data.id)}
           />
         );
+        break;
       case 'post': {
         const onPress = () => openPost(item.data.id);
         switch (item.data.type) {
           case 'route_offer':
-            return <RouteOfferCard post={item.data} onPress={onPress} />;
+            content = <RouteOfferCard post={item.data} onPress={onPress} />;
+            break;
           case 'route_request':
-            return <RouteRequestCard post={item.data} onPress={onPress} />;
+            content = <RouteRequestCard post={item.data} onPress={onPress} />;
+            break;
           case 'errand':
           case 'package':
-            return <ErrandCard post={item.data} onPress={onPress} />;
+            content = <ErrandCard post={item.data} onPress={onPress} />;
+            break;
           case 'job':
-            return <JobCard post={item.data} onPress={onPress} />;
+            content = <JobCard post={item.data} onPress={onPress} />;
+            break;
           default:
-            return <ErrandCard post={item.data} onPress={onPress} />;
+            content = <ErrandCard post={item.data} onPress={onPress} />;
         }
+        break;
       }
     }
+
+    return (
+      <Animated.View entering={FadeInUp.duration(350).delay(Math.min(index * 60, 300))}>
+        {content}
+      </Animated.View>
+    );
   }, [openPost, verifyGasPrice]);
 
   const keyExtractor = useCallback((item: FeedItem) => {
@@ -335,7 +351,7 @@ export default function ExploreScreen() {
           />
         }
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? <FeedListSkeleton /> : (
             <EmptyState
               icon="compass"
               title="No posts yet"
@@ -455,11 +471,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
+    ...shadows.md,
   },
   fabSecondary: {
     backgroundColor: colors.forest[600],

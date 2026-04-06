@@ -18,7 +18,7 @@ import { Icon } from '@/components/icons';
 import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +27,7 @@ import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { formatShortDate } from '@/lib/helpers';
 import { uploadProfileAvatar } from '@/lib/avatar';
 import type { RootState } from '@/store';
+import Constants from 'expo-constants';
 import type { AccountStatus } from '@/types/database';
 
 export default function ProfileScreen() {
@@ -324,12 +325,26 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Legal */}
+        <View style={styles.menuSection}>
+          <MenuItem
+            icon="clipboard-list"
+            label="Privacy Policy"
+            onPress={() => router.push('/(tabs)/profile/privacy')}
+          />
+          <MenuItem
+            icon="clipboard-list"
+            label="Terms of Service"
+            onPress={() => router.push('/(tabs)/profile/terms')}
+          />
+        </View>
+
         {/* Sign out */}
         <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
 
-        <Text style={styles.version}>kanek v1.0.0</Text>
+        <Text style={styles.version}>Kanek v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -463,11 +478,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   statBox: {
     flex: 1,
@@ -495,11 +506,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   reviewsSectionTitle: {
     ...typography.body1Bold,
@@ -567,11 +574,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   menuItem: {
     flexDirection: 'row',

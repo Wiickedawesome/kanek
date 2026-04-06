@@ -6,12 +6,12 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader } from '@/components/ui';
+import { ScreenHeader, FeedListSkeleton } from '@/components/ui';
 import { TopographicBg } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
@@ -140,7 +140,7 @@ export default function ActivityScreen() {
   }, [tab, refetchPosts, refetchBookings, refetchContracts, refetchActiveContracts]);
 
   const renderBooking = useCallback(
-    ({ item }: { item: BookingWithPost }) => {
+    ({ item, index }: { item: BookingWithPost; index?: number }) => {
       const hasContract = item.contract?.id;
       const canCancel = item.status === 'confirmed' || item.status === 'pending';
 
@@ -153,11 +153,70 @@ export default function ActivityScreen() {
       };
 
       return (
-        <Pressable onPress={handlePress}>
+        <Animated.View entering={FadeInUp.duration(350).delay(Math.min((index ?? 0) * 60, 300))}>
+          <Pressable onPress={handlePress}>
+            <Card style={styles.bookingCard}>
+              <View style={styles.cardHeader}>
+                {item.post && <PostTypeBadge type={item.post.type} />}
+                <StatusBadge status={item.status} />
+              </View>
+
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {item.post?.title ?? 'Untitled Post'}
+              </Text>
+
+              {item.post?.origin_address && item.post?.dest_address && (
+                <View style={styles.routeInfo}>
+                  <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                  <Text style={styles.routeText} numberOfLines={1}>
+                    {item.post.origin_address} → {item.post.dest_address}
+                  </Text>
+                </View>
+              )}
+
+              {item.post?.departure_at && (
+                <View style={styles.routeInfo}>
+                  <Icon name="clock" size={14} color={colors.forest[400]} />
+                  <Text style={styles.routeText}>{formatDeparture(item.post.departure_at)}</Text>
+                </View>
+              )}
+
+              <View style={styles.cardFooter}>
+                <Text style={styles.footerText}>
+                  {getBookingFooterLabel(item.post?.type, item.seats_booked, item.payment_method)}
+                </Text>
+                {canCancel ? (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(item.id, item.post?.title ?? 'this booking');
+                    }}
+                    hitSlop={8}
+                    style={styles.deleteButton}
+                  >
+                    <Icon name="x" size={16} color={colors.error} />
+                    <Text style={styles.deleteText}>Cancel</Text>
+                  </Pressable>
+                ) : (
+                  <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
+                )}
+              </View>
+            </Card>
+          </Pressable>
+        </Animated.View>
+      );
+    },
+    [handleCancelBooking],
+  );
+
+  const renderContract = useCallback(
+    ({ item, index }: { item: ContractWithDetails; index?: number }) => (
+      <Animated.View entering={FadeInUp.duration(350).delay(Math.min((index ?? 0) * 60, 300))}>
+        <Pressable onPress={() => router.push(`/(tabs)/activity/${item.id}`)}>
           <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
               {item.post && <PostTypeBadge type={item.post.type} />}
-              <StatusBadge status={item.status} />
+              <ContractStatusBadge status={item.status} />
             </View>
 
             <Text style={styles.cardTitle} numberOfLines={2}>
@@ -173,72 +232,15 @@ export default function ActivityScreen() {
               </View>
             )}
 
-            {item.post?.departure_at && (
-              <View style={styles.routeInfo}>
-                <Icon name="clock" size={14} color={colors.forest[400]} />
-                <Text style={styles.routeText}>{formatDeparture(item.post.departure_at)}</Text>
-              </View>
-            )}
-
             <View style={styles.cardFooter}>
               <Text style={styles.footerText}>
-                {item.seats_booked} seat{item.seats_booked !== 1 ? 's' : ''}
-                {item.payment_method ? ` · ${item.payment_method}` : ''}
+                {getBookingFooterLabel(item.post?.type, item.booking?.seats_booked, item.booking?.payment_method)}
               </Text>
-              {canCancel ? (
-                <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleCancelBooking(item.id, item.post?.title ?? 'this booking');
-                  }}
-                  hitSlop={8}
-                  style={styles.deleteButton}
-                >
-                  <Icon name="x" size={16} color={colors.error} />
-                  <Text style={styles.deleteText}>Cancel</Text>
-                </Pressable>
-              ) : (
-                <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
-              )}
+              <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
             </View>
           </Card>
         </Pressable>
-      );
-    },
-    [handleCancelBooking],
-  );
-
-  const renderContract = useCallback(
-    ({ item }: { item: ContractWithDetails }) => (
-      <Pressable onPress={() => router.push(`/(tabs)/activity/${item.id}`)}>
-        <Card style={styles.bookingCard}>
-          <View style={styles.cardHeader}>
-            {item.post && <PostTypeBadge type={item.post.type} />}
-            <ContractStatusBadge status={item.status} />
-          </View>
-
-          <Text style={styles.cardTitle} numberOfLines={2}>
-            {item.post?.title ?? 'Untitled Post'}
-          </Text>
-
-          {item.post?.origin_address && item.post?.dest_address && (
-            <View style={styles.routeInfo}>
-              <Icon name="map-pin" size={14} color={colors.forest[400]} />
-              <Text style={styles.routeText} numberOfLines={1}>
-                {item.post.origin_address} → {item.post.dest_address}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.cardFooter}>
-            <Text style={styles.footerText}>
-              {item.booking?.seats_booked ?? 1} seat{(item.booking?.seats_booked ?? 1) !== 1 ? 's' : ''}
-              {item.booking?.payment_method ? ` · ${item.booking.payment_method}` : ''}
-            </Text>
-            <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
-          </View>
-        </Card>
-      </Pressable>
+      </Animated.View>
     ),
     [],
   );
@@ -331,13 +333,14 @@ export default function ActivityScreen() {
   );
 
   const renderMyPost = useCallback(
-    ({ item }: { item: MyPostWithBookings }) => {
+    ({ item, index }: { item: MyPostWithBookings; index: number }) => {
       const joinerPreview = item.activeBookings.slice(0, 3);
       const showJoinerPreview = item.activeBookingsCount > 0;
 
       return (
-        <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
-          <Card style={styles.bookingCard}>
+        <Animated.View entering={FadeInUp.duration(350).delay(Math.min(index * 60, 300))}>
+          <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
+            <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
               <PostTypeBadge type={item.type} />
               <PostStatusBadge status={item.status} />
@@ -410,6 +413,7 @@ export default function ActivityScreen() {
             </View>
           </Card>
         </Pressable>
+      </Animated.View>
       );
     },
     [handleDeletePost],
@@ -428,7 +432,7 @@ export default function ActivityScreen() {
   if (isLoading) {
     content = (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <FeedListSkeleton count={3} />
       </View>
     );
   } else if (tab === 'my_posts') {
@@ -559,6 +563,7 @@ function StatusBadge({ status }: { status: BookingStatus }) {
     confirmed: { label: 'Confirmed', bg: '#e8f5e9', fg: colors.accent.green },
     completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
     cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
+    rejected: { label: 'Rejected', bg: '#ffebee', fg: colors.error },
     no_show: { label: 'No Show', bg: '#ffebee', fg: colors.error },
   };
 
@@ -637,6 +642,38 @@ function getJoinerPreviewNames(bookings: ActiveBookingPreview[]) {
   return `${names.join(', ')} +${bookings.length - 2} more`;
 }
 
+function getBookingFooterLabel(
+  postType: PostType | undefined,
+  seatsBooked: number | null | undefined,
+  paymentMethod: string | null | undefined,
+): string {
+  let label: string;
+  switch (postType) {
+    case 'route_offer':
+      label = `${seatsBooked ?? 1} seat${(seatsBooked ?? 1) !== 1 ? 's' : ''}`;
+      break;
+    case 'route_request':
+      label = 'Drive offer';
+      break;
+    case 'errand':
+      label = 'Errand';
+      break;
+    case 'package':
+      label = 'Delivery';
+      break;
+    case 'job':
+      label = 'Application';
+      break;
+    default:
+      label = 'Booking';
+  }
+  if (paymentMethod) {
+    const methodLabel = paymentMethod === 'ekyash' ? 'E-Kyash' : paymentMethod === 'cash' ? 'Cash' : paymentMethod;
+    label += ` · ${methodLabel}`;
+  }
+  return label;
+}
+
 
 const styles = StyleSheet.create({
   container: {
@@ -680,11 +717,11 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: spacing.lg,
   },
   feed: {
     padding: spacing.lg,
+    paddingBottom: 80,
     flexGrow: 1,
   },
   separator: {

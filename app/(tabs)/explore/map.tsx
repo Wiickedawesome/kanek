@@ -7,7 +7,7 @@ import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
 import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetRoadReportsQuery, useGetGasPricesQuery } from '@/store/api/reportsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -248,11 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     gap: spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadows.md,
   },
   legendRow: {
     flexDirection: 'row',

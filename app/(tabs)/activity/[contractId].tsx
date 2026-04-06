@@ -156,9 +156,12 @@ export default function ContractDetailScreen() {
     // Determine the other party to rate
     const otherPartyId = contract.parties.find((p) => p !== userId);
 
+    const isRoute = contract.post?.type === 'route_offer' || contract.post?.type === 'route_request';
+    const completeLabel = isRoute ? 'Complete Trip' : 'Mark Complete';
+
     const confirmed = await showConfirm(
-      'Complete Trip',
-      'Mark this contract as completed? You\'ll be prompted to rate the other party.',
+      completeLabel,
+      `Mark this as completed? You'll be prompted to rate the other party.`,
     );
     if (!confirmed) return;
 
@@ -180,7 +183,7 @@ export default function ContractDetailScreen() {
         });
       }
     } catch {
-      showAlert('Error', 'Could not complete the trip. Please try again.');
+      showAlert('Error', 'Could not complete. Please try again.');
     }
   }, [contractId, contract, userId, completeBooking]);
 
@@ -383,8 +386,8 @@ export default function ContractDetailScreen() {
               </View>
             )}
 
-            {/* Seats */}
-            {contract.booking && contract.booking.seats_booked > 0 && (
+            {/* Seats — only relevant for route_offer */}
+            {contract.post?.type === 'route_offer' && contract.booking && contract.booking.seats_booked > 0 && (
               <View style={styles.infoRow}>
                 <Icon name="user" size={18} color={colors.forest[400]} />
                 <Text style={styles.infoText}>
@@ -453,7 +456,7 @@ export default function ContractDetailScreen() {
                   />
                 )}
                 <Button
-                  title={isCompleting ? 'Completing...' : 'Complete Trip'}
+                  title={isCompleting ? 'Completing...' : (contract.post?.type === 'route_offer' || contract.post?.type === 'route_request') ? 'Complete Trip' : 'Mark Complete'}
                   onPress={handleComplete}
                   disabled={isCompleting}
                   style={styles.detailActionBtn}

@@ -1,8 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface ToastItem {
+export interface ToastItem {
   title: string;
   body?: string;
+  /** Notification type — used to pick icon and route on tap */
+  notificationType?: string;
+  /** Notification payload data — used for routing on tap */
+  data?: Record<string, unknown>;
 }
 
 interface ToastState {

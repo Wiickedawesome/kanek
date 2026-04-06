@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, shadows } from '@/theme';
 import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
 import { DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { getDistrictBoundariesGeoJSON } from '@/lib/belizeDistricts';
@@ -316,10 +316,6 @@ const s = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    ...shadows.md,
   },
 });

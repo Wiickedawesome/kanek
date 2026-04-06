@@ -84,16 +84,20 @@ interface CancelBookingArgs {
   reason?: string;
 }
 
-interface AcceptJobApplicationArgs {
+interface AcceptApplicantArgs {
   bookingId: string;
   postId: string;
   applicantId: string;
   postTitle: string;
+  postType: PostType;
 }
 
-interface RejectJobApplicationArgs {
+interface RejectApplicantArgs {
   bookingId: string;
   postId: string;
+  applicantId: string;
+  postTitle: string;
+  postType: PostType;
 }
 
 interface GetContractsArgs {
@@ -113,37 +117,72 @@ function buildAuthorJoinNotification(
   postType: PostType,
   postTitle: string,
   bookerName: string,
-  seatsBooked: number,
+  seatsBooked?: number,
 ): AuthorJoinNotification {
   if (postType === 'route_offer') {
+    const seats = seatsBooked ?? 1;
     return {
-      type: 'new_booking',
-      title: 'Seat Booked!',
-      body: `${bookerName} booked ${seatsBooked} seat(s) on "${postTitle}".`,
+      type: 'new_applicant',
+      title: 'New Rider Request!',
+      body: `${bookerName} wants to book ${seats} seat(s) on "${postTitle}". Review and accept.`,
     };
   }
 
   if (postType === 'route_request') {
     return {
-      type: 'new_booking',
+      type: 'new_applicant',
       title: 'Driver Offered!',
-      body: `${bookerName} offered to drive your route "${postTitle}".`,
+      body: `${bookerName} offered to drive your route "${postTitle}". Review and accept.`,
     };
   }
 
   if (postType === 'job') {
     return {
-      type: 'job_application',
-      title: 'Job Application!',
-      body: `${bookerName} applied for "${postTitle}".`,
+      type: 'new_applicant',
+      title: 'New Applicant!',
+      body: `${bookerName} applied for "${postTitle}". Review and accept.`,
     };
   }
 
   return {
-    type: 'errand_accepted',
-    title: postType === 'package' ? 'Delivery Accepted!' : 'Errand Accepted!',
-    body: `${bookerName} accepted your ${postType} "${postTitle}".`,
+    type: 'new_applicant',
+    title: postType === 'package' ? 'New Delivery Offer!' : 'New Errand Helper!',
+    body: `${bookerName} offered to handle your ${postType === 'package' ? 'delivery' : 'errand'} "${postTitle}". Review and accept.`,
   };
+}
+
+function getAcceptPushMessage(postType: PostType, postTitle: string): { title: string; body: string } {
+  switch (postType) {
+    case 'route_offer':
+      return { title: 'Seat Confirmed!', body: `Your seat on "${postTitle}" has been confirmed.` };
+    case 'route_request':
+      return { title: 'Drive Accepted!', body: `You were accepted to drive "${postTitle}".` };
+    case 'errand':
+      return { title: 'Errand Confirmed!', body: `You were accepted for the errand "${postTitle}".` };
+    case 'package':
+      return { title: 'Delivery Confirmed!', body: `You were accepted to deliver "${postTitle}".` };
+    case 'job':
+      return { title: 'You Got the Job!', body: `You were accepted for "${postTitle}".` };
+    default:
+      return { title: 'Accepted!', body: `You were accepted for "${postTitle}".` };
+  }
+}
+
+function getRejectPushMessage(postType: PostType, postTitle: string): { title: string; body: string } {
+  switch (postType) {
+    case 'route_offer':
+      return { title: 'Seat Request Declined', body: `Your seat request for "${postTitle}" was not accepted.` };
+    case 'route_request':
+      return { title: 'Drive Offer Declined', body: `Your offer to drive "${postTitle}" was not accepted.` };
+    case 'errand':
+      return { title: 'Errand Offer Declined', body: `Your offer for the errand "${postTitle}" was not accepted.` };
+    case 'package':
+      return { title: 'Delivery Offer Declined', body: `Your offer to deliver "${postTitle}" was not accepted.` };
+    case 'job':
+      return { title: 'Application Declined', body: `Your application for "${postTitle}" was not accepted.` };
+    default:
+      return { title: 'Not Selected', body: `Your request for "${postTitle}" was not accepted.` };
+  }
 }
 
 export const bookingsApi = createApi({
@@ -167,7 +206,7 @@ export const bookingsApi = createApi({
           .range(offset, offset + limit - 1);
 
         if (status && status.length > 0) {
-          query = query.in('status', status);
+          query = query.in('status', status as any);
         }
 
         const { data, error } = await query;
@@ -278,7 +317,7 @@ export const bookingsApi = createApi({
             post.type as PostType,
             post.title ?? 'this activity',
             bookerName,
-            data.seats_booked ?? 1,
+            post.type === 'route_offer' ? (data.seats_booked ?? 1) : undefined,
           );
 
           await sendPushOnly({
@@ -324,15 +363,16 @@ export const bookingsApi = createApi({
       },
     }),
 
-    acceptJobApplication: builder.mutation<void, AcceptJobApplicationArgs>({
+    acceptApplicant: builder.mutation<void, AcceptApplicantArgs>({
       queryFn: async ({ bookingId }) => {
-        const { error } = await (supabase.rpc as any)('accept_job_application', { p_booking_id: bookingId });
+        const { error } = await (supabase.rpc as any)('accept_applicant', { p_booking_id: bookingId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: undefined as void };
       },
       invalidatesTags: (_r, _e, { postId }) => [
         { type: 'Booking', id: 'LIST' },
         { type: 'Booking', id: `POST_${postId}` },
+        { type: 'Contract', id: 'LIST' },
       ],
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
@@ -343,18 +383,19 @@ export const bookingsApi = createApi({
             { type: 'Post', id: 'MY_LIST' },
           ]));
           // DB RPC already inserted the in-app notification; send push only
+          const push = getAcceptPushMessage(arg.postType, arg.postTitle);
           await sendPushOnly({
             userId: arg.applicantId,
-            title: 'You Got the Job!',
-            body: `You were accepted for "${arg.postTitle}".`,
+            title: push.title,
+            body: push.body,
           });
         } catch { /* mutation failed */ }
       },
     }),
 
-    rejectJobApplication: builder.mutation<void, RejectJobApplicationArgs>({
+    rejectApplicant: builder.mutation<void, RejectApplicantArgs>({
       queryFn: async ({ bookingId }) => {
-        const { error } = await (supabase.rpc as any)('reject_job_application', { p_booking_id: bookingId });
+        const { error } = await (supabase.rpc as any)('reject_applicant', { p_booking_id: bookingId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: undefined as void };
       },
@@ -369,6 +410,13 @@ export const bookingsApi = createApi({
             { type: 'Post', id: arg.postId },
             { type: 'Post', id: 'LIST' },
           ]));
+          // DB RPC already inserted the in-app notification; send push only
+          const push = getRejectPushMessage(arg.postType, arg.postTitle);
+          await sendPushOnly({
+            userId: arg.applicantId,
+            title: push.title,
+            body: push.body,
+          });
         } catch { /* mutation failed */ }
       },
     }),
@@ -495,8 +543,8 @@ export const {
   useGetPostBookingsQuery,
   useCreateBookingMutation,
   useCancelBookingMutation,
-  useAcceptJobApplicationMutation,
-  useRejectJobApplicationMutation,
+  useAcceptApplicantMutation,
+  useRejectApplicantMutation,
   useCompleteBookingMutation,
   useGetMyContractsQuery,
   useGetContractByIdQuery,

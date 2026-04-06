@@ -42,16 +42,16 @@ export default async function RiderDocDetailPage({ params }: Props) {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-forest-800 rounded-lg p-5 border border-forest-700">
-          <h3 className="text-white font-semibold mb-3">Rider Info</h3>
+        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+          <h3 className="text-forest-900 font-semibold mb-3">Rider Info</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-forest-400">Phone</dt>
-              <dd className="text-gray-300 font-mono">{doc.user?.phone}</dd>
+              <dd className="text-forest-900 font-mono">{doc.user?.phone}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-forest-400">Email</dt>
-              <dd className="text-gray-300">{doc.user?.email ?? '-'}</dd>
+              <dd className="text-forest-900">{doc.user?.email ?? '-'}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-forest-400">Account Status</dt>
@@ -59,17 +59,17 @@ export default async function RiderDocDetailPage({ params }: Props) {
             </div>
             <div className="flex justify-between">
               <dt className="text-forest-400">Rating</dt>
-              <dd className="text-gray-300">{doc.user?.rating_avg ?? '0'} / 5</dd>
+              <dd className="text-forest-900">{doc.user?.rating_avg ?? '0'} / 5</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-forest-400">Joined</dt>
-              <dd className="text-gray-300">{new Date(doc.user?.created_at).toLocaleDateString()}</dd>
+              <dd className="text-forest-900">{new Date(doc.user?.created_at).toLocaleDateString()}</dd>
             </div>
           </dl>
         </div>
 
-        <div className="bg-forest-800 rounded-lg p-5 border border-forest-700">
-          <h3 className="text-white font-semibold mb-3">Document</h3>
+        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+          <h3 className="text-forest-900 font-semibold mb-3">Document</h3>
           <p className="text-forest-400 text-xs mb-2">
             Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
           </p>
@@ -83,13 +83,13 @@ export default async function RiderDocDetailPage({ params }: Props) {
               View Document
             </a>
           ) : (
-            <span className="text-forest-500 text-sm">No document URL</span>
+            <span className="text-gray-400 text-sm">No document URL</span>
           )}
         </div>
 
-        <div className="bg-forest-800 rounded-lg p-5 border border-forest-700 lg:col-span-2">
+        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm lg:col-span-2">
           <div className="flex items-center gap-3 mb-4">
-            <h3 className="text-white font-semibold">Review Status</h3>
+            <h3 className="text-forest-900 font-semibold">Review Status</h3>
             <StatusBadge status={doc.review_status} />
           </div>
           {doc.rejection_reason && (
