@@ -1,0 +1,262 @@
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { Icon } from '@/components/icons';
+import { ScreenHeader } from '@/components/ui';
+import { colors, typography, spacing, borderRadius } from '@/theme';
+import { useGetContractByIdQuery } from '@/store/api/bookingsApi';
+import { useGetMessagesQuery, useSendMessageMutation } from '@/store/api/messagesApi';
+import type { MessageWithSender } from '@/store/api/messagesApi';
+import { useRealtime } from '@/hooks/useRealtime';
+import { safeGoBack } from '@/lib/helpers';
+import { showAlert } from '@/lib/alert';
+import type { RootState } from '@/store';
+
+export default function MessagesScreen() {
+  const { contractId } = useLocalSearchParams<{ contractId: string }>();
+  const authUser = useSelector((state: RootState) => state.auth.user);
+  const userId = authUser?.id;
+
+  const { data: contract } = useGetContractByIdQuery(contractId ?? '', {
+    skip: !contractId,
+  });
+  const { data: messages = [] } = useGetMessagesQuery(contractId ?? '', {
+    skip: !contractId,
+  });
+  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
+  const { subscribeToMessages } = useRealtime();
+
+  const [messageText, setMessageText] = useState('');
+  const chatListRef = useRef<FlatList<MessageWithSender>>(null);
+
+  // Subscribe to real-time chat messages
+  useEffect(() => {
+    if (!contractId) return;
+    const unsubscribe = subscribeToMessages(contractId);
+    return unsubscribe;
+  }, [contractId, subscribeToMessages]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => chatListRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  }, [messages.length]);
+
+  const handleSend = useCallback(async () => {
+    if (!contractId || !userId || !messageText.trim()) return;
+    try {
+      await sendMessage({ contractId, senderId: userId, body: messageText }).unwrap();
+      setMessageText('');
+    } catch {
+      showAlert('Error', 'Could not send message.');
+    }
+  }, [contractId, userId, messageText, sendMessage]);
+
+  const renderMessage = ({ item }: { item: MessageWithSender }) => {
+    const isMe = item.sender_id === userId;
+    const senderName = item.sender
+      ? `${item.sender.first_name ?? ''} ${item.sender.last_name ?? ''}`.trim()
+      : 'Unknown';
+    const time = new Date(item.created_at).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    return (
+      <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.theirBubble]}>
+        {!isMe && <Text style={styles.senderName}>{senderName}</Text>}
+        <Text style={[styles.messageText, isMe && styles.myMessageText]}>{item.body}</Text>
+        <Text style={[styles.messageTime, isMe && styles.myMessageTime]}>{time}</Text>
+      </View>
+    );
+  };
+
+  const title = contract?.post?.title ?? 'Messages';
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <ScreenHeader style={styles.header}>
+        <Pressable
+          onPress={() => safeGoBack(`/(tabs)/activity/${contractId}`)}
+          hitSlop={12}
+        >
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={styles.headerRight} />
+      </ScreenHeader>
+
+      {/* Chat */}
+      <KeyboardAvoidingView
+        style={styles.chatContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <FlatList
+          ref={chatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.chatContent}
+          ListEmptyComponent={
+            <View style={styles.emptyChat}>
+              <Icon name="message-circle" size={48} color={colors.neutral[300]} />
+              <Text style={styles.emptyChatText}>No messages yet</Text>
+              <Text style={styles.emptyChatSubText}>
+                Start a conversation with the other party
+              </Text>
+            </View>
+          }
+        />
+
+        {/* Input bar */}
+        <View style={styles.inputBar}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Type a message..."
+            placeholderTextColor={colors.neutral[400]}
+            value={messageText}
+            onChangeText={setMessageText}
+            multiline
+            maxLength={500}
+          />
+          <Pressable
+            style={[
+              styles.sendButton,
+              (!messageText.trim() || isSending) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSend}
+            disabled={!messageText.trim() || isSending}
+          >
+            <Icon
+              name="send"
+              size={18}
+              color={
+                !messageText.trim() || isSending
+                  ? colors.neutral[400]
+                  : colors.neutral[0]
+              }
+            />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.neutral[0],
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerRight: { width: 24 },
+
+  chatContainer: { flex: 1 },
+  chatContent: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+  emptyChat: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xxl,
+  },
+  emptyChatText: { ...typography.body1Bold, color: colors.neutral[400] },
+  emptyChatSubText: { ...typography.body2, color: colors.neutral[400] },
+
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+  },
+  myBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.accent.green,
+    borderBottomRightRadius: 4,
+  },
+  theirBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.neutral[0],
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  senderName: {
+    ...typography.caption,
+    color: colors.forest[400],
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  messageText: { ...typography.body1, color: colors.forest[900] },
+  myMessageText: { color: colors.neutral[0] },
+  messageTime: {
+    ...typography.caption,
+    color: colors.forest[400],
+    marginTop: 2,
+    alignSelf: 'flex-end',
+  },
+  myMessageTime: { color: 'rgba(255,255,255,0.7)' },
+
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+    backgroundColor: colors.neutral[0],
+    gap: spacing.sm,
+  },
+  textInput: {
+    flex: 1,
+    ...typography.body1,
+    color: colors.forest[900],
+    backgroundColor: colors.neutral[100],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: colors.neutral[200],
+  },
+});

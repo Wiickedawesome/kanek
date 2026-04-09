@@ -55,11 +55,10 @@ export default function IdUploadScreen() {
   const uploadImage = async (uri: string, path: string): Promise<boolean> => {
     const response = await fetch(uri);
     const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
 
     const { error } = await supabase.storage
       .from('documents')
-      .upload(path, arrayBuffer, { contentType: 'image/jpeg' });
+      .upload(path, blob, { contentType: 'image/jpeg' });
 
     if (error) {
       showAlert('Upload failed', error.message);

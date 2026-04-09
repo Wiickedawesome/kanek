@@ -12,6 +12,7 @@ import { reportsApi } from './api/reportsApi';
 import { notificationsApi } from './api/notificationsApi';
 import { checkinsApi } from './api/checkinsApi';
 import { messagesApi } from './api/messagesApi';
+import { contractEventsApi } from './api/contractEventsApi';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [checkinsApi.reducerPath]: checkinsApi.reducer,
     [messagesApi.reducerPath]: messagesApi.reducer,
+    [contractEventsApi.reducerPath]: contractEventsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -46,6 +48,7 @@ export const store = configureStore({
       notificationsApi.middleware,
       checkinsApi.middleware,
       messagesApi.middleware,
+      contractEventsApi.middleware,
     ),
 });
 

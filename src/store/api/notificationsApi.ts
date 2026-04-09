@@ -9,6 +9,20 @@ export const notificationsApi = createApi({
   baseQuery: fakeBaseQuery(),
   tagTypes: ['Notification'],
   endpoints: (builder) => ({
+    getUnreadCount: builder.query<number, string>({
+      queryFn: async (userId) => {
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false);
+
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: count ?? 0 };
+      },
+      providesTags: [{ type: 'Notification', id: 'COUNT' }],
+    }),
+
     getNotifications: builder.query<NotificationRow[], string>({
       queryFn: async (userId) => {
         const { data, error } = await supabase
@@ -34,7 +48,7 @@ export const notificationsApi = createApi({
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: null };
       },
-      invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
+      invalidatesTags: [{ type: 'Notification', id: 'LIST' }, { type: 'Notification', id: 'COUNT' }],
     }),
 
     markAllNotificationsRead: builder.mutation<null, string>({
@@ -48,7 +62,7 @@ export const notificationsApi = createApi({
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: null };
       },
-      invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
+      invalidatesTags: [{ type: 'Notification', id: 'LIST' }, { type: 'Notification', id: 'COUNT' }],
     }),
 
     registerPushToken: builder.mutation<null, { userId: string; token: string }>({
@@ -66,6 +80,7 @@ export const notificationsApi = createApi({
 });
 
 export const {
+  useGetUnreadCountQuery,
   useGetNotificationsQuery,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,

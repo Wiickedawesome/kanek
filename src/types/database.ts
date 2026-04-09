@@ -155,6 +155,48 @@ export type Database = {
           },
         ]
       }
+      contract_events: {
+        Row: {
+          id: string
+          contract_id: string
+          actor_id: string
+          event_type: string
+          note: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contract_id: string
+          actor_id: string
+          event_type: string
+          note?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contract_id?: string
+          actor_id?: string
+          event_type?: string
+          note?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_messages: {
         Row: {
           body: string

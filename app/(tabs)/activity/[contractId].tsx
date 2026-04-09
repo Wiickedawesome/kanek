@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,6 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  FlatList,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,13 +14,18 @@ import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Button, ScreenHeader } from '@/components/ui';
 import { LiveTrackingMap } from '@/components/map';
+import { TripProgressTimeline, TripActionButtons } from '@/components/trip';
+import { isSequenceComplete, getEventLabel } from '@/lib/tripEvents';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
   useGetContractByIdQuery,
   useCompleteBookingMutation,
 } from '@/store/api/bookingsApi';
-import { useGetMessagesQuery, useSendMessageMutation } from '@/store/api/messagesApi';
-import type { MessageWithSender } from '@/store/api/messagesApi';
+import {
+  useGetContractEventsQuery,
+  useCreateContractEventMutation,
+} from '@/store/api/contractEventsApi';
+import { useGetMessagesQuery } from '@/store/api/messagesApi';
 import { useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
@@ -40,22 +41,29 @@ export default function ContractDetailScreen() {
   const authUser = useSelector((state: RootState) => state.auth.user);
   const userId = authUser?.id;
   const payerPhone = authUser?.phone ?? '';
+
   const { data: contract, isLoading } = useGetContractByIdQuery(contractId ?? '', {
     skip: !contractId,
   });
   const [completeBooking, { isLoading: isCompleting }] = useCompleteBookingMutation();
-  const { subscribeToTracking, subscribeToMessages } = useRealtime();
+  const { subscribeToTracking } = useRealtime();
   const { startTracking, stopTracking, isTracking: isDriverTracking } = useDriverTracking();
   const { triggerSOS, isSending: isSOSSending } = useSOS();
 
   const [driverLocation, setDriverLocation] = useState<DriverLocationUpdate | null>(null);
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
-  const [messageText, setMessageText] = useState('');
-  const chatListRef = useRef<FlatList<MessageWithSender>>(null);
 
-  // Chat queries
+  // Contract events
+  const { data: events = [] } = useGetContractEventsQuery(contractId ?? '', {
+    skip: !contractId,
+  });
+  const [createEvent, { isLoading: isCreatingEvent }] = useCreateContractEventMutation();
+  const completedEventTypes = useMemo(
+    () => events.map((e) => e.event_type),
+    [events],
+  );
+
+  // Messages — just the count for the preview strip
   const { data: messages = [] } = useGetMessagesQuery(contractId ?? '', { skip: !contractId });
-  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
   // Check if user has already rated this contract
   const otherPartyId = contract?.parties.find((p) => p !== userId);
@@ -84,20 +92,6 @@ export default function ContractDetailScreen() {
     });
     return unsubscribe;
   }, [contractId, contract?.status, subscribeToTracking]);
-
-  // Subscribe to real-time chat messages
-  useEffect(() => {
-    if (!contractId) return;
-    const unsubscribe = subscribeToMessages(contractId);
-    return unsubscribe;
-  }, [contractId, subscribeToMessages]);
-
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => chatListRef.current?.scrollToEnd({ animated: true }), 100);
-    }
-  }, [messages.length]);
 
   // Extract route coordinates from post geometry
   const routeCoordinates = useMemo((): [number, number][] | undefined => {
@@ -153,7 +147,6 @@ export default function ContractDetailScreen() {
     if (!contractId || !contract || !userId) return;
     if (contract.status !== 'active') return;
 
-    // Determine the other party to rate
     const otherPartyId = contract.parties.find((p) => p !== userId);
 
     const isRoute = contract.post?.type === 'route_offer' || contract.post?.type === 'route_request';
@@ -166,7 +159,6 @@ export default function ContractDetailScreen() {
     if (!confirmed) return;
 
     try {
-      // Complete the booking — DB trigger cascades to contract + post + notifications
       const bookingId = contract.booking?.id;
       if (!bookingId) {
         showAlert('Error', 'No booking found for this contract.');
@@ -176,10 +168,7 @@ export default function ContractDetailScreen() {
       if (otherPartyId) {
         router.push({
           pathname: '/modals/rate',
-          params: {
-            contractId,
-            ratedId: otherPartyId,
-          },
+          params: { contractId, ratedId: otherPartyId },
         });
       }
     } catch {
@@ -202,15 +191,16 @@ export default function ContractDetailScreen() {
     });
   }, [contract, payeeId, payerId, payerPhone]);
 
-  const handleSend = useCallback(async () => {
-    if (!contractId || !userId || !messageText.trim()) return;
+  const handleTriggerEvent = useCallback(async (eventType: string) => {
+    if (!contractId || !userId) return;
     try {
-      await sendMessage({ contractId, senderId: userId, body: messageText }).unwrap();
-      setMessageText('');
-    } catch {
-      showAlert('Error', 'Could not send message.');
+      await createEvent({ contractId, actorId: userId, eventType }).unwrap();
+      showAlert('Updated', getEventLabel(eventType));
+    } catch (err: any) {
+      const msg = err?.data ?? err?.error ?? 'Could not update trip status.';
+      showAlert('Error', typeof msg === 'string' ? msg : 'Could not update trip status.');
     }
-  }, [contractId, userId, messageText, sendMessage]);
+  }, [contractId, userId, createEvent]);
 
   if (isLoading) {
     return (
@@ -235,25 +225,13 @@ export default function ContractDetailScreen() {
   const statusColor = STATUS_COLORS[contract.status];
   const showPaymentAction = contract.booking?.payment_method === 'ekyash' && isPayer;
   const showRateAction = isParty && contract.status === 'completed' && !hasRated && !!otherPartyId;
+  const postType = contract.post?.type;
 
-  const renderMessage = ({ item }: { item: MessageWithSender }) => {
-    const isMe = item.sender_id === userId;
-    const senderName = item.sender
-      ? `${item.sender.first_name ?? ''} ${item.sender.last_name ?? ''}`.trim()
-      : 'Unknown';
-    const time = new Date(item.created_at).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    return (
-      <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.theirBubble]}>
-        {!isMe && <Text style={styles.senderName}>{senderName}</Text>}
-        <Text style={[styles.messageText, isMe && styles.myMessageText]}>{item.body}</Text>
-        <Text style={[styles.messageTime, isMe && styles.myMessageTime]}>{time}</Text>
-      </View>
-    );
-  };
+  // Last message preview
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  const lastMessagePreview = lastMessage
+    ? `${lastMessage.sender?.first_name ?? 'Someone'}: ${lastMessage.body}`.slice(0, 60)
+    : null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -262,7 +240,7 @@ export default function ContractDetailScreen() {
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
-        <Text style={styles.headerTitle}>
+        <Text style={styles.headerTitle} numberOfLines={1}>
           {contract.post?.title ?? 'Contract'}
         </Text>
         <View style={styles.headerRight}>
@@ -284,248 +262,226 @@ export default function ContractDetailScreen() {
         </View>
       </ScreenHeader>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-      >
-        {/* Trip details header — collapsible */}
-        <Pressable
-          style={[styles.tripHeader, { backgroundColor: statusColor.bg }]}
-          onPress={() => setDetailsExpanded((prev) => !prev)}
-        >
-          <View style={styles.tripHeaderRow}>
-            <View style={styles.tripHeaderLeft}>
-              {contract.post && <PostTypeBadge type={contract.post.type} />}
-              <Text style={[styles.statusChip, { color: statusColor.fg }]}>
-                {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-              </Text>
-            </View>
-            <Icon
-              name={detailsExpanded ? 'chevron-left' : 'chevron-right'}
-              size={18}
-              color={colors.forest[400]}
-              style={detailsExpanded ? styles.chevronDown : styles.chevronRight}
-            />
-          </View>
-          {/* Always-visible summary row */}
-          <View style={styles.tripSummary}>
-            {contract.origin_address && (
-              <Text style={styles.tripSummaryText} numberOfLines={1}>
-                {contract.origin_address} → {contract.dest_address ?? '…'}
-              </Text>
-            )}
-            <Text style={styles.tripSummaryPrice}>
-              {formatBZD(contract.agreed_price_cents)}
+      {/* Status bar */}
+      <View style={[styles.statusBar, { backgroundColor: statusColor.bg }]}>
+        <View style={styles.statusBarRow}>
+          <View style={styles.statusBarLeft}>
+            {postType && <PostTypeBadge type={postType} />}
+            <Text style={[styles.statusChip, { color: statusColor.fg }]}>
+              {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
             </Text>
           </View>
-        </Pressable>
+          <Text style={styles.priceLabel}>
+            {formatBZD(contract.agreed_price_cents)}
+          </Text>
+        </View>
+        {contract.origin_address && (
+          <Text style={styles.routeSummaryText} numberOfLines={1}>
+            {contract.origin_address} → {contract.dest_address ?? '…'}
+          </Text>
+        )}
+      </View>
 
-        {/* Expanded trip details */}
-        {detailsExpanded && (
-          <ScrollView style={styles.detailsPanel} contentContainerStyle={styles.detailsContent}>
-            {/* View original post */}
-            {contract.post?.id && (
-              <Pressable
-                style={styles.viewPostLink}
-                onPress={() => router.push(`/(tabs)/activity/post/${contract.post!.id}`)}
-              >
-                <Icon name="external-link" size={16} color={colors.accent.green} />
-                <Text style={styles.viewPostText}>View Original Post</Text>
-              </Pressable>
-            )}
-
-            {/* Route */}
-            {(contract.origin_address || contract.dest_address) && (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionLabel}>Route</Text>
-                  {origin && destination && (
-                    <Pressable
-                      style={styles.openMapsBtn}
-                      hitSlop={8}
-                      onPress={() => openInMaps(
-                        { lat: origin[1], lng: origin[0], label: contract.origin_address ?? undefined },
-                        { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
-                      )}
-                    >
-                      <Icon name="external-link" size={14} color={colors.forest[400]} />
-                      <Text style={styles.openMapsText}>Open in Maps</Text>
-                    </Pressable>
-                  )}
-                </View>
-                <View style={styles.routeRow}>
-                  <View style={styles.routeDots}>
-                    <View style={styles.dotGreen} />
-                    <View style={styles.routeLine} />
-                    <View style={styles.dotRed} />
-                  </View>
-                  <View style={styles.routeAddresses}>
-                    <Text style={styles.address}>{contract.origin_address ?? 'Not specified'}</Text>
-                    <Text style={styles.address}>{contract.dest_address ?? 'Not specified'}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Departure */}
-            {contract.departure_at && (
-              <View style={styles.infoRow}>
-                <Icon name="clock" size={18} color={colors.forest[400]} />
-                <Text style={styles.infoText}>{formatDeparture(contract.departure_at)}</Text>
-              </View>
-            )}
-
-            {/* Payment method */}
-            {contract.booking?.payment_method && (
-              <View style={styles.infoRow}>
-                <Icon name="receipt" size={18} color={colors.forest[400]} />
-                <Text style={styles.infoText}>
-                  Payment: {contract.booking.payment_method === 'ekyash' ? 'E-Kyash' : 'Cash'}
-                </Text>
-              </View>
-            )}
-
-            {/* Seats — only relevant for route_offer */}
-            {contract.post?.type === 'route_offer' && contract.booking && contract.booking.seats_booked > 0 && (
-              <View style={styles.infoRow}>
-                <Icon name="user" size={18} color={colors.forest[400]} />
-                <Text style={styles.infoText}>
-                  {contract.booking.seats_booked} seat{contract.booking.seats_booked !== 1 ? 's' : ''} booked
-                </Text>
-              </View>
-            )}
-
-            {/* Live tracking map */}
-            {isActive && (origin || destination) && (
-              <View style={styles.mapContainer}>
-                <LiveTrackingMap
-                  driverLocation={driverLocation}
-                  origin={origin}
-                  destination={destination}
-                  routeCoordinates={routeCoordinates}
-                  isDriver={!!isDriver}
-                />
-              </View>
-            )}
-
-            {/* Driver tracking controls */}
-            {isActive && isDriver && (
-              <View style={styles.driverControls}>
-                <Pressable
-                  style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
-                  onPress={handleToggleTracking}
-                >
-                  <Icon
-                    name="navigation"
-                    size={18}
-                    color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
-                  />
-                  <Text
-                    style={[
-                      styles.trackingToggleText,
-                      isDriverTracking && styles.trackingToggleTextActive,
-                    ]}
-                  >
-                    {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.checkinButton}
-                  onPress={() => router.push({
-                    pathname: '/modals/selfie-checkin',
-                    params: { contractId: contractId! },
-                  })}
-                >
-                  <Icon name="user" size={18} color={colors.forest[400]} />
-                  <Text style={styles.checkinText}>Selfie Check-in</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* Action buttons in expanded details */}
-            {isParty && isActive && (
-              <View style={styles.detailActions}>
-                {showPaymentAction && (
-                  <Button
-                    title="Pay with E-Kyash"
-                    variant="outline"
-                    onPress={handlePayment}
-                    style={styles.detailActionBtn}
-                  />
-                )}
-                <Button
-                  title={isCompleting ? 'Completing...' : (contract.post?.type === 'route_offer' || contract.post?.type === 'route_request') ? 'Complete Trip' : 'Mark Complete'}
-                  onPress={handleComplete}
-                  disabled={isCompleting}
-                  style={styles.detailActionBtn}
-                />
-              </View>
-            )}
-
-            {/* Rate prompt */}
-            {showRateAction && (
-              <Button
-                title="Rate Trip"
-                onPress={() =>
-                  router.push({
-                    pathname: '/modals/rate',
-                    params: { contractId, ratedId: otherPartyId },
-                  })
-                }
-                style={styles.detailActionBtn}
-              />
-            )}
-          </ScrollView>
+      {/* Main scrollable content — trip-focused */}
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+        {/* View original post */}
+        {contract.post?.id && (
+          <Pressable
+            style={styles.viewPostLink}
+            onPress={() => router.push(`/(tabs)/activity/post/${contract.post!.id}`)}
+          >
+            <Icon name="external-link" size={16} color={colors.accent.green} />
+            <Text style={styles.viewPostText}>View Original Post</Text>
+          </Pressable>
         )}
 
-        {/* Chat messages */}
-        <FlatList
-          ref={chatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          style={styles.chatList}
-          contentContainerStyle={styles.chatContent}
-          ListEmptyComponent={
-            <View style={styles.emptyChat}>
-              <Icon name="clipboard-list" size={40} color={colors.neutral[300]} />
-              <Text style={styles.emptyChatText}>No messages yet</Text>
-              <Text style={styles.emptyChatSubText}>
-                Send a message to coordinate with your contact
-              </Text>
+        {/* Route visual */}
+        {(contract.origin_address || contract.dest_address) && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Route</Text>
+              {origin && destination && (
+                <Pressable
+                  style={styles.openMapsBtn}
+                  hitSlop={8}
+                  onPress={() => openInMaps(
+                    { lat: origin[1], lng: origin[0], label: contract.origin_address ?? undefined },
+                    { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
+                  )}
+                >
+                  <Icon name="external-link" size={14} color={colors.forest[400]} />
+                  <Text style={styles.openMapsText}>Open in Maps</Text>
+                </Pressable>
+              )}
             </View>
-          }
-        />
+            <View style={styles.routeRow}>
+              <View style={styles.routeDots}>
+                <View style={styles.dotGreen} />
+                <View style={styles.routeLine} />
+                <View style={styles.dotRed} />
+              </View>
+              <View style={styles.routeAddresses}>
+                <Text style={styles.address}>{contract.origin_address ?? 'Not specified'}</Text>
+                <Text style={styles.address}>{contract.dest_address ?? 'Not specified'}</Text>
+              </View>
+            </View>
+          </View>
+        )}
 
-        {/* Message input */}
-        {isParty && (
-          <View style={styles.inputBar}>
-            <TextInput
-              style={styles.textInput}
-              value={messageText}
-              onChangeText={setMessageText}
-              placeholder="Type a message…"
-              placeholderTextColor={colors.neutral[400]}
-              multiline
-              maxLength={2000}
+        {/* Info rows: departure, payment, seats */}
+        {contract.departure_at && (
+          <View style={styles.infoRow}>
+            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>{formatDeparture(contract.departure_at)}</Text>
+          </View>
+        )}
+
+        {contract.booking?.payment_method && (
+          <View style={styles.infoRow}>
+            <Icon name="receipt" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>
+              Payment: {contract.booking.payment_method === 'ekyash' ? 'E-Kyash' : 'Cash'}
+            </Text>
+          </View>
+        )}
+
+        {contract.post?.type === 'route_offer' && contract.booking && contract.booking.seats_booked > 0 && (
+          <View style={styles.infoRow}>
+            <Icon name="user" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>
+              {contract.booking.seats_booked} seat{contract.booking.seats_booked !== 1 ? 's' : ''} booked
+            </Text>
+          </View>
+        )}
+
+        {/* Trip Progress Timeline */}
+        {postType && (
+          <TripProgressTimeline
+            postType={postType}
+            events={events}
+          />
+        )}
+
+        {/* Next Action Button */}
+        {isParty && isActive && postType && (
+          <TripActionButtons
+            postType={postType}
+            completedEventTypes={completedEventTypes}
+            onTriggerEvent={handleTriggerEvent}
+            isLoading={isCreatingEvent}
+          />
+        )}
+
+        {/* Live tracking map */}
+        {isActive && (origin || destination) && (
+          <View style={styles.mapContainer}>
+            <LiveTrackingMap
+              driverLocation={driverLocation}
+              origin={origin}
+              destination={destination}
+              routeCoordinates={routeCoordinates}
+              isDriver={!!isDriver}
             />
+          </View>
+        )}
+
+        {/* Driver tracking controls */}
+        {isActive && isDriver && (
+          <View style={styles.driverControls}>
             <Pressable
-              style={[styles.sendButton, (!messageText.trim() || isSending) && styles.sendButtonDisabled]}
-              onPress={handleSend}
-              disabled={!messageText.trim() || isSending}
-              hitSlop={8}
+              style={[styles.trackingToggle, isDriverTracking && styles.trackingToggleActive]}
+              onPress={handleToggleTracking}
             >
               <Icon
-                name="send"
-                size={20}
-                color={messageText.trim() && !isSending ? colors.neutral[0] : colors.neutral[400]}
+                name="navigation"
+                size={18}
+                color={isDriverTracking ? colors.neutral[0] : colors.accent.green}
               />
+              <Text
+                style={[
+                  styles.trackingToggleText,
+                  isDriverTracking && styles.trackingToggleTextActive,
+                ]}
+              >
+                {isDriverTracking ? 'Stop Broadcasting' : 'Start Broadcasting Location'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.checkinButton}
+              onPress={() => router.push({
+                pathname: '/modals/selfie-checkin',
+                params: { contractId: contractId! },
+              })}
+            >
+              <Icon name="user" size={18} color={colors.forest[400]} />
+              <Text style={styles.checkinText}>Selfie Check-in</Text>
             </Pressable>
           </View>
         )}
-      </KeyboardAvoidingView>
+
+        {/* Primary actions: Pay / Complete */}
+        {isParty && isActive && (
+          <View style={styles.actionRow}>
+            {showPaymentAction && (
+              <Button
+                title="Pay with E-Kyash"
+                variant="outline"
+                onPress={handlePayment}
+                style={styles.actionBtn}
+              />
+            )}
+            {(!postType || isSequenceComplete(postType, completedEventTypes)) && (
+              <Button
+                title={isCompleting ? 'Completing...' : (contract.post?.type === 'route_offer' || contract.post?.type === 'route_request') ? 'Complete Trip' : 'Mark Complete'}
+                onPress={handleComplete}
+                disabled={isCompleting}
+                style={styles.actionBtn}
+              />
+            )}
+          </View>
+        )}
+
+        {/* Rate prompt */}
+        {showRateAction && (
+          <Button
+            title="Rate Trip"
+            onPress={() =>
+              router.push({
+                pathname: '/modals/rate',
+                params: { contractId, ratedId: otherPartyId },
+              })
+            }
+            style={styles.actionBtn}
+          />
+        )}
+
+        {/* Messages strip — navigate to dedicated chat */}
+        <Pressable
+          style={styles.messagesStrip}
+          onPress={() => router.push({
+            pathname: '/(tabs)/activity/messages/[contractId]',
+            params: { contractId: contractId! },
+          })}
+        >
+          <View style={styles.messagesStripLeft}>
+            <Icon name="message-circle" size={20} color={colors.forest[500]} />
+            <Text style={styles.messagesStripTitle}>
+              Messages{messages.length > 0 ? ` (${messages.length})` : ''}
+            </Text>
+          </View>
+          <View style={styles.messagesStripRight}>
+            {lastMessagePreview ? (
+              <Text style={styles.messagesPreview} numberOfLines={1}>
+                {lastMessagePreview}
+              </Text>
+            ) : (
+              <Text style={styles.messagesPreviewEmpty}>No messages yet</Text>
+            )}
+            <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
+          </View>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -537,13 +493,19 @@ const STATUS_COLORS: Record<ContractStatus, { bg: string; fg: string }> = {
   cancelled: { bg: '#ffebee', fg: colors.error },
 };
 
-
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.neutral[50] },
-  flex: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
-  errorText: { ...typography.body1, color: colors.neutral[400], marginVertical: spacing.lg },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[50],
+  },
+  errorText: {
+    ...typography.body1,
+    color: colors.neutral[400],
+    marginVertical: spacing.lg,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -551,46 +513,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.neutral[0],
+    flex: 1,
+    textAlign: 'center',
+  },
   headerRight: { width: 24, alignItems: 'flex-end' },
 
-  // Trip header (collapsible)
-  tripHeader: {
+  // Status bar (always visible)
+  statusBar: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
-  tripHeaderRow: {
+  statusBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  tripHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  statusChip: { ...typography.body2Bold },
-  chevronDown: { transform: [{ rotate: '-90deg' }] },
-  chevronRight: {},
-  tripSummary: {
+  statusBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  statusChip: { ...typography.body2Bold },
+  priceLabel: { ...typography.body1Bold, color: colors.forest[900] },
+  routeSummaryText: {
+    ...typography.body2,
+    color: colors.forest[500],
     marginTop: spacing.xs,
   },
-  tripSummaryText: { ...typography.body2, color: colors.forest[500], flex: 1, marginRight: spacing.sm },
-  tripSummaryPrice: { ...typography.body1Bold, color: colors.forest[900] },
 
-  // Expanded details panel
-  detailsPanel: { maxHeight: 400, borderBottomWidth: 1, borderBottomColor: colors.neutral[200] },
-  detailsContent: { padding: spacing.lg },
-  detailActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
-  detailActionBtn: { flex: 1 },
+  // Body
+  body: { flex: 1 },
+  bodyContent: { padding: spacing.lg },
 
-  // Shared detail styles
+  // Sections
   section: { marginBottom: spacing.xl },
-  sectionLabel: { ...typography.body2Bold, color: colors.forest[400], marginBottom: spacing.sm },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionLabel: {
+    ...typography.body2Bold,
+    color: colors.forest[400],
+    marginBottom: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   openMapsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  openMapsText: { ...typography.caption, color: colors.forest[400], fontWeight: '600' },
+  openMapsText: {
+    ...typography.caption,
+    color: colors.forest[400],
+    fontWeight: '600',
+  },
   viewPostLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -604,14 +581,47 @@ const styles = StyleSheet.create({
   },
   routeRow: { flexDirection: 'row', gap: spacing.md },
   routeDots: { alignItems: 'center', paddingVertical: 2 },
-  dotGreen: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent.green },
-  routeLine: { width: 2, flex: 1, backgroundColor: colors.neutral[300], marginVertical: 2 },
-  dotRed: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.error },
-  routeAddresses: { flex: 1, justifyContent: 'space-between', gap: spacing.lg },
+  dotGreen: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.accent.green,
+  },
+  routeLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: colors.neutral[300],
+    marginVertical: 2,
+  },
+  dotRed: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.error,
+  },
+  routeAddresses: {
+    flex: 1,
+    justifyContent: 'space-between',
+    gap: spacing.lg,
+  },
   address: { ...typography.body1, color: colors.forest[900] },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
   infoText: { ...typography.body1, color: colors.forest[900] },
-  mapContainer: { height: 200, borderRadius: borderRadius.lg, overflow: 'hidden', marginBottom: spacing.lg },
+
+  // Map
+  mapContainer: {
+    height: 200,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+
+  // Driver controls
   driverControls: { gap: spacing.md, marginBottom: spacing.xl },
   trackingToggle: {
     flexDirection: 'row',
@@ -624,7 +634,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.accent.green,
   },
-  trackingToggleActive: { backgroundColor: colors.accent.green, borderColor: colors.accent.green },
+  trackingToggleActive: {
+    backgroundColor: colors.accent.green,
+    borderColor: colors.accent.green,
+  },
   trackingToggleText: { ...typography.body1Bold, color: colors.accent.green },
   trackingToggleTextActive: { color: colors.neutral[0] },
   checkinButton: {
@@ -640,68 +653,52 @@ const styles = StyleSheet.create({
   },
   checkinText: { ...typography.body1Bold, color: colors.forest[500] },
 
-  // Chat
-  chatList: { flex: 1 },
-  chatContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexGrow: 1, justifyContent: 'flex-end' },
-  emptyChat: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
-  emptyChatText: { ...typography.body1Bold, color: colors.neutral[400] },
-  emptyChatSubText: { ...typography.body2, color: colors.neutral[400] },
+  // Action buttons
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  actionBtn: { flex: 1 },
 
-  messageBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
-  },
-  myBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: colors.accent.green,
-    borderBottomRightRadius: 4,
-  },
-  theirBubble: {
-    alignSelf: 'flex-start',
+  // Messages strip
+  messagesStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     backgroundColor: colors.neutral[0],
-    borderBottomLeftRadius: 4,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neutral[200],
+    marginTop: spacing.md,
   },
-  senderName: { ...typography.caption, color: colors.forest[400], fontWeight: '600', marginBottom: 2 },
-  messageText: { ...typography.body1, color: colors.forest[900] },
-  myMessageText: { color: colors.neutral[0] },
-  messageTime: { ...typography.caption, color: colors.forest[400], marginTop: 2, alignSelf: 'flex-end' },
-  myMessageTime: { color: 'rgba(255,255,255,0.7)' },
-
-  // Input bar
-  inputBar: {
+  messagesStripLeft: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
-    backgroundColor: colors.neutral[0],
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  textInput: {
-    flex: 1,
-    ...typography.body1,
+  messagesStripTitle: {
+    ...typography.body1Bold,
     color: colors.forest[900],
-    backgroundColor: colors.neutral[100],
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    maxHeight: 100,
   },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.accent.green,
+  messagesStripRight: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  sendButtonDisabled: {
-    backgroundColor: colors.neutral[200],
+  messagesPreview: {
+    ...typography.body2,
+    color: colors.forest[400],
+    flex: 1,
+    textAlign: 'right',
+  },
+  messagesPreviewEmpty: {
+    ...typography.body2,
+    color: colors.neutral[400],
+    fontStyle: 'italic',
   },
 });

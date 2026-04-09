@@ -9,12 +9,11 @@ interface UploadProfileAvatarArgs {
 export async function uploadProfileAvatar({ userId, uri, mimeType }: UploadProfileAvatarArgs) {
   const response = await fetch(uri);
   const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
   const filePath = `${userId}/avatar`;
 
   const { error } = await supabase.storage
     .from('avatars')
-    .upload(filePath, arrayBuffer, {
+    .upload(filePath, blob, {
       contentType: mimeType ?? 'image/jpeg',
       upsert: true,
     });
