@@ -21,6 +21,7 @@ export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
 export type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
 export type BookingRole = 'rider' | 'driver';
 export type BelizeDistrict = 'belize' | 'cayo' | 'corozal' | 'orange_walk' | 'stann_creek' | 'toledo';
+export type DriverDocumentType = 'drivers_license' | 'vehicle_insurance' | 'vehicle_registration' | 'police_record';
 export type FlagTarget = 'post' | 'user' | 'booking';
 export type AdminActionType = 'approve_driver' | 'reject_driver' | 'approve_rider_doc' | 'reject_rider_doc' | 'suspend_user' | 'unsuspend_user' | 'remove_post' | 'dismiss_flag' | 'issue_strike';
 
@@ -191,6 +192,66 @@ export type Database = {
           {
             foreignKeyName: "contract_events_actor_id_fkey"
             columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_documents: {
+        Row: {
+          id: string
+          profile_id: string
+          document_type: Database["public"]["Enums"]["driver_document_type"]
+          document_url: string
+          document_number: string | null
+          expiration_date: string | null
+          review_status: Database["public"]["Enums"]["review_status"]
+          rejection_reason: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          uploaded_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          document_type: Database["public"]["Enums"]["driver_document_type"]
+          document_url: string
+          document_number?: string | null
+          expiration_date?: string | null
+          review_status?: Database["public"]["Enums"]["review_status"]
+          rejection_reason?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          uploaded_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          document_type?: Database["public"]["Enums"]["driver_document_type"]
+          document_url?: string
+          document_number?: string | null
+          expiration_date?: string | null
+          review_status?: Database["public"]["Enums"]["review_status"]
+          rejection_reason?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          uploaded_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1470,6 +1531,11 @@ export type Database = {
         | "no_show"
         | "completed"
       contract_status: "active" | "completed" | "disputed" | "cancelled"
+      driver_document_type:
+        | "drivers_license"
+        | "vehicle_insurance"
+        | "vehicle_registration"
+        | "police_record"
       ekyash_status: "pending" | "approved" | "cancelled" | "refunded"
       errand_category:
         | "grocery"

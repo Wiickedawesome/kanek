@@ -5,19 +5,24 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  Image,
+  View,
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
-import { Icon } from '@/components/icons';
 import { profilesApi } from '@/store/api/profilesApi';
+import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
+import {
+  useGetDriverDocumentsQuery,
+  useUpsertDriverDocumentMutation,
+} from '@/store/api/driverDocumentsApi';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import type { AppDispatch, RootState } from '@/store';
+import type { DriverDocumentType } from '@/types/database';
+
+const ONBOARDING_DOCS: DriverDocumentType[] = ['drivers_license', 'vehicle_insurance'];
 
 interface VehicleInfo {
   make: string;
@@ -30,8 +35,11 @@ interface VehicleInfo {
 export default function DriverDocsScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
-  const [licenseUri, setLicenseUri] = useState<string | null>(null);
-  const [insuranceUri, setInsuranceUri] = useState<string | null>(null);
+  const { data: driverDocs = [] } = useGetDriverDocumentsQuery(
+    user?.id ?? '',
+    { skip: !user?.id },
+  );
+  const [upsertDriverDoc] = useUpsertDriverDocumentMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vehicle, setVehicle] = useState<VehicleInfo>({
     make: '',
@@ -41,44 +49,7 @@ export default function DriverDocsScreen() {
     plate: '',
   });
 
-  const pickDocument = async (setter: (uri: string) => void) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-      allowsEditing: true,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
-        showAlert('File too large', 'Document must be under 5 MB');
-        return;
-      }
-      setter(asset.uri);
-    }
-  };
-
-  const uploadFile = async (uri: string, name: string): Promise<string | null> => {
-    if (!user) return null;
-    const fileName = `${user.id}/${name}-${Date.now()}.jpg`;
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-
-    const { error } = await supabase.storage
-      .from('documents')
-      .upload(fileName, arrayBuffer, { contentType: 'image/jpeg' });
-
-    if (error) {
-      showAlert('Upload failed', error.message);
-      return null;
-    }
-    return fileName;
-  };
-
   const isFormValid =
-    licenseUri &&
-    insuranceUri &&
     vehicle.make.trim() &&
     vehicle.model.trim() &&
     vehicle.year.trim() &&
@@ -89,54 +60,42 @@ export default function DriverDocsScreen() {
     if (!isFormValid || !user) return;
     setIsSubmitting(true);
 
-    const [licensePath, insurancePath] = await Promise.all([
-      uploadFile(licenseUri!, 'license'),
-      uploadFile(insuranceUri!, 'insurance'),
-    ]);
+    try {
+      const { data: latestRiderDoc } = await supabase
+        .from('rider_documents')
+        .select('document_url')
+        .eq('user_id', user.id)
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (!licensePath || !insurancePath) {
+      const { error } = await supabase.from('driver_details').upsert({
+        id: user.id,
+        id_document_url: latestRiderDoc?.document_url ?? null,
+        vehicle_make: vehicle.make.trim(),
+        vehicle_model: vehicle.model.trim(),
+        vehicle_year: parseInt(vehicle.year, 10),
+        vehicle_color: vehicle.color.trim(),
+        vehicle_plate: vehicle.plate.trim().toUpperCase(),
+        verified: false,
+        verified_at: null,
+        verified_by: null,
+        rejection_reason: null,
+        review_status: 'pending',
+      });
+
+      if (error) throw error;
+
+      dispatch(profilesApi.util.invalidateTags([
+        { type: 'DriverDetails', id: user.id },
+      ]));
+
+      router.replace('/(tabs)/explore');
+    } catch (err) {
+      showAlert('Submission failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    const { data: latestRiderDoc } = await supabase
-      .from('rider_documents')
-      .select('document_url')
-      .eq('user_id', user.id)
-      .order('uploaded_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const { error } = await supabase.from('driver_details').upsert({
-      id: user.id,
-      license_url: licensePath,
-      insurance_url: insurancePath,
-      id_document_url: latestRiderDoc?.document_url ?? null,
-      vehicle_make: vehicle.make.trim(),
-      vehicle_model: vehicle.model.trim(),
-      vehicle_year: parseInt(vehicle.year, 10),
-      vehicle_color: vehicle.color.trim(),
-      vehicle_plate: vehicle.plate.trim().toUpperCase(),
-      verified: false,
-      verified_at: null,
-      verified_by: null,
-      rejection_reason: null,
-      review_status: 'pending',
-    });
-
-    if (error) {
-      showAlert('Submission failed', error.message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    dispatch(profilesApi.util.invalidateTags([
-      { type: 'DriverDetails', id: user.id },
-      { type: 'RiderDocument', id: user.id },
-    ]));
-
-    setIsSubmitting(false);
-    router.replace('/(tabs)/explore');
   };
 
   return (
@@ -144,40 +103,31 @@ export default function DriverDocsScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Driver documents</Text>
         <Text style={styles.subtitle}>
-          Upload your license and insurance, and tell us about your vehicle.
+          Upload your license and insurance, and tell us about your vehicle. You can upload remaining documents later from My Documents.
         </Text>
 
-        {/* License upload */}
-        <Text style={styles.sectionLabel}>Driver&apos;s License</Text>
-        <Pressable
-          style={styles.uploadArea}
-          onPress={() => pickDocument(setLicenseUri)}
-        >
-          {licenseUri ? (
-            <Image source={{ uri: licenseUri }} style={styles.docImage} />
-          ) : (
-            <>
-              <Icon name="user" size={28} color={colors.forest[400]} />
-              <Text style={styles.uploadText}>Tap to upload</Text>
-            </>
-          )}
-        </Pressable>
-
-        {/* Insurance upload */}
-        <Text style={styles.sectionLabel}>Vehicle Insurance</Text>
-        <Pressable
-          style={styles.uploadArea}
-          onPress={() => pickDocument(setInsuranceUri)}
-        >
-          {insuranceUri ? (
-            <Image source={{ uri: insuranceUri }} style={styles.docImage} />
-          ) : (
-            <>
-              <Icon name="shield-alert" size={28} color={colors.forest[400]} />
-              <Text style={styles.uploadText}>Tap to upload</Text>
-            </>
-          )}
-        </Pressable>
+        {/* Document uploads via DocumentUploadCard */}
+        {user && ONBOARDING_DOCS.map((docType) => {
+          const existingDoc = driverDocs.find((d) => d.document_type === docType) ?? null;
+          return (
+            <View key={docType} style={styles.cardWrapper}>
+              <DocumentUploadCard
+                userId={user.id}
+                documentType={docType}
+                existingDoc={existingDoc}
+                onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
+                  await upsertDriverDoc({
+                    profileId: user.id,
+                    documentType: docType,
+                    documentUrl,
+                    documentNumber,
+                    expirationDate,
+                  }).unwrap();
+                }}
+              />
+            </View>
+          );
+        })}
 
         {/* Vehicle info */}
         <Text style={styles.sectionLabel}>Vehicle Information</Text>
@@ -227,12 +177,12 @@ export default function DriverDocsScreen() {
           disabled={!isFormValid || isSubmitting}
         >
           <Text style={styles.buttonText}>
-            {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+            {isSubmitting ? 'Submitting...' : 'Continue'}
           </Text>
         </Pressable>
 
         <Text style={styles.note}>
-          Your driver documents were submitted. You can keep using kanek while we review them.
+          You can upload remaining documents (vehicle registration, police record) later from My Documents in your profile.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -265,26 +215,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  uploadArea: {
-    backgroundColor: colors.neutral[100],
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-    borderStyle: 'dashed',
-    padding: spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 120,
-  },
-  uploadText: {
-    ...typography.body2,
-    color: colors.forest[400],
-    marginTop: spacing.xs,
-  },
-  docImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: borderRadius.sm,
+  cardWrapper: {
+    marginBottom: spacing.md,
   },
   input: {
     backgroundColor: colors.neutral[100],

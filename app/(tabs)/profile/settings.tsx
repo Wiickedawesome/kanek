@@ -17,10 +17,17 @@ import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
   useGetMyProfileQuery,
+  useGetLatestRiderDocumentQuery,
   useUpdateProfileMutation,
   useRequestPhoneChangeMutation,
   useVerifyPhoneChangeMutation,
 } from '@/store/api/profilesApi';
+import {
+  useGetDriverDocumentsQuery,
+  areAllDriverDocsApproved,
+  REQUIRED_DRIVER_DOCS,
+  DRIVER_DOC_LABELS,
+} from '@/store/api/driverDocumentsApi';
 import { isValidPhone, normalizePhone, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
@@ -38,6 +45,8 @@ const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
 export default function SettingsScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile, isLoading } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const { data: riderDocument } = useGetLatestRiderDocumentQuery(userId ?? '', { skip: !userId });
+  const { data: driverDocs = [] } = useGetDriverDocumentsQuery(userId ?? '', { skip: !userId });
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation();
   const [requestPhoneChange, { isLoading: isRequestingPhone }] = useRequestPhoneChangeMutation();
   const [verifyPhoneChange, { isLoading: isVerifyingPhone }] = useVerifyPhoneChangeMutation();
@@ -211,7 +220,27 @@ export default function SettingsScreen() {
             </Pressable>
             <Pressable
               style={[styles.roleBtn, role === 'driver' && styles.roleBtnActive]}
-              onPress={() => setRole('driver')}
+              onPress={() => {
+                const govIdApproved = riderDocument?.review_status === 'approved';
+                const driverDocsOk = areAllDriverDocsApproved(driverDocs);
+
+                if (!govIdApproved || !driverDocsOk) {
+                  const missing: string[] = [];
+                  if (!govIdApproved) missing.push('Government ID');
+                  for (const dt of REQUIRED_DRIVER_DOCS) {
+                    const doc = driverDocs.find((d) => d.document_type === dt);
+                    if (!doc || doc.review_status !== 'approved') {
+                      missing.push(DRIVER_DOC_LABELS[dt]);
+                    }
+                  }
+                  showAlert(
+                    'Documents Required',
+                    `The following documents must be uploaded and approved before switching to driver:\n\n${missing.map((m) => `• ${m}`).join('\n')}\n\nGo to My Documents to upload them.`,
+                  );
+                  return;
+                }
+                setRole('driver');
+              }}
             >
               <Text style={[styles.roleBtnText, role === 'driver' && styles.roleBtnTextActive]}>
                 Driver
@@ -219,8 +248,8 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
           {role === 'driver' && profile?.role !== 'driver' && (
-            <Text style={styles.driverNote}>
-              Switching to driver requires ID verification. Upload your documents after saving.
+            <Text style={[styles.driverNote, { color: colors.accent.green }]}>
+              All documents approved — you can switch to driver.
             </Text>
           )}
         </View>
