@@ -61,8 +61,8 @@ function getStatusIcon(status: ReviewStatus | 'not_uploaded'): IconName {
 }
 
 /** Whether this doc type requires an expiration date */
-function requiresExpiration(type: DriverDocumentType): boolean {
-  return type !== 'police_record';
+function requiresExpiration(_type: DriverDocumentType): boolean {
+  return true;
 }
 
 /** Label for the document number field */
@@ -71,7 +71,6 @@ function numberFieldLabel(type: DriverDocumentType): string {
     case 'drivers_license': return 'License Number';
     case 'vehicle_insurance': return 'Policy Number';
     case 'vehicle_registration': return 'Registration Number';
-    case 'police_record': return 'Record Number';
   }
 }
 
@@ -262,12 +261,6 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
                 maxLength={10}
               />
             </View>
-          )}
-
-          {documentType === 'police_record' && (
-            <Text style={styles.hint}>
-              Police records are valid for 6 months from issue date.
-            </Text>
           )}
 
           {/* Submit */}

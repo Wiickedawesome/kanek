@@ -51,3 +51,8 @@ ios/
 google-services.json
 play-store-service-account.json
 
+# Raw geodata (only the processed belize-pois.json is committed in src/data/)
+data/belize-pois/*.osm.pbf
+data/belize-pois/*.geojson
+data/belize-pois/*.gz
+

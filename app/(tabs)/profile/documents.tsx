@@ -204,52 +204,40 @@ export default function DocumentsScreen() {
           />
         </Card>
 
-        {/* Driver Documents Section */}
-        {isDriver && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Driver Documents</Text>
-              <Text style={styles.sectionSubtitle}>
-                {allDocsApproved
-                  ? 'All documents approved'
-                  : allDocsUploaded
-                    ? `${approvedCount}/${totalRequired} approved — review in progress`
-                    : `${approvedCount}/${totalRequired} approved — upload remaining documents`}
-              </Text>
-            </View>
+        {/* Driver Documents Section — visible to all users */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Driver Documents</Text>
+          <Text style={styles.sectionSubtitle}>
+            {allDocsApproved
+              ? 'All documents approved'
+              : allDocsUploaded
+                ? `${approvedCount}/${totalRequired} approved — review in progress`
+                : isDriver
+                  ? `${approvedCount}/${totalRequired} approved — upload remaining documents`
+                  : 'Upload these to become a driver'}
+          </Text>
+        </View>
 
-            {REQUIRED_DRIVER_DOCS.map((docType) => {
-              const existingDoc = driverDocs.find((d) => d.document_type === docType) ?? null;
-              return (
-                <DocumentUploadCard
-                  key={docType}
-                  userId={userId!}
-                  documentType={docType}
-                  existingDoc={existingDoc}
-                  onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
-                    await upsertDriverDoc({
-                      profileId: userId!,
-                      documentType: docType,
-                      documentUrl,
-                      documentNumber,
-                      expirationDate,
-                    }).unwrap();
-                  }}
-                />
-              );
-            })}
-          </>
-        )}
-
-        {/* Promo for riders */}
-        {!isDriver && (
-          <Card style={styles.driverPromo}>
-            <Icon name="navigation" size={24} color={colors.forest[400]} />
-            <Text style={styles.promoText}>
-              Want to drive? Switch to driver in Account Settings — you'll need to upload and get all driver documents approved first.
-            </Text>
-          </Card>
-        )}
+        {REQUIRED_DRIVER_DOCS.map((docType) => {
+          const existingDoc = driverDocs.find((d) => d.document_type === docType) ?? null;
+          return (
+            <DocumentUploadCard
+              key={docType}
+              userId={userId!}
+              documentType={docType}
+              existingDoc={existingDoc}
+              onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
+                await upsertDriverDoc({
+                  profileId: userId!,
+                  documentType: docType,
+                  documentUrl,
+                  documentNumber,
+                  expirationDate,
+                }).unwrap();
+              }}
+            />
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -279,15 +267,4 @@ const styles = StyleSheet.create({
   sectionHeader: { gap: spacing.xs, marginTop: spacing.sm },
   sectionTitle: { ...typography.h3, color: colors.forest[900] },
   sectionSubtitle: { ...typography.body2, color: colors.forest[400] },
-
-  driverPromo: {
-    flexDirection: 'row',
-    padding: spacing.lg,
-    gap: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.forest[400],
-    borderStyle: 'dashed',
-  },
-  promoText: { ...typography.body2, color: colors.forest[400], flex: 1 },
 });

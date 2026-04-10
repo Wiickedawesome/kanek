@@ -21,7 +21,7 @@ export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
 export type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
 export type BookingRole = 'rider' | 'driver';
 export type BelizeDistrict = 'belize' | 'cayo' | 'corozal' | 'orange_walk' | 'stann_creek' | 'toledo';
-export type DriverDocumentType = 'drivers_license' | 'vehicle_insurance' | 'vehicle_registration' | 'police_record';
+export type DriverDocumentType = 'drivers_license' | 'vehicle_insurance' | 'vehicle_registration';
 export type FlagTarget = 'post' | 'user' | 'booking';
 export type AdminActionType = 'approve_driver' | 'reject_driver' | 'approve_rider_doc' | 'reject_rider_doc' | 'suspend_user' | 'unsuspend_user' | 'remove_post' | 'dismiss_flag' | 'issue_strike';
 
@@ -1535,7 +1535,6 @@ export type Database = {
         | "drivers_license"
         | "vehicle_insurance"
         | "vehicle_registration"
-        | "police_record"
       ekyash_status: "pending" | "approved" | "cancelled" | "refunded"
       errand_category:
         | "grocery"

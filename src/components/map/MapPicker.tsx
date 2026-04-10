@@ -5,16 +5,11 @@ import { useSelector } from 'react-redux';
 import { MapPickerContent } from './MapPickerContent';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
-import { reverseGeocode, BELIZE_CENTER, MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
-import { BELIZE_BBOX } from '@/lib/constants';
+import { reverseGeocode, BELIZE_CENTER } from '@/lib/mapbox';
+import { searchPlaces as searchGeocode, type GeocodeSuggestion } from '@/lib/geocode';
 import type { RootState } from '@/store';
 
-interface SearchResult {
-  id: string;
-  place_name: string;
-  lat: number;
-  lng: number;
-}
+type SearchResult = GeocodeSuggestion;
 
 interface MapPickerProps {
   visible: boolean;
@@ -66,21 +61,7 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
     }
     setSearching(true);
     try {
-      const bbox = `${BELIZE_BBOX.west},${BELIZE_BBOX.south},${BELIZE_BBOX.east},${BELIZE_BBOX.north}`;
-      const url =
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json` +
-        `?access_token=${MAPBOX_ACCESS_TOKEN}&bbox=${bbox}&country=BZ&limit=6` +
-        `&types=place,locality,neighborhood,address,poi`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const items: SearchResult[] = (data.features ?? []).map(
-        (f: { id: string; place_name: string; center: [number, number] }) => ({
-          id: f.id,
-          place_name: f.place_name,
-          lat: f.center[1],
-          lng: f.center[0],
-        }),
-      );
+      const items = await searchGeocode(text, { limit: 6, minChars: 2 });
       setResults(items);
       setShowResults(items.length > 0);
     } catch {

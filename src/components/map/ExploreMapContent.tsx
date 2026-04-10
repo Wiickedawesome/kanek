@@ -24,6 +24,8 @@ export interface ExploreMapContentProps {
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
+  /** Exposed flyTo callback — parent can call to animate camera to a location */
+  onFlyToRef?: React.MutableRefObject<((lat: number, lng: number, zoom?: number) => void) | null>;
   /** Override initial camera center (defaults to BELIZE_CENTER) */
   initialCenter?: { latitude: number; longitude: number };
   /** Override initial zoom (defaults to BELIZE_ZOOM) */
@@ -42,6 +44,7 @@ export function ExploreMapContent({
   gasStations,
   onPinPress,
   onRecenterRef,
+  onFlyToRef,
   initialCenter,
   initialZoom,
   showUserLocation = false,
@@ -111,6 +114,17 @@ export function ExploreMapContent({
 
   // Expose recenter to parent
   if (onRecenterRef) onRecenterRef.current = recenter;
+
+  // Expose flyTo to parent (for search-to-location)
+  if (onFlyToRef) {
+    onFlyToRef.current = (lat: number, lng: number, flyZoom?: number) => {
+      cameraRef.current?.setCamera({
+        centerCoordinate: [lng, lat],
+        zoomLevel: flyZoom ?? 14,
+        animationDuration: 800,
+      });
+    };
+  }
 
   return (
     <>

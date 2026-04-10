@@ -182,7 +182,7 @@ export default function DriverDocsScreen() {
         </Pressable>
 
         <Text style={styles.note}>
-          You can upload remaining documents (vehicle registration, police record) later from My Documents in your profile.
+          You can upload remaining documents (vehicle registration) later from My Documents in your profile.
         </Text>
       </ScrollView>
     </SafeAreaView>

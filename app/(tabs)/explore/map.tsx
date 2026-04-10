@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, FlatList, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
@@ -12,6 +12,7 @@ import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetRoadReportsQuery, useGetGasPricesQuery } from '@/store/api/reportsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { DISTRICT_CENTERS, DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
+import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
 import type { BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
 
@@ -157,6 +158,45 @@ export default function ExploreMapScreen() {
 
   const [headerHeight, setHeaderHeight] = useState(64);
 
+  // ── Search state ───────────────────────────────────────────────
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GeocodeSuggestion[]>([]);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flyToRef = useRef<((lat: number, lng: number, zoom?: number) => void) | null>(null);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (text.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      const results = await searchPlaces(text, { limit: 5 });
+      setSearchResults(results);
+    }, 300);
+  }, []);
+
+  const handleSearchSelect = useCallback((item: GeocodeSuggestion) => {
+    flyToRef.current?.(item.lat, item.lng, 15);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchOpen(false);
+    Keyboard.dismiss();
+  }, []);
+
+  const toggleSearch = useCallback(() => {
+    setSearchOpen((prev) => {
+      if (prev) {
+        setSearchQuery('');
+        setSearchResults([]);
+        Keyboard.dismiss();
+      }
+      return !prev;
+    });
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Map fills entire area */}
@@ -166,6 +206,7 @@ export default function ExploreMapScreen() {
           reports={reportPoints}
           gasStations={gasPoints}
           onPinPress={handlePinPress}
+          onFlyToRef={flyToRef}
           initialCenter={initialCenter}
           initialZoom={initialZoom}
           showUserLocation={hasGPS}
@@ -182,11 +223,46 @@ export default function ExploreMapScreen() {
             <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
               <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
             </Pressable>
-            <Text style={styles.headerTitle}>Map View</Text>
-            <Pressable onPress={() => router.push('/(tabs)/explore/')} hitSlop={12}>
-              <Icon name="clipboard-list" size={24} color={colors.neutral[0]} />
+            {searchOpen ? (
+              <View style={styles.searchInputWrapper}>
+                <Icon name="search" size={18} color={colors.neutral[400]} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={handleSearchChange}
+                  placeholder="Search places..."
+                  placeholderTextColor={colors.neutral[400]}
+                  autoFocus
+                  returnKeyType="search"
+                />
+              </View>
+            ) : (
+              <Text style={styles.headerTitle}>Map View</Text>
+            )}
+            <Pressable onPress={toggleSearch} hitSlop={12}>
+              <Icon name={searchOpen ? 'x' : 'search'} size={24} color={colors.neutral[0]} />
             </Pressable>
           </View>
+
+          {/* Search results dropdown */}
+          {searchResults.length > 0 && (
+            <View style={styles.searchResults}>
+              <FlatList
+                data={searchResults}
+                keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={({ pressed }) => [styles.searchResultItem, pressed && styles.searchResultPressed]}
+                    onPress={() => handleSearchSelect(item)}
+                  >
+                    <Icon name="map-pin" size={16} color={item.source === 'local' ? colors.accent.green : colors.accent.blue} />
+                    <Text style={styles.searchResultText} numberOfLines={1}>{item.place_name}</Text>
+                  </Pressable>
+                )}
+              />
+            </View>
+          )}
         </ScreenHeader>
 
         {/* Legend */}
@@ -239,6 +315,48 @@ const styles = StyleSheet.create({
   headerTitle: {
     ...typography.h3,
     color: colors.neutral[0],
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginHorizontal: spacing.sm,
+    gap: spacing.xs,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body2,
+    color: colors.forest[900],
+    padding: 0,
+    height: 32,
+  },
+  searchResults: {
+    marginHorizontal: spacing.xl,
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.md,
+    maxHeight: 200,
+    ...shadows.md,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.neutral[200],
+  },
+  searchResultPressed: {
+    backgroundColor: colors.neutral[100],
+  },
+  searchResultText: {
+    flex: 1,
+    ...typography.body2,
+    color: colors.forest[900],
   },
   legend: {
     position: 'absolute',

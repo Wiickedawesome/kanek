@@ -49,6 +49,7 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
+    "@mapbox/mapbox-sdk": "^0.16.2",
     "@types/react": "~19.2.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~55.0.0",

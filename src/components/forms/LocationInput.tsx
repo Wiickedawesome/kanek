@@ -3,15 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator,
 import { Icon } from '@/components/icons';
 import { MapPicker } from '@/components/map/MapPicker';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
-import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
-import { BELIZE_BBOX } from '@/lib/constants';
+import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
 
-interface Suggestion {
-  id: string;
-  place_name: string;
-  lat: number;
-  lng: number;
-}
+type Suggestion = GeocodeSuggestion;
 
 export interface LocationCoords {
   lat: number;
@@ -57,16 +51,7 @@ export function LocationInput({
 
     setLoading(true);
     try {
-      const bbox = `${BELIZE_BBOX.west},${BELIZE_BBOX.south},${BELIZE_BBOX.east},${BELIZE_BBOX.north}`;
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&bbox=${bbox}&country=BZ&limit=5&types=place,locality,neighborhood,address,poi`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const items: Suggestion[] = (data.features ?? []).map((f: { id: string; place_name: string; center: [number, number] }) => ({
-        id: f.id,
-        place_name: f.place_name,
-        lng: f.center[0],
-        lat: f.center[1],
-      }));
+      const items = await searchPlaces(query, { limit: 5, minChars: 3 });
       setSuggestions(items);
       setShowDropdown(items.length > 0);
     } catch {

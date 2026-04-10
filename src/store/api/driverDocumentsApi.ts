@@ -8,21 +8,18 @@ export const REQUIRED_DRIVER_DOCS: DriverDocumentType[] = [
   'drivers_license',
   'vehicle_insurance',
   'vehicle_registration',
-  'police_record',
 ];
 
 export const DRIVER_DOC_LABELS: Record<DriverDocumentType, string> = {
   drivers_license: "Driver's License",
   vehicle_insurance: 'Vehicle Insurance',
   vehicle_registration: 'Vehicle Registration',
-  police_record: 'Police Record',
 };
 
 export const DRIVER_DOC_ICONS: Record<DriverDocumentType, string> = {
   drivers_license: 'user',
   vehicle_insurance: 'shield-alert',
   vehicle_registration: 'clipboard-list',
-  police_record: 'star',
 };
 
 export const driverDocumentsApi = createApi({

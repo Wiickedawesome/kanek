@@ -31,6 +31,7 @@ export interface ExploreMapContentProps {
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
+  onFlyToRef?: React.MutableRefObject<((lat: number, lng: number, zoom?: number) => void) | null>;
   initialCenter?: { latitude: number; longitude: number };
   initialZoom?: number;
   showUserLocation?: boolean;
@@ -44,6 +45,7 @@ export function ExploreMapContent({
   gasStations,
   onPinPress,
   onRecenterRef,
+  onFlyToRef,
   initialCenter,
   initialZoom,
   showUserLocation = false,
@@ -75,6 +77,15 @@ export function ExploreMapContent({
   useEffect(() => {
     if (onRecenterRef) onRecenterRef.current = recenter;
   }, [onRecenterRef, recenter]);
+
+  // Expose flyTo to parent (for search-to-location)
+  useEffect(() => {
+    if (onFlyToRef) {
+      onFlyToRef.current = (lat: number, lng: number, flyZoom?: number) => {
+        mapRef.current?.flyTo({ center: [lng, lat], zoom: flyZoom ?? 14, duration: 800 });
+      };
+    }
+  }, [onFlyToRef]);
 
   // Fly to initialCenter whenever it changes after mount (profile data loaded late)
   useEffect(() => {

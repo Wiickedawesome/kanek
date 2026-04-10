@@ -1,14 +1,10 @@
 import { supabase } from './supabase';
+import { BELIZE_BBOX } from './constants';
 
 export const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
-/** Belize bounding box — reject coordinates outside */
-export const BELIZE_BOUNDS = {
-  north: 18.497,
-  south: 15.889,
-  east: -87.485,
-  west: -89.225,
-} as const;
+/** @deprecated Use BELIZE_BBOX from '@/lib/constants' directly. Re-exported for backward compat. */
+export const BELIZE_BOUNDS = BELIZE_BBOX;
 
 /** Center of Belize for default map view */
 export const BELIZE_CENTER = {
@@ -183,11 +179,18 @@ export function formatDuration(minutes: number): string {
 
 // ── Reverse Geocoding ────────────────────────────────────────────────
 
+import { findNearestPoi } from './belizePois';
+
 /**
- * Reverse-geocode coordinates to a place name using Mapbox Geocoding API.
- * Returns the best available place name, falling back to formatted coords.
+ * Reverse-geocode coordinates to a place name.
+ * Checks local POI database first (instant, offline-capable), then
+ * falls back to the Mapbox Geocoding API for broader coverage.
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  // Try local POI data first — instant, no network needed
+  const nearbyPoi = findNearestPoi(lat, lng, 100);
+  if (nearbyPoi) return nearbyPoi.place_name;
+
   const url =
     `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
     `?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,locality,neighborhood,address,poi&limit=1`;
@@ -284,7 +287,7 @@ export function buildRouteMapUrl(
     );
 
     return (
-      `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/geojson(${geojson})` +
+      `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/geojson(${geojson})` +
       `/auto/${width}x${height}?padding=${padding}&access_token=${MAPBOX_ACCESS_TOKEN}`
     );
   };
