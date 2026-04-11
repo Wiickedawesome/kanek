@@ -25,7 +25,6 @@ WITH CHECK (
   AND strikes_hard IS NOT DISTINCT FROM (SELECT p.strikes_hard FROM profiles p WHERE p.id = auth.uid())
   AND rating_avg IS NOT DISTINCT FROM (SELECT p.rating_avg FROM profiles p WHERE p.id = auth.uid())
   AND punctuality_pct IS NOT DISTINCT FROM (SELECT p.punctuality_pct FROM profiles p WHERE p.id = auth.uid())
-  AND total_rides IS NOT DISTINCT FROM (SELECT p.total_rides FROM profiles p WHERE p.id = auth.uid())
 );
 
 

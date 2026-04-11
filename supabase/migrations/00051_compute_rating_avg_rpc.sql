@@ -45,7 +45,6 @@ BEGIN
   SET
     rating_avg    = v_avg,
     punctuality_pct = v_punctuality,
-    total_rides   = v_count,
     updated_at    = now()
   WHERE id = p_user_id;
 
