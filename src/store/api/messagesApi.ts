@@ -21,7 +21,7 @@ export const messagesApi = createApi({
       queryFn: async (contractId) => {
         const { data, error } = await supabase
           .from('contract_messages')
-          .select('*, sender:profiles!sender_id(first_name, last_name, avatar_url)')
+          .select('*, sender:profiles_public!sender_id(first_name, last_name, avatar_url)')
           .eq('contract_id', contractId)
           .order('created_at', { ascending: true })
           .limit(200);

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button, ScreenHeader } from '@/components/ui';
 import { LocationInput } from '@/components/forms';
+import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
@@ -57,6 +58,7 @@ export default function JobFormScreen() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [originAddress, setOriginAddress] = useState('');
+  const [originCoords, setOriginCoords] = useState<LocationCoords | null>(null);
   const [payRateDollars, setPayRateDollars] = useState('');
   const [payType, setPayType] = useState<PayType>('fixed');
   const [timeline, setTimeline] = useState<JobTimeline>('flexible');
@@ -101,6 +103,8 @@ export default function JobFormScreen() {
         title: title.trim(),
         description: description.trim(),
         origin_address: originAddress.trim() || null,
+        origin_lat: originCoords?.lat ?? null,
+        origin_lng: originCoords?.lng ?? null,
         job_category: category,
         pay_rate_cents: payRateCents,
         pay_type: payType,
@@ -178,6 +182,7 @@ export default function JobFormScreen() {
             placeholder="Where is the job?"
             value={originAddress}
             onChangeText={setOriginAddress}
+            onLocationSelect={setOriginCoords}
           />
 
           {/* Pay type */}

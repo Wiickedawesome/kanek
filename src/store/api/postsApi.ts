@@ -22,6 +22,7 @@ export interface ActiveBookingPreview {
     ProfileRow,
     'id' | 'first_name' | 'last_name' | 'avatar_url' | 'rating_avg' | 'punctuality_pct'
   > | null;
+  contract: { id: string }[];
 }
 
 export interface MyPostWithBookings extends PostWithAuthor {
@@ -47,8 +48,6 @@ export const postsApi = createApi({
       queryFn: async (args) => {
         const { type, status = 'open', limit = 20, offset = 0, search } = args ?? {};
 
-        // Explicitly list columns to exclude route_geometry (large GeoJSON)
-        // which is only needed on the detail screen (getPostById still uses *).
         let query = supabase
           .from('posts')
           .select(`
@@ -59,10 +58,11 @@ export const postsApi = createApi({
             price_cents, seats_total, seats_filled,
             payment_method, pickup_notes, pickup_style,
             is_round_trip, vehicle_description, min_riders,
+            route_geometry,
             route_distance_km, route_duration_min, route_fuel_cost_cents,
             errand_category, errand_fee_cents, item_cost_cents,
             job_category, job_timeline, pay_rate_cents, pay_type,
-            author:profiles!posts_author_id_fkey (
+            author:profiles_public!posts_author_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
             )
           `)
@@ -100,7 +100,7 @@ export const postsApi = createApi({
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey (
+            author:profiles_public!posts_author_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
             )
           `)
@@ -151,7 +151,7 @@ export const postsApi = createApi({
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey (
+            author:profiles_public!posts_author_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
             )
           `)
@@ -173,9 +173,10 @@ export const postsApi = createApi({
             post_id,
             status,
             seats_booked,
-            user:profiles!bookings_user_id_fkey (
+            user:profiles_public!bookings_user_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
-            )
+            ),
+            contract:contracts!contracts_booking_id_fkey(id)
           `)
           .in('post_id', postIds)
           .in('status', ['pending', 'confirmed'])

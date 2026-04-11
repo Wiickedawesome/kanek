@@ -22,7 +22,7 @@ export const contractEventsApi = createApi({
       queryFn: async (contractId) => {
         const { data, error } = await supabase
           .from('contract_events')
-          .select('*, actor:profiles!actor_id(first_name, last_name)')
+          .select('*, actor:profiles_public!actor_id(first_name, last_name)')
           .eq('contract_id', contractId)
           .order('created_at', { ascending: true });
 

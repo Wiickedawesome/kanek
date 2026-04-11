@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { colors, typography, shadows } from '@/theme';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
@@ -29,42 +28,11 @@ export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
   const ringWidth = size === 'lg' ? 2.5 : 2;
   const [imgError, setImgError] = React.useState(false);
 
-  // Reset error state when URI changes
   React.useEffect(() => {
     setImgError(false);
   }, [uri]);
 
   const showImage = !!uri && !imgError;
-
-  if (showImage) {
-    return (
-      <View
-        style={[
-          styles.ring,
-          {
-            width: dim + ringWidth * 2,
-            height: dim + ringWidth * 2,
-            borderRadius: (dim + ringWidth * 2) / 2,
-            borderWidth: ringWidth,
-          },
-          style,
-        ]}
-      >
-        <Image
-          source={{ uri }}
-          style={[
-            styles.image,
-            { width: dim, height: dim, borderRadius: dim / 2 },
-          ]}
-          contentFit="cover"
-          transition={300}
-          recyclingKey={uri}
-          placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
-          onError={() => setImgError(true)}
-        />
-      </View>
-    );
-  }
 
   return (
     <View
@@ -75,20 +43,33 @@ export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
           height: dim + ringWidth * 2,
           borderRadius: (dim + ringWidth * 2) / 2,
           borderWidth: ringWidth,
+          overflow: 'hidden',
         },
         style,
       ]}
     >
-      <View
-        style={[
-          styles.fallback,
-          { width: dim, height: dim, borderRadius: dim / 2 },
-        ]}
-      >
-        <Text style={[styles.initials, size === 'sm' && styles.initialsSmall]}>
-          {getInitials(name)}
-        </Text>
-      </View>
+      {showImage ? (
+        <Image
+          source={{ uri }}
+          style={[
+            styles.image,
+            { width: dim, height: dim, borderRadius: dim / 2 },
+          ]}
+          resizeMode="cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <View
+          style={[
+            styles.fallback,
+            { width: dim, height: dim, borderRadius: dim / 2 },
+          ]}
+        >
+          <Text style={[styles.initials, size === 'sm' && styles.initialsSmall]}>
+            {getInitials(name)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -98,7 +79,6 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[0],
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     ...shadows.sm,
   },
   image: {

@@ -77,6 +77,17 @@ export default function ContractDetailScreen() {
     ? contract.booking.user_id === userId
     : contract?.post?.author_id === userId;
 
+  // Determine if current user is the "doer" who triggers trip progress events.
+  // route_offer → the poster (driver) triggers events.
+  // All other types → the booker (worker/helper/deliverer) triggers events.
+  const isEventActor = useMemo(() => {
+    if (!contract?.post || !contract?.booking || !userId) return false;
+    if (contract.post.type === 'route_offer') {
+      return contract.post.author_id === userId;
+    }
+    return contract.booking.user_id === userId;
+  }, [contract, userId]);
+
   // Subscribe to live tracking when contract is active (rider side)
   useEffect(() => {
     if (!contractId || contract?.status !== 'active') return;
@@ -237,7 +248,7 @@ export default function ContractDetailScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
+        <Pressable onPress={() => router.navigate('/(tabs)/activity/' as any)} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -363,7 +374,7 @@ export default function ContractDetailScreen() {
         )}
 
         {/* Next Action Button */}
-        {isParty && isActive && postType && (
+        {isEventActor && isActive && postType && (
           <TripActionButtons
             postType={postType}
             completedEventTypes={completedEventTypes}

@@ -215,13 +215,18 @@ export default function ExploreMapScreen() {
         />
 
         {/* Header overlay */}
-        <ScreenHeader
-          style={styles.headerOverlay}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        >
-          <View style={styles.headerRow}>
-            <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-              <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <View style={styles.headerOverlay}>
+          <ScreenHeader
+            onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+          >
+            <View style={styles.headerRow}>
+            <Pressable
+              style={({ pressed }) => [styles.feedButton, pressed && styles.feedButtonPressed]}
+              onPress={() => safeGoBack('/(tabs)/explore/')}
+              hitSlop={8}
+            >
+              <Icon name="chevron-left" size={18} color={colors.neutral[0]} />
+              <Text style={styles.feedButtonLabel}>Feed</Text>
             </Pressable>
             {searchOpen ? (
               <View style={styles.searchInputWrapper}>
@@ -264,6 +269,7 @@ export default function ExploreMapScreen() {
             </View>
           )}
         </ScreenHeader>
+        </View>
 
         {/* Legend */}
         <View style={styles.legend}>
@@ -367,6 +373,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
     ...shadows.md,
+  },
+  feedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  feedButtonPressed: {
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  feedButtonLabel: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.neutral[0],
   },
   legendRow: {
     flexDirection: 'row',

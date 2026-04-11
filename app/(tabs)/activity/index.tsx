@@ -3,6 +3,7 @@ import {
   View,
   Text,
   FlatList,
+  SectionList,
   StyleSheet,
   Pressable,
   RefreshControl,
@@ -26,23 +27,19 @@ import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
 import type { BookingStatus, ContractStatus, PostType } from '@/types/database';
 
-type Tab = 'active' | 'history' | 'my_posts';
+type Tab = 'my_posts' | 'history';
 
-const ACTIVE_STATUSES: BookingStatus[] = ['pending', 'confirmed'];
 const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
-const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
 const HISTORY_CONTRACT_STATUSES: ContractStatus[] = ['completed', 'cancelled'];
 const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
 
 export default function ActivityScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialTab = (params.tab === 'active' || params.tab === 'history') ? params.tab : 'my_posts';
+  const initialTab = params.tab === 'history' ? 'history' : 'my_posts';
   const [tab, setTab] = useState<Tab>(initialTab);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
 
   const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
-
-  const statuses = tab === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
 
   const {
     data: bookings,
@@ -50,8 +47,8 @@ export default function ActivityScreen() {
     isFetching: bookingsFetching,
     refetch: refetchBookings,
   } = useGetMyBookingsQuery(
-    { userId: userId ?? '', status: statuses },
-    { skip: !userId || tab === 'my_posts' },
+    { userId: userId ?? '', status: HISTORY_STATUSES },
+    { skip: !userId || tab !== 'history' },
   );
 
   const {
@@ -62,16 +59,6 @@ export default function ActivityScreen() {
   } = useGetMyContractsQuery(
     { userId: userId ?? '', status: HISTORY_CONTRACT_STATUSES },
     { skip: !userId || tab !== 'history' },
-  );
-
-  const {
-    data: activeContracts,
-    isLoading: activeContractsLoading,
-    isFetching: activeContractsFetching,
-    refetch: refetchActiveContracts,
-  } = useGetMyContractsQuery(
-    { userId: userId ?? '', status: ACTIVE_CONTRACT_STATUSES },
-    { skip: !userId || tab !== 'active' },
   );
 
   const {
@@ -130,23 +117,20 @@ export default function ActivityScreen() {
   const onRefresh = useCallback(() => {
     if (tab === 'my_posts') {
       refetchPosts();
-    } else if (tab === 'history') {
-      refetchBookings();
-      refetchContracts();
     } else {
       refetchBookings();
-      refetchActiveContracts();
+      refetchContracts();
     }
-  }, [tab, refetchPosts, refetchBookings, refetchContracts, refetchActiveContracts]);
+  }, [tab, refetchPosts, refetchBookings, refetchContracts]);
 
   const renderBooking = useCallback(
     ({ item, index }: { item: BookingWithPost; index?: number }) => {
-      const hasContract = item.contract?.id;
+      const hasContract = item.contract?.[0]?.id;
       const canCancel = item.status === 'confirmed' || item.status === 'pending';
 
       const handlePress = () => {
         if (hasContract) {
-          router.push(`/(tabs)/activity/${item.contract!.id}`);
+          router.push(`/(tabs)/activity/${item.contract![0]!.id}`);
         } else {
           router.push(`/(tabs)/activity/post/${item.post_id}`);
         }
@@ -282,40 +266,6 @@ export default function ActivityScreen() {
     return items;
   }, [tab, historyContracts, bookings]);
 
-  // Build merged active list: active contracts + active bookings (dedup)
-  type ActiveItem =
-    | { kind: 'contract'; data: ContractWithDetails }
-    | { kind: 'booking'; data: BookingWithPost };
-
-  const activeItems = React.useMemo((): ActiveItem[] => {
-    if (tab !== 'active') return [];
-    const items: ActiveItem[] = [];
-
-    const contractBookingIds = new Set<string>();
-    if (activeContracts) {
-      for (const c of activeContracts) {
-        items.push({ kind: 'contract', data: c });
-        if (c.booking_id) contractBookingIds.add(c.booking_id);
-      }
-    }
-
-    if (bookings) {
-      for (const b of bookings) {
-        if (!contractBookingIds.has(b.id)) {
-          items.push({ kind: 'booking', data: b });
-        }
-      }
-    }
-
-    items.sort((a, b) => {
-      const dateA = new Date(a.data.created_at).getTime();
-      const dateB = new Date(b.data.created_at).getTime();
-      return dateB - dateA;
-    });
-
-    return items;
-  }, [tab, activeContracts, bookings]);
-
   const renderHistoryItem = useCallback(
     ({ item }: { item: HistoryItem }) => {
       if (item.kind === 'contract') return renderContract({ item: item.data });
@@ -324,22 +274,29 @@ export default function ActivityScreen() {
     [renderContract, renderBooking],
   );
 
-  const renderActiveItem = useCallback(
-    ({ item }: { item: ActiveItem }) => {
-      if (item.kind === 'contract') return renderContract({ item: item.data });
-      return renderBooking({ item: item.data });
-    },
-    [renderContract, renderBooking],
-  );
+  const getContractIdForPost = useCallback((post: MyPostWithBookings): string | null => {
+    const confirmed = post.activeBookings.find(b => b.status === 'confirmed' && b.contract?.length > 0);
+    return confirmed?.contract?.[0]?.id ?? null;
+  }, []);
 
   const renderMyPost = useCallback(
     ({ item, index }: { item: MyPostWithBookings; index: number }) => {
       const joinerPreview = item.activeBookings.slice(0, 3);
       const showJoinerPreview = item.activeBookingsCount > 0;
+      const contractId = getContractIdForPost(item);
+      const isActive = item.status === 'filled';
+
+      const handlePress = () => {
+        if (isActive && contractId) {
+          router.push(`/(tabs)/activity/${contractId}`);
+        } else {
+          router.push(`/(tabs)/activity/post/${item.id}`);
+        }
+      };
 
       return (
         <Animated.View entering={index < 8 ? FadeInUp.duration(350).delay(index * 60) : undefined}>
-          <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
+          <Pressable onPress={handlePress}>
             <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
               <PostTypeBadge type={item.type} />
@@ -399,33 +356,61 @@ export default function ActivityScreen() {
 
             <View style={styles.cardFooter}>
               <Text style={styles.timestamp}>{getTimeAgo(item.created_at)}</Text>
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleDeletePost(item.id, item.title);
-                }}
-                hitSlop={8}
-                style={styles.deleteButton}
-              >
-                <Icon name="alert-triangle" size={16} color={colors.error} />
-                <Text style={styles.deleteText}>Delete</Text>
-              </Pressable>
+              {!isActive && (
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeletePost(item.id, item.title);
+                  }}
+                  hitSlop={8}
+                  style={styles.deleteButton}
+                >
+                  <Icon name="alert-triangle" size={16} color={colors.error} />
+                  <Text style={styles.deleteText}>Delete</Text>
+                </Pressable>
+              )}
             </View>
           </Card>
         </Pressable>
       </Animated.View>
       );
     },
-    [handleDeletePost],
+    [handleDeletePost, getContractIdForPost],
   );
 
-  const filteredPosts = React.useMemo(() => {
+  type MyPostSection = { title: string; data: MyPostWithBookings[] };
+
+  const sections = React.useMemo((): MyPostSection[] => {
     if (!myPosts) return [];
-    return myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
+    const filtered = myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
+    const active: MyPostWithBookings[] = [];
+    const regular: MyPostWithBookings[] = [];
+
+    for (const post of filtered) {
+      if (post.status === 'filled') {
+        active.push(post);
+      } else {
+        regular.push(post);
+      }
+    }
+
+    const result: MyPostSection[] = [];
+    if (active.length > 0) result.push({ title: 'Active', data: active });
+    if (regular.length > 0) result.push({ title: 'My Posts', data: regular });
+    return result;
   }, [myPosts]);
 
-  const isLoading = tab === 'my_posts' ? postsLoading : tab === 'history' ? (bookingsLoading || contractsLoading) : (bookingsLoading || activeContractsLoading);
-  const isFetching = tab === 'my_posts' ? postsFetching : tab === 'history' ? (bookingsFetching || contractsFetching) : (bookingsFetching || activeContractsFetching);
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: MyPostSection }) => (
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionHeaderText}>{section.title}</Text>
+      </View>
+    ),
+    [],
+  );
+
+  const isLoading = tab === 'my_posts' ? postsLoading : (bookingsLoading || contractsLoading);
+  const isFetching = tab === 'my_posts' ? postsFetching : (bookingsFetching || contractsFetching);
 
   let content: React.ReactNode;
 
@@ -437,9 +422,10 @@ export default function ActivityScreen() {
     );
   } else if (tab === 'my_posts') {
     content = (
-      <FlatList
-        data={filteredPosts}
+      <SectionList
+        sections={sections}
         renderItem={renderMyPost}
+        renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feed}
         initialNumToRender={8}
@@ -447,6 +433,7 @@ export default function ActivityScreen() {
         windowSize={5}
         removeClippedSubviews
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={isFetching && !isLoading}
@@ -463,7 +450,7 @@ export default function ActivityScreen() {
         }
       />
     );
-  } else if (tab === 'history') {
+  } else {
     content = (
       <FlatList
         data={historyItems}
@@ -487,34 +474,6 @@ export default function ActivityScreen() {
             icon="clipboard-list"
             title="No history yet"
             message="Your completed and cancelled jobs will show here."
-          />
-        }
-      />
-    );
-  } else {
-    content = (
-      <FlatList
-        data={activeItems}
-        renderItem={renderActiveItem}
-        keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
-        contentContainerStyle={styles.feed}
-        initialNumToRender={8}
-        maxToRenderPerBatch={6}
-        windowSize={5}
-        removeClippedSubviews
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        refreshControl={
-          <RefreshControl
-            refreshing={isFetching && !isLoading}
-            onRefresh={onRefresh}
-            tintColor={colors.accent.green}
-          />
-        }
-        ListEmptyComponent={
-          <EmptyState
-            icon="clipboard-list"
-            title="No active bookings"
-            message="When you book a ride or accept an errand, it will appear here."
           />
         }
       />
@@ -544,14 +503,6 @@ export default function ActivityScreen() {
         >
           <Text style={[styles.tabText, tab === 'my_posts' && styles.tabTextActive]}>
             My Posts
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tab, tab === 'active' && styles.tabActive]}
-          onPress={() => setTab('active')}
-        >
-          <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>
-            Active
           </Text>
         </Pressable>
         <Pressable
@@ -739,6 +690,15 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: spacing.md,
+  },
+  sectionHeader: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  sectionHeaderText: {
+    ...typography.body1Bold,
+    color: colors.forest[900],
+    fontSize: 15,
   },
   bookingCard: {
     gap: spacing.sm,

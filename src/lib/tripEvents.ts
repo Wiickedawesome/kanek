@@ -21,14 +21,12 @@ const EVENT_SEQUENCES: Record<string, TripEventDef[]> = {
     { type: 'arrived_destination', label: 'Arrived at Destination', pushMessage: "You've arrived!", icon: 'map-pin' },
   ],
   route_request: [
-    { type: 'driver_confirmed', label: 'Driver Confirmed', pushMessage: 'Your driver confirmed', icon: 'user' },
     { type: 'en_route', label: 'En Route to Pickup', pushMessage: 'Driver is on the way', icon: 'navigation' },
     { type: 'arrived_pickup', label: 'Arrived at Pickup', pushMessage: 'Driver at pickup', icon: 'map-pin' },
     { type: 'departed', label: 'Trip Started', pushMessage: 'Trip has started', icon: 'compass' },
     { type: 'arrived_destination', label: 'Arrived', pushMessage: 'Arrived at destination', icon: 'map-pin' },
   ],
   errand: [
-    { type: 'accepted_errand', label: 'Errand Accepted', pushMessage: 'Helper accepted your errand', icon: 'clipboard-list' },
     { type: 'en_route', label: 'En Route', pushMessage: 'Helper is on the way', icon: 'navigation' },
     { type: 'arrived_location', label: 'Arrived at Location', pushMessage: 'Helper arrived', icon: 'map-pin' },
     { type: 'picked_up', label: 'Picked Up', pushMessage: 'Item picked up!', icon: 'package' },

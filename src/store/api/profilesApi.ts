@@ -204,12 +204,12 @@ export const profilesApi = createApi({
     }),
 
     /** Server-validated role switch to driver — validates all docs are approved */
-    switchToDriver: builder.mutation<void, string>({
+    switchToDriver: builder.mutation<null, string>({
       queryFn: async (userId) => {
         // RPC added in migration 00052 — not yet in generated types
         const { error } = await supabase.rpc('switch_to_driver_role' as any, { p_user_id: userId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined };
+        return { data: null };
       },
       invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
     }),

@@ -17,12 +17,12 @@ export interface BookingWithUser extends BookingRow {
     rating_avg: number;
     punctuality_pct: number;
   } | null;
-  contract: { id: string } | null;
+  contract: { id: string }[];
 }
 
 /** Booking with its associated contract (for checking if a chat is available) */
 export interface BookingWithContract extends BookingRow {
-  contract: { id: string } | null;
+  contract: { id: string }[];
 }
 
 /** Booking with related post title and author info */
@@ -37,7 +37,7 @@ export interface BookingWithPost extends BookingRow {
     price_cents: number | null;
     author_id: string;
   } | null;
-  contract: { id: string } | null;
+  contract: { id: string }[];
 }
 
 /** Contract with post + booking + party profiles */
@@ -249,7 +249,7 @@ export const bookingsApi = createApi({
           .from('bookings')
           .select(`
             *,
-            user:profiles!bookings_user_id_fkey (
+            user:profiles_public!bookings_user_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
             ),
             contract:contracts!contracts_booking_id_fkey(id)
@@ -363,11 +363,11 @@ export const bookingsApi = createApi({
       },
     }),
 
-    acceptApplicant: builder.mutation<void, AcceptApplicantArgs>({
+    acceptApplicant: builder.mutation<null, AcceptApplicantArgs>({
       queryFn: async ({ bookingId }) => {
         const { error } = await (supabase.rpc as any)('accept_applicant', { p_booking_id: bookingId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined as void };
+        return { data: null };
       },
       invalidatesTags: (_r, _e, { postId }) => [
         { type: 'Booking', id: 'LIST' },
@@ -393,11 +393,11 @@ export const bookingsApi = createApi({
       },
     }),
 
-    rejectApplicant: builder.mutation<void, RejectApplicantArgs>({
+    rejectApplicant: builder.mutation<null, RejectApplicantArgs>({
       queryFn: async ({ bookingId }) => {
         const { error } = await (supabase.rpc as any)('reject_applicant', { p_booking_id: bookingId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: undefined as void };
+        return { data: null };
       },
       invalidatesTags: (_r, _e, { postId }) => [
         { type: 'Booking', id: 'LIST' },

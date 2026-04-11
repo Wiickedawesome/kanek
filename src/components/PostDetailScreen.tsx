@@ -18,9 +18,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
-import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useCompleteBookingMutation, useAcceptApplicantMutation, useRejectApplicantMutation } from '@/store/api/bookingsApi';
+import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { supabase } from '@/lib/supabase';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
@@ -64,7 +63,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
   });
   const [deletePost] = useDeletePostMutation();
   const [createBooking] = useCreateBookingMutation();
-  const [completeBooking] = useCompleteBookingMutation();
   const { data: existingBooking } = useGetBookingForPostQuery(
     { postId: postId ?? '', userId: userId ?? '' },
     { skip: !postId || !userId },
@@ -76,7 +74,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const [acceptApplicant] = useAcceptApplicantMutation();
   const [rejectApplicant] = useRejectApplicantMutation();
   const [isBooking, setIsBooking] = useState(false);
-  const [isCompleting, setIsCompleting] = useState(false);
   const [actionBookingId, setActionBookingId] = useState<string | null>(null);
 
   const hasCoords =
@@ -130,13 +127,11 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const jobPayType = post.type === 'job' ? post.pay_type : null;
   const jobTimeline = post.type === 'job' ? post.job_timeline : null;
   const jobCategory = post.type === 'job' ? post.job_category : null;
-  const showOwnerCompletionBar =
-    isOwner &&
-    !isPostOpen &&
-    post.status !== 'completed' &&
-    post.status !== 'cancelled' &&
-    post.status !== 'expired';
   const showOwnerDeleteBar = isOwner && isPostOpen;
+  const ownerContractId = isOwner && post.status === 'filled'
+    ? (postBookings ?? []).find(b => b.status === 'confirmed' && b.contract?.[0]?.id)?.contract?.[0]?.id ?? null
+    : null;
+  const showOwnerActiveBar = isOwner && post.status === 'filled' && !!ownerContractId;
   const showExistingBookingBar = !!existingBooking;
   const showOpenBookingBar = isPostOpen && !isOwner && !existingBooking;
   const hasOwnerBookings = (postBookings?.length ?? 0) > 0;
@@ -242,9 +237,9 @@ export default function PostDetailScreen({ backFallback }: Props) {
             <View style={styles.acceptedBadge}>
               <Text style={styles.acceptedBadgeText}>Accepted</Text>
             </View>
-            {b.contract?.id && (
+            {b.contract?.[0]?.id && (
               <Pressable
-                onPress={() => router.push(`/(tabs)/activity/${b.contract!.id}`)}
+                onPress={() => router.push(`/(tabs)/activity/${b.contract![0]!.id}`)}
                 hitSlop={8}
               >
                 <Icon name="message-circle" size={20} color={colors.forest[600]} />
@@ -258,59 +253,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
   let bottomAction: React.ReactNode;
 
-  if (showOwnerCompletionBar) {
-    bottomAction = (
-      <View style={styles.bottomBar}>
-        <Button
-          title={isCompleting ? 'Completing...' : 'Mark Complete'}
-          disabled={isCompleting}
-          onPress={async () => {
-            if (!postBookings || postBookings.length === 0) {
-              showAlert('No bookings', 'There are no active bookings to complete.');
-              return;
-            }
-            const confirmed = await showConfirm(
-              'Mark Complete',
-              'Mark this post and all its bookings as completed?',
-            );
-            if (!confirmed) return;
-
-            setIsCompleting(true);
-            try {
-              for (const b of postBookings) {
-                await completeBooking(b.id).unwrap();
-              }
-              const firstBooking = postBookings[0];
-              const { data: contract } = await supabase
-                .from('contracts')
-                .select('id')
-                .eq('booking_id', firstBooking.id)
-                .single();
-
-              if (contract && firstBooking.user_id) {
-                router.push({
-                  pathname: '/modals/rate',
-                  params: {
-                    contractId: contract.id,
-                    ratedId: firstBooking.user_id,
-                  },
-                });
-              } else {
-                showAlert('Completed', 'This post has been marked as completed.');
-              }
-            } catch (e: any) {
-              const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to complete.';
-              showAlert('Error', msg);
-            } finally {
-              setIsCompleting(false);
-            }
-          }}
-          size="lg"
-          style={styles.actionButton}
-        />
-      </View>
-    );
-  } else if (showOwnerDeleteBar) {
+  if (showOwnerDeleteBar) {
     bottomAction = (
       <View style={styles.bottomBar}>
         <Button
@@ -340,7 +283,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   } else if (showExistingBookingBar) {
     const isPending = existingBooking?.status === 'pending';
     const isConfirmed = existingBooking?.status === 'confirmed';
-    const contractId = existingBooking?.contract?.id;
+    const contractId = existingBooking?.contract?.[0]?.id;
     if (isConfirmed && contractId) {
       bottomAction = (
         <View style={styles.bottomBar}>
@@ -414,7 +357,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
               }).unwrap();
 
               showAlert('Success', getSuccessMessage(post.type));
-              router.replace({ pathname: '/(tabs)/activity', params: { tab: 'active' } });
+              router.replace({ pathname: '/(tabs)/activity', params: { tab: 'my_posts' } });
             } catch (e: any) {
               const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Something went wrong';
               showAlert('Error', msg);
@@ -422,6 +365,17 @@ export default function PostDetailScreen({ backFallback }: Props) {
               setIsBooking(false);
             }
           }}
+          size="lg"
+          style={styles.actionButton}
+        />
+      </View>
+    );
+  } else if (showOwnerActiveBar) {
+    bottomAction = (
+      <View style={styles.bottomBar}>
+        <Button
+          title="View Active Contract"
+          onPress={() => router.push(`/(tabs)/activity/${ownerContractId}`)}
           size="lg"
           style={styles.actionButton}
         />
