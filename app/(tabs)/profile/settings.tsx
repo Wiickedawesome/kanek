@@ -19,6 +19,8 @@ import {
   useGetMyProfileQuery,
   useGetLatestRiderDocumentQuery,
   useUpdateProfileMutation,
+  useSwitchToDriverMutation,
+  useSwitchToRiderMutation,
   useRequestPhoneChangeMutation,
   useVerifyPhoneChangeMutation,
 } from '@/store/api/profilesApi';
@@ -48,6 +50,8 @@ export default function SettingsScreen() {
   const { data: riderDocument } = useGetLatestRiderDocumentQuery(userId ?? '', { skip: !userId });
   const { data: driverDocs = [] } = useGetDriverDocumentsQuery(userId ?? '', { skip: !userId });
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation();
+  const [switchToDriver] = useSwitchToDriverMutation();
+  const [switchToRider] = useSwitchToRiderMutation();
   const [requestPhoneChange, { isLoading: isRequestingPhone }] = useRequestPhoneChangeMutation();
   const [verifyPhoneChange, { isLoading: isVerifyingPhone }] = useVerifyPhoneChangeMutation();
 
@@ -99,16 +103,26 @@ export default function SettingsScreen() {
           last_name: lastName.trim() || null,
           email: email.trim() || null,
           emergency_contact: validContact,
-          role,
           district,
           address_line: addressLine.trim() || null,
         },
       }).unwrap();
+
+      // Handle role change separately via server-validated RPCs
+      const currentRole = profile?.role;
+      if (role !== currentRole) {
+        if (role === 'driver') {
+          await switchToDriver(userId).unwrap();
+        } else {
+          await switchToRider(userId).unwrap();
+        }
+      }
+
       showAlert('Saved', 'Your profile has been updated.');
     } catch {
       showAlert('Error', 'Could not save profile. Please try again.');
     }
-  }, [userId, firstName, lastName, email, emergencyContact, role, district, addressLine, updateProfile]);
+  }, [userId, firstName, lastName, email, emergencyContact, role, district, addressLine, updateProfile, switchToDriver, switchToRider, profile?.role]);
 
   if (isLoading) {
     return (
@@ -140,6 +154,7 @@ export default function SettingsScreen() {
             placeholder="Enter first name"
             placeholderTextColor={colors.neutral[400]}
             autoCapitalize="words"
+            maxLength={50}
           />
         </View>
 
@@ -152,6 +167,7 @@ export default function SettingsScreen() {
             placeholder="Enter last name"
             placeholderTextColor={colors.neutral[400]}
             autoCapitalize="words"
+            maxLength={50}
           />
         </View>
 
@@ -165,6 +181,7 @@ export default function SettingsScreen() {
             placeholderTextColor={colors.neutral[400]}
             keyboardType="email-address"
             autoCapitalize="none"
+            maxLength={254}
           />
         </View>
 
@@ -177,6 +194,7 @@ export default function SettingsScreen() {
             placeholder="+501 000 0000"
             placeholderTextColor={colors.neutral[400]}
             keyboardType="phone-pad"
+            maxLength={20}
           />
         </View>
 
@@ -312,6 +330,7 @@ export default function SettingsScreen() {
                   placeholderTextColor={colors.neutral[400]}
                   keyboardType="phone-pad"
                   autoFocus
+                  maxLength={20}
                 />
               </>
             ) : (

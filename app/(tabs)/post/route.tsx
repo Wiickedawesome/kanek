@@ -21,7 +21,7 @@ import { useCreatePostMutation } from '@/store/api/postsApi';
 import { useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
-import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, sanitizeInteger, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import { showAlert } from '@/lib/alert';
@@ -108,6 +108,7 @@ export default function RouteFormScreen() {
     const newErrors: Record<string, string> = {};
 
     if (!title.trim()) newErrors.title = 'Title is required';
+    else if (title.trim().length > MAX_TITLE_LENGTH) newErrors.title = `Max ${MAX_TITLE_LENGTH} characters`;
     if (!originAddress.trim()) newErrors.originAddress = 'Origin is required';
     if (!destAddress.trim()) newErrors.destAddress = 'Destination is required';
     if (!departureDate.trim()) newErrors.departureDate = 'Date is required';
@@ -246,6 +247,7 @@ export default function RouteFormScreen() {
             value={title}
             onChangeText={setTitle}
             error={errors.title}
+            maxLength={100}
           />
 
           <LocationInput

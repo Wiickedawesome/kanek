@@ -12,7 +12,7 @@ Path alias `@/*` maps to `src/*` (see `tsconfig.json`).
 
 All data fetching uses **RTK Query with `fakeBaseQuery()`** — queries call the Supabase JS client directly, never HTTP endpoints.
 See `src/store/api/postsApi.ts` for the canonical pattern: `queryFn` → `supabase.from().select()` → return `{ data }` or `{ error: { status: 'CUSTOM_ERROR', data: msg } }`.
-9 API slices in `src/store/api/`, 4 sync slices in `src/store/slices/`. All registered in `src/store/index.ts`.
+11 API slices in `src/store/api/`, 4 sync slices in `src/store/slices/`. All registered in `src/store/index.ts`.
 
 ## Navigation — Tab Isolation (Critical)
 
@@ -56,7 +56,7 @@ Types auto-generated: `supabase gen types typescript --project-id tlggdherqjvybp
 
 ## Edge Functions
 
-13 Deno functions in `supabase/functions/`. Shared code in `supabase/functions/_shared/`.
+14 Deno functions in `supabase/functions/`. Shared code in `supabase/functions/_shared/`.
 Deploy: `supabase functions deploy`. Secrets set in Supabase dashboard (not in code).
 
 ## Commands

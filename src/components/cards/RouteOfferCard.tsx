@@ -13,7 +13,7 @@ interface RouteOfferCardProps {
   onPress?: () => void;
 }
 
-export function RouteOfferCard({ post, onPress }: RouteOfferCardProps) {
+export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress }: RouteOfferCardProps) {
   const authorName = post.author
     ? `${post.author.first_name ?? ''} ${(post.author.last_name ?? '')[0] ?? ''}.`.trim()
     : 'Unknown';
@@ -108,7 +108,7 @@ export function RouteOfferCard({ post, onPress }: RouteOfferCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

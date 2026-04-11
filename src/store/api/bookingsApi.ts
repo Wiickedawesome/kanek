@@ -517,23 +517,6 @@ export const bookingsApi = createApi({
       providesTags: (_r, _e, id) => [{ type: 'Contract', id }],
     }),
 
-    createContract: builder.mutation<
-      ContractRow,
-      Database['public']['Tables']['contracts']['Insert']
-    >({
-      queryFn: async (contract) => {
-        const { data, error } = await supabase
-          .from('contracts')
-          .insert(contract)
-          .select()
-          .single();
-
-        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: data as ContractRow };
-      },
-      invalidatesTags: [{ type: 'Contract', id: 'LIST' }],
-    }),
-
   }),
 });
 
@@ -548,5 +531,4 @@ export const {
   useCompleteBookingMutation,
   useGetMyContractsQuery,
   useGetContractByIdQuery,
-  useCreateContractMutation,
 } = bookingsApi;

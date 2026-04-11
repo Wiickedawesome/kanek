@@ -7,8 +7,9 @@ import {
   type StyleProp,
   type LayoutChangeEvent,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { colors, borderRadius } from '@/theme';
+import { colors, spacing, borderRadius, shadows } from '@/theme';
 
 interface ScreenHeaderProps {
   children: React.ReactNode;
@@ -17,57 +18,63 @@ interface ScreenHeaderProps {
 }
 
 /**
- * Unified glass-card header shell used on every screen.
+ * Unified header shell used on every screen.
  *
- * iOS   — BlurView (dark, intensity 90) + forest-green tint overlay
- * Other — solid colors.forest[900]
+ * iOS   — BlurView (dark, intensity 65) + gradient tint overlay
+ * Other — gradient from forest-900 → forest-800
  *
- * Provides overflow:hidden + barely-curved bottom corners (borderRadius.sm = 6).
+ * Features: 20px bottom radius, subtle drop shadow, accent-green bottom edge.
  * Pass per-screen layout styles (padding, flex, etc.) via the `style` prop.
  * Do NOT set backgroundColor in the passed style — this component owns that.
  */
 export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
   if (Platform.OS === 'ios') {
     return (
-      <View style={[styles.container, style]} onLayout={onLayout}>
-        <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={styles.iosTint} />
-        {children}
-        <View style={styles.bottomEdge} />
+      <View style={styles.outer} onLayout={onLayout}>
+        <View style={[styles.container, style]}>
+          <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            colors={['rgba(20, 45, 0, 0.45)', 'rgba(28, 37, 19, 0.35)']}
+            style={StyleSheet.absoluteFill}
+          />
+          {children}
+          <View style={styles.accentEdge} />
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, styles.solidBg, style]} onLayout={onLayout}>
-      {children}
-      <View style={styles.bottomEdge} />
+    <View style={styles.outer} onLayout={onLayout}>
+      <View style={[styles.container, style]}>
+        <LinearGradient
+          colors={[colors.forest[900], colors.forest[800]]}
+          style={StyleSheet.absoluteFill}
+        />
+        {children}
+        <View style={styles.accentEdge} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {
+    ...shadows.md,
+    shadowColor: 'rgba(20, 40, 0, 0.5)',
+  },
   container: {
     overflow: 'hidden',
-    borderBottomLeftRadius: borderRadius.sm,
-    borderBottomRightRadius: borderRadius.sm,
-    // iOS: bg is transparent — BlurView + tint take over
-    backgroundColor: 'transparent',
-  },
-  solidBg: {
     backgroundColor: colors.forest[900],
   },
-  iosTint: {
-    ...StyleSheet.absoluteFillObject,
-    // Light forest-green tint — low opacity to let the blur breathe
-    backgroundColor: 'rgba(20, 45, 0, 0.38)',
-  },
-  bottomEdge: {
+  accentEdge: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    left: spacing.lg,
+    right: spacing.lg,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.accent.neonGreen,
+    opacity: 0.35,
   },
 });

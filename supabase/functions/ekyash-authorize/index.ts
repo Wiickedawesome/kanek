@@ -5,11 +5,11 @@ import {
   getEkyashApiUrl,
   getEkyashCredentials,
 } from '../_shared/ekyash.ts';
-import { corsHeaders, jsonResponse, errorResponse, verifyAuth } from '../_shared/supabase.ts';
+import { getCorsHeaders, jsonResponse, errorResponse, verifyAuth } from '../_shared/supabase.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   const authResult = await verifyAuth(req);
@@ -40,9 +40,7 @@ Deno.serve(async (req) => {
     const data = await response.json();
     return jsonResponse({ session: data.session });
   } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : 'Authorization failed',
-      500,
-    );
+    console.error('ekyash-authorize error:', error);
+    return errorResponse('Authorization failed', 500);
   }
 });

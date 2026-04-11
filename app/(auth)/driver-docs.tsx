@@ -74,7 +74,7 @@ export default function DriverDocsScreen() {
         id_document_url: latestRiderDoc?.document_url ?? null,
         vehicle_make: vehicle.make.trim(),
         vehicle_model: vehicle.model.trim(),
-        vehicle_year: parseInt(vehicle.year, 10),
+        vehicle_year: parseInt(vehicle.year, 10) || 0,
         vehicle_color: vehicle.color.trim(),
         vehicle_plate: vehicle.plate.trim().toUpperCase(),
         verified: false,
@@ -138,6 +138,7 @@ export default function DriverDocsScreen() {
           placeholderTextColor={colors.neutral[400]}
           value={vehicle.make}
           onChangeText={(t) => setVehicle((v) => ({ ...v, make: t }))}
+          maxLength={50}
         />
         <TextInput
           style={styles.input}
@@ -145,6 +146,7 @@ export default function DriverDocsScreen() {
           placeholderTextColor={colors.neutral[400]}
           value={vehicle.model}
           onChangeText={(t) => setVehicle((v) => ({ ...v, model: t }))}
+          maxLength={50}
         />
         <TextInput
           style={styles.input}
@@ -161,6 +163,7 @@ export default function DriverDocsScreen() {
           placeholderTextColor={colors.neutral[400]}
           value={vehicle.color}
           onChangeText={(t) => setVehicle((v) => ({ ...v, color: t }))}
+          maxLength={30}
         />
         <TextInput
           style={styles.input}
@@ -169,6 +172,7 @@ export default function DriverDocsScreen() {
           value={vehicle.plate}
           onChangeText={(t) => setVehicle((v) => ({ ...v, plate: t }))}
           autoCapitalize="characters"
+          maxLength={20}
         />
 
         <Pressable

@@ -31,8 +31,28 @@ export async function updateSession(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname === '/login';
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
 
-  // API routes handle their own auth — don't redirect them
+  // API routes: verify auth + admin role without redirecting
   if (isApiRoute) {
+    // CSRF protection: verify Origin header for state-changing requests
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+      const origin = request.headers.get('origin');
+      const host = request.headers.get('host');
+      if (!origin || !host || new URL(origin).host !== host) {
+        return NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 });
+      }
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { data: apiProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (apiProfile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     return supabaseResponse;
   }
 

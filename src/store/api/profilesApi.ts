@@ -15,8 +15,6 @@ export interface PublicProfile {
   role: string;
   rating_avg: number;
   punctuality_pct: number;
-  strikes_soft: number;
-  strikes_hard: number;
   account_status: string;
   created_at: string;
 }
@@ -24,6 +22,7 @@ export interface PublicProfile {
 export const profilesApi = createApi({
   reducerPath: 'profilesApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 300,
   tagTypes: ['Profile', 'DriverDetails', 'RiderDocument'],
   endpoints: (builder) => ({
     getMyProfile: builder.query<ProfileRow, string>({
@@ -41,13 +40,13 @@ export const profilesApi = createApi({
       providesTags: (_result, _error, id) => [{ type: 'Profile', id }],
     }),
 
-    /** Public profile — only trust-relevant fields */
+    /** Public profile — only trust-relevant fields (via profiles_public view) */
     getPublicProfile: builder.query<PublicProfile, string>({
       queryFn: async (userId) => {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select(
-            'id, first_name, last_name, avatar_url, role, rating_avg, punctuality_pct, strikes_soft, strikes_hard, account_status, created_at',
+            'id, first_name, last_name, avatar_url, role, rating_avg, punctuality_pct, account_status, created_at',
           )
           .eq('id', userId)
           .single();
@@ -64,9 +63,20 @@ export const profilesApi = createApi({
       { id: string; updates: Database['public']['Tables']['profiles']['Update'] }
     >({
       queryFn: async ({ id, updates }) => {
+        // Allowlist: only permit user-editable fields
+        const ALLOWED_FIELDS = [
+          'first_name', 'last_name', 'bio', 'avatar_url', 'email',
+          'preferred_districts', 'push_token',
+          'district', 'address_line', 'emergency_contact',
+        ] as const;
+        const safeUpdates: Record<string, unknown> = {};
+        for (const key of ALLOWED_FIELDS) {
+          if (key in updates) safeUpdates[key] = (updates as Record<string, unknown>)[key];
+        }
+
         const { data, error } = await supabase
           .from('profiles')
-          .update(updates)
+          .update(safeUpdates)
           .eq('id', id)
           .select()
           .single();
@@ -192,6 +202,32 @@ export const profilesApi = createApi({
       },
       invalidatesTags: (_result, _error, { userId }) => [{ type: 'Profile', id: userId }],
     }),
+
+    /** Server-validated role switch to driver — validates all docs are approved */
+    switchToDriver: builder.mutation<void, string>({
+      queryFn: async (userId) => {
+        // RPC added in migration 00052 — not yet in generated types
+        const { error } = await supabase.rpc('switch_to_driver_role' as any, { p_user_id: userId });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: undefined };
+      },
+      invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
+    }),
+
+    /** Switch back to rider — no document validation needed */
+    switchToRider: builder.mutation<ProfileRow, string>({
+      queryFn: async (userId) => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ role: 'rider' })
+          .eq('id', userId)
+          .select()
+          .single();
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: data as ProfileRow };
+      },
+      invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
+    }),
   }),
 });
 
@@ -203,4 +239,6 @@ export const {
   useGetLatestRiderDocumentQuery,
   useRequestPhoneChangeMutation,
   useVerifyPhoneChangeMutation,
+  useSwitchToDriverMutation,
+  useSwitchToRiderMutation,
 } = profilesApi;

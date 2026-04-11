@@ -14,7 +14,7 @@ Redux Toolkit with RTK Query. Store configured in `src/store/index.ts`.
   notifications,     // Notification items, unread count
   toast,             // Toast message display state
 
-  // RTK Query API caches (9 slices)
+  // RTK Query API caches (11 slices)
   postsApi,
   bookingsApi,
   profilesApi,
@@ -24,6 +24,8 @@ Redux Toolkit with RTK Query. Store configured in `src/store/index.ts`.
   notificationsApi,
   checkinsApi,
   messagesApi,
+  contractEventsApi,
+  driverDocumentsApi,
 }
 ```
 
@@ -223,6 +225,36 @@ const api = createApi({
 
 ---
 
+### contractEventsApi (`src/store/api/contractEventsApi.ts`)
+
+Manages contract lifecycle events (started, completed, cancelled, etc.).
+
+**Queries:**
+- `getContractEvents(contractId)` — all events for a contract, ordered chronologically
+
+**Mutations:**
+- `createContractEvent(contractId, actorId, eventType, note?)` — log a new event + push notification
+
+**Tags:** `'ContractEvent'`
+
+---
+
+### driverDocumentsApi (`src/store/api/driverDocumentsApi.ts`)
+
+Manages driver document uploads and review status (license, insurance, registration).
+
+**Queries:**
+- `getDriverDocuments(userId)` — all documents for a driver
+- `getDriverDocumentStatus(userId)` — check if all required docs are uploaded and approved
+
+**Mutations:**
+- `uploadDriverDocument(userId, docType, file)` — upload document to Storage + create record
+- `deleteDriverDocument(docId)` — remove a document
+
+**Tags:** `'DriverDocuments'`
+
+---
+
 ## Custom Hooks
 
 | Hook | File | Purpose |
@@ -233,3 +265,4 @@ const api = createApi({
 | `useRealtime` | `src/hooks/useRealtime.ts` | Subscribe to Supabase realtime channels |
 | `useSOS` | `src/hooks/useSOS.ts` | Trigger SOS, send GPS to emergency contact |
 | `useDriverTracking` | `src/hooks/useDriverTracking.ts` | Broadcast driver location during active trip |
+| `useOnboardingStatus` | `src/hooks/useOnboardingStatus.ts` | Determine if user needs onboarding steps |

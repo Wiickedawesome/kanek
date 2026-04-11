@@ -10,7 +10,8 @@ export default async function FlagsPage() {
     .from('flags')
     .select('id, target_type, target_id, reason, description, status, created_at, reporter:profiles!reporter_id(first_name, last_name)')
     .order('status', { ascending: true })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
 
   return (
     <div>

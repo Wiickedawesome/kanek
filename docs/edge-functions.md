@@ -1,6 +1,6 @@
 # Edge Functions
 
-13 Deno edge functions in `supabase/functions/`. Deployed via `supabase functions deploy`.
+14 Deno edge functions in `supabase/functions/`. Deployed via `supabase functions deploy`.
 
 Shared utilities live in `supabase/functions/_shared/`.
 
@@ -199,6 +199,29 @@ Database trigger that recalculates a user's rating after a new review.
 
 - **Trigger:** After INSERT on `ratings` table
 - **Updates:** `profiles.rating_avg` and `profiles.punctuality_pct`
+
+### notify-user
+
+Internal-only endpoint that creates a notification record and optionally sends a push notification via Expo Push API.
+
+- **Method:** POST (service-role / internal only — rejects user-initiated requests)
+- **Input:**
+  ```json
+  {
+    "userId": "uuid",
+    "type": "booking_confirmed | checkin_reminder | ...",
+    "title": "string",
+    "body": "string (optional)",
+    "data": "object (optional)",
+    "dedupe": "boolean (optional, default false)",
+    "sendPush": "boolean (optional, default true)"
+  }
+  ```
+- **Behavior:**
+  - If `dedupe` is true, checks for an existing unread notification of the same type for the user and skips creation if found
+  - Inserts a row into `notifications` table
+  - If `sendPush` is true and the user has a push token, sends via Expo Push API
+- **Output:** `{ "success": true, "notificationId": "uuid" }` or `{ "success": true, "skipped": true }` if deduplicated
 
 ---
 

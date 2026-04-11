@@ -35,6 +35,10 @@ export const messagesApi = createApi({
     sendMessage: builder.mutation<MessageRow, { contractId: string; senderId: string; body: string }>({
       queryFn: async ({ contractId, senderId, body }) => {
         const trimmedBody = body.trim();
+        if (trimmedBody.length === 0 || trimmedBody.length > 500) {
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'Message must be 1-500 characters' } };
+        }
+
         const { data, error } = await supabase
           .from('contract_messages')
           .insert({ contract_id: contractId, sender_id: senderId, body: trimmedBody })
@@ -45,21 +49,22 @@ export const messagesApi = createApi({
 
         // Send push notification to the other party (best-effort, don't block on failure)
         try {
-          const { data: contract } = await supabase
-            .from('contracts')
-            .select('parties')
-            .eq('id', contractId)
-            .single();
+          const [{ data: contract }, { data: sender }] = await Promise.all([
+            supabase
+              .from('contracts')
+              .select('parties')
+              .eq('id', contractId)
+              .single(),
+            supabase
+              .from('profiles')
+              .select('first_name')
+              .eq('id', senderId)
+              .single(),
+          ]);
 
           if (contract?.parties) {
             const recipientId = contract.parties.find((id: string) => id !== senderId);
             if (recipientId) {
-              const { data: sender } = await supabase
-                .from('profiles')
-                .select('first_name')
-                .eq('id', senderId)
-                .single();
-
               const senderName = sender?.first_name || 'Someone';
               const { error: pushError } = await supabase.functions.invoke('send-push', {
                 body: {

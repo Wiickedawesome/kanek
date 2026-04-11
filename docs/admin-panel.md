@@ -41,6 +41,11 @@ npm run dev    # localhost:3001
 | Users | `/(admin)/users` | User management, strikes, suspensions |
 | Transactions | `/(admin)/transactions` | E-Kyash transaction review |
 | Flags | `/(admin)/flags` | All community flags |
+| Flag Detail | `/(admin)/flags/[id]` | Individual flag review with actions |
+| Admins | `/(admin)/admins` | Admin user management, invite new admins |
+| Driver Detail | `/(admin)/drivers/[id]` | Individual driver review with document actions |
+| Rider Detail | `/(admin)/riders/[id]` | Individual rider review with document actions |
+| User Detail | `/(admin)/users/[id]` | Individual user management with strike/suspend actions |
 
 ---
 
@@ -49,13 +54,12 @@ npm run dev    # localhost:3001
 All admin API routes verify the user has `role = 'admin'` before processing.
 
 | Endpoint | Method | Purpose |
-|----------|--------|---------|
+|----------|--------|----------|
 | `/api/drivers/review` | POST | Approve or reject driver application |
 | `/api/riders/review` | POST | Approve or reject rider document |
 | `/api/users/action` | POST | Issue strike, suspend, or unsuspend user |
-| `/api/posts/action` | POST | Remove or restore flagged post |
 | `/api/flags/action` | POST | Dismiss or take action on flag |
-| `/api/transactions/action` | POST | Review E-Kyash transaction |
+| `/api/admins/invite` | POST | Invite a new admin user |
 
 ---
 

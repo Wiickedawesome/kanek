@@ -1,4 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server';
+import { isValidUUID, MAX_REASON_LENGTH } from '@/lib/validation';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,24 +11,41 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await authSupabase.from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
   const { userId, action, reason } = body as { userId: string; action: string; reason?: string };
 
-  if (!userId || !['suspend', 'unsuspend', 'approve'].includes(action)) {
+  if (!isValidUUID(userId) || !['suspend', 'unsuspend', 'approve'].includes(action)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
   if (action === 'suspend' && !reason) {
     return NextResponse.json({ error: 'Reason required for suspension' }, { status: 400 });
   }
+  if (reason && typeof reason === 'string' && reason.length > MAX_REASON_LENGTH) {
+    return NextResponse.json({ error: `Reason must be ${MAX_REASON_LENGTH} characters or less` }, { status: 400 });
+  }
 
   const supabase = await createAdminSupabase();
+
+  // Prevent actions against admin accounts
+  if (action === 'suspend') {
+    const { data: targetProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    if (targetProfile?.role === 'admin') {
+      return NextResponse.json({ error: 'Cannot suspend an admin account' }, { status: 403 });
+    }
+  }
 
   const newStatus = action === 'suspend' ? 'suspended' : 'active';
   const { error } = await supabase
     .from('profiles')
     .update({ account_status: newStatus })
     .eq('id', userId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });
 
   // If approving, also mark any pending rider document as approved
   if (action === 'approve') {

@@ -51,6 +51,7 @@ export function UserActions({ userId, currentStatus }: Props) {
         placeholder="Reason (required for suspension)"
         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
         rows={2}
+        maxLength={500}
       />
       <div className="flex gap-3">
         {currentStatus === 'pending' && (

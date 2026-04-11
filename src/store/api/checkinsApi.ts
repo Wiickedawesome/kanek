@@ -7,6 +7,7 @@ type CheckinRow = Database['public']['Tables']['driver_checkins']['Row'];
 export const checkinsApi = createApi({
   reducerPath: 'checkinsApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 30,
   tagTypes: ['Checkin'],
   endpoints: (builder) => ({
     /** Get check-in for a specific contract (if exists) */
@@ -41,6 +42,15 @@ export const checkinsApi = createApi({
         // Read image file
         const response = await fetch(imageUri);
         const blob = await response.blob();
+
+        // Validate file size (max 5MB) and type
+        if (blob.size > 5 * 1024 * 1024) {
+          return { error: { message: 'Selfie must be under 5MB' } };
+        }
+        if (!blob.type.startsWith('image/')) {
+          return { error: { message: 'File must be an image' } };
+        }
+
         const ext = imageUri.split('.').pop() ?? 'jpg';
         const filePath = `${driverId}/${contractId}.${ext}`;
 

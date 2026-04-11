@@ -60,6 +60,7 @@ export default function RoleSelectScreen() {
           placeholderTextColor={colors.neutral[400]}
           value={firstName}
           onChangeText={setFirstName}
+          maxLength={50}
           autoFocus
         />
         <TextInput
@@ -68,6 +69,7 @@ export default function RoleSelectScreen() {
           placeholderTextColor={colors.neutral[400]}
           value={lastName}
           onChangeText={setLastName}
+          maxLength={50}
         />
 
         <Pressable

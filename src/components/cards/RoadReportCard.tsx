@@ -25,7 +25,7 @@ const reportTypeLabels: Record<string, string> = {
   road_damage: 'Road Damage',
 };
 
-export function RoadReportCard({ report, onPress }: RoadReportCardProps) {
+export const RoadReportCard = React.memo(function RoadReportCard({ report, onPress }: RoadReportCardProps) {
   const age = getTimeAgo(report.created_at);
 
   return (
@@ -47,7 +47,7 @@ export function RoadReportCard({ report, onPress }: RoadReportCardProps) {
       </Text>
     </Card>
   );
-}
+});
 
 
 const styles = StyleSheet.create({

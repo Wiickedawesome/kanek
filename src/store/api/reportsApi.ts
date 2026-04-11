@@ -33,6 +33,7 @@ interface CreateGasPriceArgs {
 export const reportsApi = createApi({
   reducerPath: 'reportsApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 120,
   tagTypes: ['RoadReport', 'GasPrice'],
   endpoints: (builder) => ({
     getRoadReports: builder.query<RoadReportRow[], GetRoadReportsArgs | void>({
@@ -60,6 +61,9 @@ export const reportsApi = createApi({
 
     createRoadReport: builder.mutation<RoadReportRow, CreateRoadReportArgs>({
       queryFn: async ({ reporterId, type, lat, lng, description }) => {
+        // Enforce length limit on description
+        const safeDescription = description ? description.slice(0, 500) : null;
+
         const { data, error } = await supabase
           .from('road_reports')
           .insert({
@@ -67,7 +71,7 @@ export const reportsApi = createApi({
             type,
             lat,
             lng,
-            description: description ?? null,
+            description: safeDescription,
           })
           .select()
           .single();

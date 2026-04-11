@@ -13,7 +13,7 @@ Kanek is a community mobility board for Belize. The system is split into three l
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Mobile App (Expo)                      │
-│  React Native 0.83.2 · Expo SDK 55 · TypeScript 5.9     │
+│  React Native 0.83.4 · Expo SDK 55 · TypeScript 5.9     │
 │  Redux Toolkit · RTK Query · Mapbox GL · Expo Router     │
 └──────────────────┬──────────────────────────────────────┘
                    │ Supabase JS Client (fakeBaseQuery)
@@ -25,9 +25,9 @@ Kanek is a community mobility board for Belize. The system is split into three l
 │  │ 17 + RLS │ │ Phone OTP│ │ Buckets  │ │ Channels │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │           13 Deno Edge Functions                  │   │
+│  │           14 Deno Edge Functions                  │   │
 │  │  E-Kyash (6) · Push · Email · SMS · Cron (2)     │   │
-│  │  Route Activation · Rating Trigger                │   │
+│  │  Route Activation · Rating Trigger · Notify      │   │
 │  └──────────────────────────────────────────────────┘   │
 └──────────────────┬──────────────────────────────────────┘
                    │
@@ -46,7 +46,7 @@ Kanek is a community mobility board for Belize. The system is split into three l
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| Mobile | React Native | 0.83.2 | Cross-platform UI |
+| Mobile | React Native | 0.83.4 | Cross-platform UI |
 | Mobile | Expo | SDK 55 (~55.0.9) | Build toolchain, native modules |
 | Navigation | Expo Router | ~55.0.8 | File-based routing |
 | Language | TypeScript | ~5.9.2 | Type safety (strict mode) |

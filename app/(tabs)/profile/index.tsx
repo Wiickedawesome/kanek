@@ -400,8 +400,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[50],
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   headerTitle: {
     ...typography.h2,

@@ -9,7 +9,7 @@
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| Mobile | React Native + Expo | SDK 55 / RN 0.83.2 / React 19.2.0 |
+| Mobile | React Native + Expo | SDK 55 / RN 0.83.4 / React 19.2.0 |
 | Navigation | Expo Router (file-based) | ~55.0.8 |
 | Language | TypeScript (strict) | ~5.9.2 |
 | State | Redux Toolkit + RTK Query | ^2.6.1 |
@@ -51,13 +51,13 @@ kanek/
 │   ├── hooks/                    # Custom hooks
 │   ├── lib/                      # Utilities (supabase client, mapbox, helpers, constants)
 │   ├── store/                    # Redux store
-│   │   ├── api/                  # RTK Query API slices (9 slices)
+│   │   ├── api/                  # RTK Query API slices (11 slices)
 │   │   └── slices/               # Redux slices (auth, location, notifications, toast)
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 33 SQL migration files
-│   ├── functions/                # 13 Deno edge functions
+│   ├── migrations/               # 50 SQL migration files
+│   ├── functions/                # 14 Deno edge functions
 │   └── templates/                # Email templates
 ├── admin/                        # Next.js admin panel (separate app)
 └── assets/                       # Fonts (Work Sans, Manrope), icons, splash
@@ -104,7 +104,7 @@ const api = createApi({
 });
 ```
 
-**9 API slices:** postsApi, bookingsApi, profilesApi, ratingsApi, ekyashApi, reportsApi, notificationsApi, checkinsApi, messagesApi
+**11 API slices:** postsApi, bookingsApi, profilesApi, ratingsApi, ekyashApi, reportsApi, notificationsApi, checkinsApi, messagesApi, contractEventsApi, driverDocumentsApi
 
 **4 state slices:** authSlice, locationSlice, notificationsSlice, toastSlice
 
@@ -132,7 +132,7 @@ const api = createApi({
 ### 4. Database — Key Facts
 
 - **Supabase project:** `tlggdherqjvybpddsqjj`
-- **33 migrations** — run sequentially, never modify deployed migrations
+- **50 migrations** — run sequentially, never modify deployed migrations
 - **20+ tables** with RLS policies (see `docs/database-schema.md` for full reference)
 - **Types generated** via `supabase gen types typescript` → `src/types/database.ts`
 - **All prices in cents** (integer) — display as `$X.XX BZD`
@@ -155,7 +155,7 @@ Validate at boundaries only (forms + edge functions). Internal code trusts valid
 
 ### 6. Edge Functions
 
-13 Deno edge functions in `supabase/functions/`:
+14 Deno edge functions in `supabase/functions/`:
 
 | Function | Purpose |
 |----------|---------|
@@ -172,6 +172,7 @@ Validate at boundaries only (forms + edge functions). Internal code trusts valid
 | `process-strikes` | Cron: enforce strike penalties |
 | `check-route-activation` | Check if route can activate |
 | `update-rating-avg` | Trigger: recalculate rating after new review |
+| `notify-user` | Send targeted notification to a specific user |
 
 ### 7. E-Kyash Payment Flow
 

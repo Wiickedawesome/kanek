@@ -114,6 +114,7 @@ export default function ReportGasModal() {
             onChangeText={setRegular}
             placeholder="e.g. 12.50"
             keyboardType="decimal-pad"
+            maxLength={10}
           />
 
           <TextInput
@@ -122,6 +123,7 @@ export default function ReportGasModal() {
             onChangeText={setPremium}
             placeholder="e.g. 14.00"
             keyboardType="decimal-pad"
+            maxLength={10}
           />
 
           <TextInput
@@ -130,6 +132,7 @@ export default function ReportGasModal() {
             onChangeText={setDiesel}
             placeholder="e.g. 11.75"
             keyboardType="decimal-pad"
+            maxLength={10}
           />
 
           <Pressable style={styles.locationRow} onPress={() => setMapVisible(true)}>

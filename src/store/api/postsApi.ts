@@ -40,16 +40,28 @@ interface GetPostsArgs {
 export const postsApi = createApi({
   reducerPath: 'postsApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 120,
   tagTypes: ['Post'],
   endpoints: (builder) => ({
     getPosts: builder.query<PostWithAuthor[], GetPostsArgs | void>({
       queryFn: async (args) => {
         const { type, status = 'open', limit = 20, offset = 0, search } = args ?? {};
 
+        // Explicitly list columns to exclude route_geometry (large GeoJSON)
+        // which is only needed on the detail screen (getPostById still uses *).
         let query = supabase
           .from('posts')
           .select(`
-            *,
+            id, type, status, title, description, author_id,
+            origin_address, origin_lat, origin_lng,
+            dest_address, dest_lat, dest_lng,
+            departure_at, expires_at, created_at, updated_at,
+            price_cents, seats_total, seats_filled,
+            payment_method, pickup_notes, pickup_style,
+            is_round_trip, vehicle_description, min_riders,
+            route_distance_km, route_duration_min, route_fuel_cost_cents,
+            errand_category, errand_fee_cents, item_cost_cents,
+            job_category, job_timeline, pay_rate_cents, pay_type,
             author:profiles!posts_author_id_fkey (
               id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
             )
@@ -63,7 +75,9 @@ export const postsApi = createApi({
         }
 
         if (search) {
-          query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+          // Escape PostgREST special characters to prevent filter injection
+          const sanitized = search.replace(/[%_\\(),."]/g, (ch) => `\\${ch}`);
+          query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
         }
 
         const { data, error } = await query;
@@ -101,9 +115,27 @@ export const postsApi = createApi({
 
     createPost: builder.mutation<PostRow, Database['public']['Tables']['posts']['Insert']>({
       queryFn: async (newPost) => {
+        // Allowlist: only permit fields the form should set
+        const ALLOWED_FIELDS = [
+          'author_id', 'title', 'type', 'description',
+          'origin_address', 'origin_lat', 'origin_lng',
+          'dest_address', 'dest_lat', 'dest_lng',
+          'departure_at', 'expires_at', 'price_cents', 'seats_total',
+          'payment_method', 'pickup_notes', 'pickup_style',
+          'is_round_trip', 'vehicle_description', 'min_riders',
+          'route_geometry', 'route_distance_km', 'route_duration_min',
+          'route_fuel_cost_cents',
+          'errand_category', 'errand_fee_cents', 'item_cost_cents',
+          'job_category', 'job_timeline', 'pay_rate_cents', 'pay_type',
+        ] as const;
+        const safePost: Record<string, unknown> = {};
+        for (const key of ALLOWED_FIELDS) {
+          if (key in newPost) safePost[key] = (newPost as Record<string, unknown>)[key];
+        }
+
         const { data, error } = await supabase
           .from('posts')
-          .insert(newPost)
+          .insert(safePost as Database['public']['Tables']['posts']['Insert'])
           .select()
           .single();
 

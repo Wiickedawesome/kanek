@@ -38,6 +38,8 @@ Root (Stack) — app/_layout.tsx
 │   │   ├── index.tsx            My Posts + Active + History (segmented tabs)
 │   │   ├── [contractId].tsx     Contract detail + live tracking
 │   │   ├── notifications.tsx    Booking notifications
+│   │   ├── messages/
+│   │   │   └── [contractId].tsx Contract messaging thread
 │   │   └── post/
 │   │       └── [postId].tsx     Post detail (thin wrapper → PostDetailScreen)
 │   │
@@ -48,7 +50,9 @@ Root (Stack) — app/_layout.tsx
 │       ├── documents.tsx        Manage verification documents
 │       ├── wallet.tsx           E-Kyash wallet
 │       ├── reports.tsx          My road reports
-│       └── notifications.tsx    Notification settings
+│       ├── notifications.tsx    Notification settings
+│       ├── privacy.tsx          Privacy policy
+│       └── terms.tsx            Terms of service
 │
 └── modals/ (Modal Presentation)
     ├── _layout.tsx              Modal group

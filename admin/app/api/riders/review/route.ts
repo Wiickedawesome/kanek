@@ -1,4 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server';
+import { isValidUUID, MAX_REASON_LENGTH } from '@/lib/validation';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,14 +11,23 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await authSupabase.from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
   const { docId, action, reason } = body as { docId: string; action: string; reason?: string };
 
-  if (!docId || !['approve', 'reject'].includes(action)) {
+  if (!isValidUUID(docId) || !['approve', 'reject'].includes(action)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
   if (action === 'reject' && !reason) {
     return NextResponse.json({ error: 'Reason required for rejection' }, { status: 400 });
+  }
+  if (reason && typeof reason === 'string' && reason.length > MAX_REASON_LENGTH) {
+    return NextResponse.json({ error: `Reason must be ${MAX_REASON_LENGTH} characters or less` }, { status: 400 });
   }
 
   const supabase = await createAdminSupabase();
@@ -30,7 +40,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (fetchError || !doc) {
-    return NextResponse.json({ error: fetchError?.message ?? 'Document not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
   const riderUserId = doc.user_id;
@@ -40,7 +50,7 @@ export async function POST(request: NextRequest) {
       .from('rider_documents')
       .update({ review_status: 'approved', verified: true, reviewed_by: user.id })
       .eq('id', docId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Failed to update document status' }, { status: 500 });
 
     await supabase.from('profiles').update({ account_status: 'active' }).eq('id', riderUserId);
     await supabase.from('notifications').insert({
@@ -55,7 +65,7 @@ export async function POST(request: NextRequest) {
       .from('rider_documents')
       .update({ review_status: 'rejected', rejection_reason: reason, verified: false, reviewed_by: user.id })
       .eq('id', docId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Failed to update document status' }, { status: 500 });
 
     await supabase.from('notifications').insert({
       user_id: riderUserId,

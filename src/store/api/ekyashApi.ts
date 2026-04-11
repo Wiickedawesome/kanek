@@ -21,6 +21,7 @@ interface CancelPaymentArgs {
 export const ekyashApi = createApi({
   reducerPath: 'ekyashApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 30,
   tagTypes: ['Payment'],
   endpoints: (builder) => ({
     createPayment: builder.mutation<CreatePaymentResponse, CreatePaymentArgs>({
@@ -69,6 +70,11 @@ export const ekyashApi = createApi({
 
     getPaymentHistory: builder.query<EkyashTxnRow[], string>({
       queryFn: async (userId) => {
+        // Validate userId format to prevent filter injection
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'Invalid user ID' } };
+        }
+
         const { data, error } = await supabase
           .from('ekyash_transactions')
           .select('*')

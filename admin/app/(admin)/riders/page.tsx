@@ -10,7 +10,8 @@ export default async function RidersPage() {
     .from('rider_documents')
     .select('id, document_url, review_status, rejection_reason, uploaded_at, user:profiles!user_id(first_name, last_name, phone)')
     .order('review_status', { ascending: true })
-    .order('uploaded_at', { ascending: false });
+    .order('uploaded_at', { ascending: false })
+    .limit(200);
 
   return (
     <div>

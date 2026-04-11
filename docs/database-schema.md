@@ -2,7 +2,7 @@
 
 Supabase PostgreSQL 17. Project ref: `tlggdherqjvybpddsqjj`.
 
-33 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
+50 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
 
 Types are generated via:
 ```bash
@@ -452,3 +452,20 @@ Audit trail — immutable. RLS: admins only.
 | 31 | `00031_unified_booking_flow.sql` | Unified booking flow |
 | 32 | `00032_cron_schedules.sql` | pg_cron schedules |
 | 33 | `00033_contract_messages.sql` | Contract messaging |
+| 34 | `00034_message_notifications.sql` | Message notification triggers |
+| 35 | `00035_phone_change_rate_limit.sql` | Phone change rate limiting |
+| 36 | `00036_anonymous_ratings.sql` | Anonymous rating support |
+| 37 | `00037_contract_completion_notifications.sql` | Contract completion notifications |
+| 38 | `00038_activity_notifications.sql` | Activity notification triggers |
+| 39 | `00039_profile_avatars.sql` | Profile avatar support |
+| 40 | `00040_job_application_flow.sql` | Job application flow |
+| 41 | `00041_secure_report_actions.sql` | Secure report action policies |
+| 42 | `00042_deduplicate_upvotes.sql` | Deduplicate report upvotes |
+| 43 | `00043_phone_change_rate_limit_trigger.sql` | Phone change rate limit trigger |
+| 44 | `00044_profiles_public_view.sql` | Public profiles view |
+| 45 | `00045_universal_applicant_review.sql` | Universal applicant review flow |
+| 46 | `00046_gate_actions_behind_active_status.sql` | Gate actions behind active account status |
+| 47 | `00047_contract_events.sql` | Contract events table |
+| 48 | `00048_driver_documents.sql` | Driver documents table |
+| 49 | `00049_remove_police_record.sql` | Remove police record requirement |
+| 50 | `00050_phase2_audit_fixes.sql` | Phase 2 audit fixes |

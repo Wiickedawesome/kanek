@@ -71,7 +71,7 @@
 
 **File:** `useAuth.ts`
 
-**Problem:** All 8 other API slices were reset on sign-out, but `messagesApi` was missing. Cached chat messages could leak between users on the same device.
+**Problem:** All 8 other API slices were reset on sign-out, but `messagesApi` was missing. Cached chat messages could leak between users on the same device. (Subsequently, `contractEventsApi` and `driverDocumentsApi` were also found missing and fixed in Phase 8 audit.)
 
 **Fix:** Added `dispatch(messagesApi.util.resetApiState())` to sign-out.
 
@@ -134,7 +134,7 @@ All channels clean up on unmount via returned unsubscribe functions.
 
 ### Sign-Out Cleanup
 
-All 9 API slices are now properly reset:
+All 11 API slices are now properly reset:
 1. `profilesApi` ✅
 2. `postsApi` ✅
 3. `bookingsApi` ✅
@@ -143,7 +143,9 @@ All 9 API slices are now properly reset:
 6. `reportsApi` ✅
 7. `notificationsApi` ✅
 8. `checkinsApi` ✅
-9. `messagesApi` ✅ (newly added)
+9. `messagesApi` ✅
+10. `contractEventsApi` ✅ (added in Phase 8 audit)
+11. `driverDocumentsApi` ✅ (added in Phase 8 audit)
 
 Session is nulled first, then Supabase signOut with AsyncStorage fallback.
 

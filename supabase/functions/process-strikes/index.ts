@@ -2,9 +2,10 @@
 
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 /**
@@ -19,7 +20,14 @@ import {
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
+  }
+
+  // Only internal (service-role) calls allowed
+  const authResult = await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
+  if (authResult.userId !== null) {
+    return errorResponse('Forbidden: internal-only endpoint', 403);
   }
 
   try {
@@ -43,28 +51,35 @@ Deno.serve(async (req) => {
 
     if (strikeError) return errorResponse(strikeError.message, 500);
 
-    // Increment strike counter on profile
+    // Count from strikes table — avoids TOCTOU read-increment-write race (M-03)
     const field = strikeType === 'hard' ? 'strikes_hard' : 'strikes_soft';
-    const { data: profile, error: profileError } = await supabase
+    const { count: newCount, error: countError } = await supabase
+      .from('strikes')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', strikeType);
+
+    if (countError) return errorResponse('Failed to count strikes', 500);
+
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('strikes_soft, strikes_hard, account_status')
+      .select('account_status')
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile) {
+    if (!profile) {
       return errorResponse('Profile not found', 404);
     }
 
-    const newCount = (profile[field] ?? 0) + 1;
     const updates: Record<string, unknown> = {
-      [field]: newCount,
+      [field]: newCount ?? 0,
       updated_at: new Date().toISOString(),
     };
 
     // Escalation logic
     if (strikeType === 'hard') {
       updates.account_status = 'suspended';
-    } else if (newCount >= 3 && profile.account_status === 'active') {
+    } else if ((newCount ?? 0) >= 3 && profile.account_status === 'active') {
       updates.account_status = 'restricted';
     }
 
@@ -93,7 +108,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       strikeType,
       reason,
-      newCount,
+      newCount: newCount ?? 0,
       accountStatus: updates.account_status ?? profile.account_status,
     });
   } catch (error) {

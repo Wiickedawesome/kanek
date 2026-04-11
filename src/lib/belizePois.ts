@@ -47,15 +47,22 @@ export const POI_CATEGORY_LABELS: Record<string, string> = {
   market: 'Market',
 };
 
-// ── Pre-build search index (runs once at import time) ────────────
+// ── Lazy-init search index (deferred from import time) ───────────
 
 const pois = poisRaw as RawPoi[];
 
-/** Lowercase name + category for fast matching */
-const searchIndex = pois.map((p) => ({
-  lowerName: p.n.toLowerCase(),
-  lowerCategory: p.c.toLowerCase(),
-}));
+/** Lowercase name + category for fast matching — built on first use */
+let _searchIndex: { lowerName: string; lowerCategory: string }[] | null = null;
+
+function getSearchIndex() {
+  if (!_searchIndex) {
+    _searchIndex = pois.map((p) => ({
+      lowerName: p.n.toLowerCase(),
+      lowerCategory: p.c.toLowerCase(),
+    }));
+  }
+  return _searchIndex;
+}
 
 // ── Nearest POI (for reverse geocoding) ─────────────────────────
 
@@ -120,8 +127,9 @@ export function searchLocalPois(query: string, limit = 5): PoiResult[] {
 
   const scored: { poi: RawPoi; score: number }[] = [];
 
+  const idx = getSearchIndex();
   for (let i = 0; i < pois.length; i++) {
-    const { lowerName, lowerCategory } = searchIndex[i];
+    const { lowerName, lowerCategory } = idx[i];
 
     // Skip if none of the query words appear in name or category
     if (!words.some((w) => lowerName.includes(w) || lowerCategory.includes(w))) continue;

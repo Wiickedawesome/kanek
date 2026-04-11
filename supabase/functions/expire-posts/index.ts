@@ -2,9 +2,10 @@
 
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 /**
@@ -13,7 +14,14 @@ import {
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
+  }
+
+  // Internal-only: reject user-initiated requests
+  const authResult = await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
+  if (authResult.userId !== null) {
+    return errorResponse('Forbidden: internal-only endpoint', 403);
   }
 
   try {
@@ -44,19 +52,18 @@ Deno.serve(async (req) => {
       }));
       await supabase.from('notifications').insert(notifications);
 
-      // Cancel pending bookings on expired posts
-      for (const post of expiredPosts) {
-        await supabase
-          .from('bookings')
-          .update({
-            status: 'cancelled',
-            cancel_reason: 'Post expired',
-            cancelled_at: now,
-            updated_at: now,
-          })
-          .eq('post_id', post.id)
-          .in('status', ['pending', 'confirmed']);
-      }
+      // Cancel pending bookings on expired posts — batched (M-04)
+      const expiredIds = expiredPosts.map((p) => p.id);
+      await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled',
+          cancel_reason: 'Post expired',
+          cancelled_at: now,
+          updated_at: now,
+        })
+        .in('post_id', expiredIds)
+        .in('status', ['pending', 'confirmed']);
     }
 
     // Delete expired road reports (they auto-expire after 2 hours)

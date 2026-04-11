@@ -12,6 +12,8 @@ import { reportsApi } from '@/store/api/reportsApi';
 import { notificationsApi } from '@/store/api/notificationsApi';
 import { checkinsApi } from '@/store/api/checkinsApi';
 import { messagesApi } from '@/store/api/messagesApi';
+import { contractEventsApi } from '@/store/api/contractEventsApi';
+import { driverDocumentsApi } from '@/store/api/driverDocumentsApi';
 import type { AppDispatch } from '@/store';
 
 /**
@@ -77,6 +79,8 @@ export function useAuth() {
     dispatch(notificationsApi.util.resetApiState());
     dispatch(checkinsApi.util.resetApiState());
     dispatch(messagesApi.util.resetApiState());
+    dispatch(contractEventsApi.util.resetApiState());
+    dispatch(driverDocumentsApi.util.resetApiState());
     // Clear Supabase session from server + AsyncStorage
     try {
       await supabase.auth.signOut();

@@ -24,7 +24,7 @@ function formatPrice(cents: number | null): string {
 }
 
 
-export function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
+export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
   const age = getTimeAgo(gasPrice.reported_at);
 
   return (
@@ -60,7 +60,7 @@ export function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
       </Text>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

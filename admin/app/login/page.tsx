@@ -181,8 +181,10 @@ function LoginForm() {
                   id="phone"
                   type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={7}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   placeholder="6XX-XXXX"
                   required
                   className="flex-1 border border-gray-300 rounded-r-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"

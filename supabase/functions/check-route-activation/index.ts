@@ -2,9 +2,10 @@
 
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 /**
@@ -14,7 +15,14 @@ import {
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
+  }
+
+  // Internal-only: reject user-initiated requests
+  const authResult = await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
+  if (authResult.userId !== null) {
+    return errorResponse('Forbidden: internal-only endpoint', 403);
   }
 
   try {

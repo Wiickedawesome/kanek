@@ -9,7 +9,7 @@ import {
 } from '../_shared/ekyash.ts';
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
   verifyAuth,
@@ -17,7 +17,7 @@ import {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   const authResult = await verifyAuth(req);
@@ -36,6 +36,22 @@ Deno.serve(async (req) => {
 
     if (!contractId || !payerId || !payeeId || !amountCents) {
       return errorResponse('Missing required fields');
+    }
+
+    // L-2: Validate UUIDs
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(contractId) || !UUID_RE.test(payerId) || !UUID_RE.test(payeeId)) {
+      return errorResponse('Invalid ID format');
+    }
+
+    // L-3: Validate phone format if provided
+    if (payerPhone && !/^\+501[0-9]{7}$/.test(payerPhone)) {
+      return errorResponse('Invalid phone number format');
+    }
+
+    // M-1: Validate amountCents is a safe integer within range
+    if (!Number.isInteger(amountCents) || amountCents < 100 || amountCents > 999900) {
+      return errorResponse('Invalid amount: must be between $1.00 and $9,999.00 BZD');
     }
 
     // Caller must be the payer
@@ -83,7 +99,9 @@ Deno.serve(async (req) => {
         orderId,
         amount: amountCents,
         currency: 'BZD',
-        description: description || `kanek payment - ${orderId}`,
+        description: (description || `kanek payment - ${orderId}`)
+          .replace(/[<>&"']/g, '')
+          .slice(0, 200),
         payer: payerPhone || null,
         longTerm: false,
         receipt: null,
@@ -118,7 +136,7 @@ Deno.serve(async (req) => {
       });
 
     if (dbError) {
-      return errorResponse(`Database error: ${dbError.message}`, 500);
+      return errorResponse('Database error', 500);
     }
 
     return jsonResponse({
@@ -131,9 +149,7 @@ Deno.serve(async (req) => {
       donationCents,
     });
   } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : 'Invoice creation failed',
-      500,
-    );
+    console.error('ekyash-create-invoice error:', error);
+    return errorResponse('Invoice creation failed', 500);
   }
 });

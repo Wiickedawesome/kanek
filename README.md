@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20Web-51c152?style=flat-square&logo=expo&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/Expo-SDK%2055-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo SDK 55" />
-  <img src="https://img.shields.io/badge/React%20Native-0.83.2-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" />
+  <img src="https://img.shields.io/badge/React%20Native-0.83.4-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Supabase-backend-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Mapbox-maps-4264FB?style=flat-square&logo=mapbox&logoColor=white" alt="Mapbox" />
@@ -24,7 +24,7 @@ kanek is not a dispatch system. It is not Uber. It is a board where Belizeans or
 
 | Layer | Technology | Version |
 |---|---|---|
-| Mobile | React Native + Expo | SDK 55 / RN 0.83.2 / React 19.2.0 |
+| Mobile | React Native + Expo | SDK 55 / RN 0.83.4 / React 19.2.0 |
 | Navigation | Expo Router (file-based) | ~55.0.8 |
 | Language | TypeScript (strict) | ~5.9.2 |
 | State | Redux Toolkit + RTK Query | ^2.6.1 |
@@ -64,13 +64,13 @@ kanek/
 │   ├── hooks/                    # useAuth, useLocation, useRealtime, useSOS, useDriverTracking
 │   ├── lib/                      # Supabase client, Mapbox config, helpers, constants
 │   ├── store/                    # Redux store
-│   │   ├── api/                  # RTK Query API slices (9 slices)
+│   │   ├── api/                  # RTK Query API slices (11 slices)
 │   │   └── slices/               # Redux slices (auth, location, notifications, toast)
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 33 SQL migration files
-│   ├── functions/                # 13 Deno edge functions
+│   ├── migrations/               # 50 SQL migration files
+│   ├── functions/                # 14 Deno edge functions
 │   └── templates/                # Email templates
 ├── admin/                        # Next.js admin panel (separate app)
 ├── docs/                         # Project documentation

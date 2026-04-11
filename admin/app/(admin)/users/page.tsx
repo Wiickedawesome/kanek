@@ -9,7 +9,8 @@ export default async function UsersPage() {
   const { data: users } = await supabase
     .from('profiles')
     .select('id, first_name, last_name, phone, role, account_status, rating_avg, strikes_soft, strikes_hard, created_at')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
 
   return (
     <div>

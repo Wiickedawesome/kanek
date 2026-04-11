@@ -23,6 +23,9 @@ const notificationsSlice = createSlice({
     },
     addNotification(state, action: PayloadAction<NotificationRow>) {
       state.items.unshift(action.payload);
+      if (state.items.length > 100) {
+        state.items = state.items.slice(0, 100);
+      }
       if (!action.payload.read) {
         state.unreadCount += 1;
       }

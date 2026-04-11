@@ -153,7 +153,7 @@ export default function ActivityScreen() {
       };
 
       return (
-        <Animated.View entering={FadeInUp.duration(350).delay(Math.min((index ?? 0) * 60, 300))}>
+        <Animated.View entering={(index ?? 0) < 8 ? FadeInUp.duration(350).delay((index ?? 0) * 60) : undefined}>
           <Pressable onPress={handlePress}>
             <Card style={styles.bookingCard}>
               <View style={styles.cardHeader}>
@@ -211,7 +211,7 @@ export default function ActivityScreen() {
 
   const renderContract = useCallback(
     ({ item, index }: { item: ContractWithDetails; index?: number }) => (
-      <Animated.View entering={FadeInUp.duration(350).delay(Math.min((index ?? 0) * 60, 300))}>
+      <Animated.View entering={(index ?? 0) < 8 ? FadeInUp.duration(350).delay((index ?? 0) * 60) : undefined}>
         <Pressable onPress={() => router.push(`/(tabs)/activity/${item.id}`)}>
           <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
@@ -338,7 +338,7 @@ export default function ActivityScreen() {
       const showJoinerPreview = item.activeBookingsCount > 0;
 
       return (
-        <Animated.View entering={FadeInUp.duration(350).delay(Math.min(index * 60, 300))}>
+        <Animated.View entering={index < 8 ? FadeInUp.duration(350).delay(index * 60) : undefined}>
           <Pressable onPress={() => router.push(`/(tabs)/activity/post/${item.id}`)}>
             <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
@@ -442,6 +442,10 @@ export default function ActivityScreen() {
         renderItem={renderMyPost}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feed}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshControl={
           <RefreshControl
@@ -466,6 +470,10 @@ export default function ActivityScreen() {
         renderItem={renderHistoryItem}
         keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
         contentContainerStyle={styles.feed}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshControl={
           <RefreshControl
@@ -490,6 +498,10 @@ export default function ActivityScreen() {
         renderItem={renderActiveItem}
         keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
         contentContainerStyle={styles.feed}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshControl={
           <RefreshControl
@@ -684,8 +696,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   title: {
     ...typography.h2,

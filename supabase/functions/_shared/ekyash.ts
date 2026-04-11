@@ -50,7 +50,12 @@ export async function verifyCallbackHash(
   const computedHash = Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-  return computedHash === receivedHash;
+
+  // Timing-safe comparison to prevent timing attacks
+  if (computedHash.length !== receivedHash.length) return false;
+  const a = encoder.encode(computedHash);
+  const b = encoder.encode(receivedHash);
+  return crypto.subtle.timingSafeEqual(a, b);
 }
 
 /** Generate a unique order ID */

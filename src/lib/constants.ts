@@ -21,6 +21,7 @@ export const MAX_SEATS = 20;
 export const MAX_PRICE_CENTS = 999_900;
 export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_NAME_LENGTH = 50;
+export const MAX_TITLE_LENGTH = 100;
 
 /** Number of top routes to show on explore feed */
 export const TOP_ROUTES_LIMIT = 10;

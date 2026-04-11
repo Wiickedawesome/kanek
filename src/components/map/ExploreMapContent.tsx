@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
@@ -70,32 +70,32 @@ export function ExploreMapContent({
     [highlightDistrict],
   );
 
-  const geoJson: GeoJSON.FeatureCollection = {
+  const geoJson: GeoJSON.FeatureCollection = useMemo(() => ({
     type: 'FeatureCollection',
     features: posts.map((p) => ({
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
       properties: { id: p.id, color: p.color, label: p.label ?? '' },
     })),
-  };
+  }), [posts]);
 
-  const reportsGeoJson: GeoJSON.FeatureCollection = {
+  const reportsGeoJson: GeoJSON.FeatureCollection = useMemo(() => ({
     type: 'FeatureCollection',
     features: reports.map((r) => ({
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
       properties: { id: r.id, color: r.color, label: r.label ?? '' },
     })),
-  };
+  }), [reports]);
 
-  const gasGeoJson: GeoJSON.FeatureCollection = {
+  const gasGeoJson: GeoJSON.FeatureCollection = useMemo(() => ({
     type: 'FeatureCollection',
     features: gasStations.map((g) => ({
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [g.lng, g.lat] },
       properties: { id: g.id, color: g.color, label: g.label ?? '' },
     })),
-  };
+  }), [gasStations]);
 
   const handlePinPress = (event: any) => {
     const feature = event?.features?.[0];
@@ -115,15 +115,21 @@ export function ExploreMapContent({
   // Expose recenter to parent
   if (onRecenterRef) onRecenterRef.current = recenter;
 
-  // Expose flyTo to parent (for search-to-location)
-  if (onFlyToRef) {
-    onFlyToRef.current = (lat: number, lng: number, flyZoom?: number) => {
+  // Expose flyTo to parent (for search-to-location) — debounced to prevent rapid-fire
+  const flyToTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedFlyTo = useCallback((lat: number, lng: number, flyZoom?: number) => {
+    if (flyToTimerRef.current) clearTimeout(flyToTimerRef.current);
+    flyToTimerRef.current = setTimeout(() => {
       cameraRef.current?.setCamera({
         centerCoordinate: [lng, lat],
         zoomLevel: flyZoom ?? 14,
         animationDuration: 800,
       });
-    };
+    }, 300);
+  }, []);
+
+  if (onFlyToRef) {
+    onFlyToRef.current = debouncedFlyTo;
   }
 
   return (

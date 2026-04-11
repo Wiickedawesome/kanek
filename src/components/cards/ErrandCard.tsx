@@ -18,7 +18,7 @@ interface ErrandCardProps {
   onPress?: () => void;
 }
 
-export function ErrandCard({ post, onPress }: ErrandCardProps) {
+export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: ErrandCardProps) {
   const authorName = post.author
     ? `${post.author.first_name ?? ''} ${(post.author.last_name ?? '')[0] ?? ''}.`.trim()
     : 'Unknown';
@@ -92,7 +92,7 @@ export function ErrandCard({ post, onPress }: ErrandCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

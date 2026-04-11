@@ -20,37 +20,14 @@ import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, 
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
-import type { PostType, Database, BelizeDistrict } from '@/types/database';
+import type { Database } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
-import { TOP_ROUTES_LIMIT, GAS_PRICES_LIMIT, DISTANCE_PRESETS } from '@/lib/constants';
-import { getDistanceKm } from '@/lib/helpers';
-
-/** Map enum values to keywords that may appear in origin_address */
-const DISTRICT_KEYWORDS: Record<BelizeDistrict, string[]> = {
-  belize: ['belize city', 'belize district', 'ladyville', 'hattieville', 'sandhill'],
-  cayo: ['cayo', 'san ignacio', 'santa elena', 'belmopan', 'benque', 'spanish lookout'],
-  corozal: ['corozal'],
-  orange_walk: ['orange walk'],
-  stann_creek: ['stann creek', 'dangriga', 'hopkins', 'placencia', 'independence'],
-  toledo: ['toledo', 'punta gorda', 'big falls'],
-};
-
-function postMatchesDistrict(post: PostWithAuthor, district: BelizeDistrict): boolean {
-  const addr = (post.origin_address ?? '').toLowerCase();
-  const dest = (post.dest_address ?? '').toLowerCase();
-  return DISTRICT_KEYWORDS[district].some((kw) => addr.includes(kw) || dest.includes(kw));
-}
-
-type FeedFilter = PostType | 'reports' | null;
+import { DISTANCE_PRESETS } from '@/lib/constants';
+import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
 
 type RoadReportRow = Database['public']['Tables']['road_reports']['Row'];
 type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
-
-type FeedItem =
-  | { kind: 'post'; data: PostWithAuthor }
-  | { kind: 'road_report'; data: RoadReportRow }
-  | { kind: 'gas_price'; data: GasPriceRow };
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'All', value: null },
@@ -61,23 +38,6 @@ const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'Jobs', value: 'job' },
   { label: 'Reports', value: 'reports' },
 ];
-
-/** Extract lat/lng from any feed item for distance comparison */
-function getPostCoord(item: FeedItem): { lat: number; lng: number } | null {
-  if (item.kind === 'post') {
-    if (item.data.origin_lat != null && item.data.origin_lng != null) {
-      return { lat: item.data.origin_lat, lng: item.data.origin_lng };
-    }
-    return null;
-  }
-  if (item.kind === 'road_report') {
-    return { lat: item.data.lat, lng: item.data.lng };
-  }
-  if (item.kind === 'gas_price') {
-    return { lat: item.data.station_lat, lng: item.data.station_lng };
-  }
-  return null;
-}
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -92,8 +52,11 @@ export default function ExploreScreen() {
   const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
-  const userLat = useSelector((state: RootState) => state.location.latitude);
-  const userLng = useSelector((state: RootState) => state.location.longitude);
+  const userLatRaw = useSelector((state: RootState) => state.location.latitude);
+  const userLngRaw = useSelector((state: RootState) => state.location.longitude);
+  // Quantize to ~500m to avoid re-sorting feed on every GPS tick
+  const userLat = useMemo(() => userLatRaw != null ? Math.round(userLatRaw * 200) / 200 : null, [userLatRaw]);
+  const userLng = useMemo(() => userLngRaw != null ? Math.round(userLngRaw * 200) / 200 : null, [userLngRaw]);
   const hasGPS = userLat != null && userLng != null;
 
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
@@ -121,75 +84,14 @@ export default function ExploreScreen() {
     };
   }, [subscribeToRoadReports]);
 
-  const feedItems = useMemo<FeedItem[]>(() => {
-    if (isReportsFilter) {
-      const items: FeedItem[] = [];
-      (roadReports ?? []).forEach((r) => items.push({ kind: 'road_report', data: r }));
-      (gasPrices ?? []).forEach((g) => items.push({ kind: 'gas_price', data: g }));
-      return items;
-    }
-
-    let filteredPosts = posts ?? [];
-
-    // Distance radius filter (needs GPS)
-    if (distanceFilter && hasGPS) {
-      filteredPosts = filteredPosts.filter((p) => {
-        if (p.origin_lat == null || p.origin_lng == null) return false;
-        const d = getDistanceKm(
-          { lat: userLat, lng: userLng },
-          { lat: p.origin_lat, lng: p.origin_lng },
-        );
-        return d <= distanceFilter;
-      });
-    }
-
-    const items: FeedItem[] = [];
-    filteredPosts.forEach((p) => items.push({ kind: 'post', data: p }));
-
-    // When showing "All", weave active road reports and recent gas prices into feed
-    if (typeFilter === null) {
-      (roadReports ?? []).forEach((r) => items.push({ kind: 'road_report', data: r }));
-      (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g) => items.push({ kind: 'gas_price', data: g }));
-    }
-
-    // Sort by proximity if user has GPS, otherwise fall back to district match
-    if (hasGPS) {
-      items.sort((a, b) => {
-        const aCoord = getPostCoord(a);
-        const bCoord = getPostCoord(b);
-        const aDist = aCoord ? getDistanceKm({ lat: userLat, lng: userLng }, aCoord) : Infinity;
-        const bDist = bCoord ? getDistanceKm({ lat: userLat, lng: userLng }, bCoord) : Infinity;
-        return aDist - bDist;
-      });
-    } else if (userDistrict) {
-      items.sort((a, b) => {
-        const aMatch = a.kind === 'post' && postMatchesDistrict(a.data, userDistrict) ? 0 : 1;
-        const bMatch = b.kind === 'post' && postMatchesDistrict(b.data, userDistrict) ? 0 : 1;
-        return aMatch - bMatch;
-      });
-    }
-
-    return items;
-  }, [posts, roadReports, gasPrices, typeFilter, isReportsFilter, userDistrict, distanceFilter, hasGPS, userLat, userLng]);
+  const feedItems = selectFeedItems({
+    posts, roadReports, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict,
+  });
 
   const isLoading = postsLoading || reportsLoading || gasLoading;
   const isFetching = postsFetching;
 
-  const topRoutes = useMemo(() => {
-    if (typeFilter !== null) return [];
-    const routes = (posts ?? []).filter(
-      (p) => p.type === 'route_offer' || p.type === 'route_request',
-    );
-    // Prioritize routes in user's district
-    if (userDistrict) {
-      routes.sort((a, b) => {
-        const aMatch = postMatchesDistrict(a, userDistrict) ? 0 : 1;
-        const bMatch = postMatchesDistrict(b, userDistrict) ? 0 : 1;
-        return aMatch - bMatch;
-      });
-    }
-    return routes.slice(0, TOP_ROUTES_LIMIT);
-  }, [posts, typeFilter, userDistrict]);
+  const topRoutes = selectTopRoutes({ posts, typeFilter, userDistrict });
 
   const onRefresh = useCallback(() => {
     refetchPosts();
@@ -244,8 +146,10 @@ export default function ExploreScreen() {
       }
     }
 
+    if (index >= 8) return <View>{content}</View>;
+
     return (
-      <Animated.View entering={FadeInUp.duration(350).delay(Math.min(index * 60, 300))}>
+      <Animated.View entering={FadeInUp.duration(350).delay(index * 60)}>
         {content}
       </Animated.View>
     );
@@ -332,6 +236,10 @@ export default function ExploreScreen() {
         keyExtractor={keyExtractor}
         style={styles.list}
         contentContainerStyle={styles.feed}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
           <View>
@@ -386,9 +294,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[50],
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   greeting: {
     ...typography.h2,

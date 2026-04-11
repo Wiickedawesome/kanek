@@ -1,4 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server';
+import { isValidUUID, MAX_REASON_LENGTH } from '@/lib/validation';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -9,20 +10,52 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await authSupabase.from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
-  const { flagId, targetType, targetId, action, reason } = body as {
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { flagId, action, reason } = body as {
     flagId: string;
-    targetType: string;
-    targetId: string;
     action: string;
     reason?: string;
   };
 
-  if (!flagId || !action) {
+  if (!isValidUUID(flagId)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
+  if (!action) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
+
+  // Validate action against allowlist
+  const ALLOWED_ACTIONS = ['dismiss', 'remove_post', 'suspend_user', 'issue_strike'];
+  if (!ALLOWED_ACTIONS.includes(action)) {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }
+
+  if (reason && typeof reason === 'string' && reason.length > MAX_REASON_LENGTH) {
+    return NextResponse.json({ error: `Reason must be ${MAX_REASON_LENGTH} characters or less` }, { status: 400 });
+  }
+
   const supabase = await createAdminSupabase();
+
+  // Fetch the flag record to get the authoritative target_type and target_id
+  const { data: flag, error: flagError } = await supabase
+    .from('flags')
+    .select('target_type, target_id')
+    .eq('id', flagId)
+    .single();
+
+  if (flagError || !flag) {
+    return NextResponse.json({ error: 'Flag not found' }, { status: 404 });
+  }
+
+  const targetType = flag.target_type;
+  const targetId = flag.target_id;
 
   // Update flag status
   const flagStatus = action === 'dismiss' ? 'dismissed' : 'action_taken';
@@ -61,6 +94,12 @@ export async function POST(request: NextRequest) {
       reason: reason ?? null,
     });
   } else if (action === 'suspend_user' && targetType === 'user') {
+    // Prevent suspending admin accounts
+    const { data: targetProfile } = await supabase.from('profiles').select('role').eq('id', targetId).single();
+    if (targetProfile?.role === 'admin') {
+      return NextResponse.json({ error: 'Cannot suspend an admin account' }, { status: 403 });
+    }
+
     await supabase.from('profiles').update({ account_status: 'suspended' }).eq('id', targetId);
     await supabase.from('notifications').insert({
       user_id: targetId,

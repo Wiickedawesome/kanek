@@ -15,6 +15,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "bz.kanek.app",
+      "associatedDomains": [
+        "applinks:kanek.bz"
+      ],
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Kanek needs your location to show routes and posts near you.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Kanek needs your location to share your position during active trips.",
@@ -25,6 +28,23 @@
     },
     "android": {
       "package": "bz.kanek.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kanek.bz",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#142800",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -69,7 +89,8 @@
         {
           "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "${MAPBOX_DOWNLOAD_TOKEN}"
         }
-      ]
+      ],
+      "expo-image"
     ],
     "extra": {
       "router": {},

@@ -32,7 +32,7 @@ interface JobCardProps {
   onPress?: () => void;
 }
 
-export function JobCard({ post, onPress }: JobCardProps) {
+export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardProps) {
   const authorName = post.author
     ? `${post.author.first_name ?? ''} ${(post.author.last_name ?? '')[0] ?? ''}.`.trim()
     : 'Unknown';
@@ -106,7 +106,7 @@ export function JobCard({ post, onPress }: JobCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

@@ -87,8 +87,8 @@ export default function UserProfileModal() {
         <RatingBreakdown
           ratingAvg={profile.rating_avg}
           punctualityPct={profile.punctuality_pct}
-          strikesSoft={profile.strikes_soft}
-          strikesHard={profile.strikes_hard}
+          strikesSoft={0}
+          strikesHard={0}
         />
 
         {/* Recent reviews */}

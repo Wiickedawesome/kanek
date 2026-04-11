@@ -2,9 +2,10 @@
 
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 /**
@@ -15,7 +16,14 @@ import {
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
+  }
+
+  // Only internal (service-role) calls allowed
+  const authResult = await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
+  if (authResult.userId !== null) {
+    return errorResponse('Forbidden: internal-only endpoint', 403);
   }
 
   try {
@@ -24,44 +32,15 @@ Deno.serve(async (req) => {
 
     const supabase = createServiceClient();
 
-    // Fetch all ratings for this user
-    const { data: ratings, error: ratingsError } = await supabase
-      .from('ratings')
-      .select('stars, was_on_time')
-      .eq('rated_id', userId);
+    // Use SQL aggregate function instead of fetching all rows
+    const { data: result, error: rpcError } = await supabase.rpc(
+      'compute_rating_avg',
+      { p_user_id: userId },
+    );
 
-    if (ratingsError) return errorResponse(ratingsError.message, 500);
+    if (rpcError) return errorResponse(rpcError.message, 500);
 
-    if (!ratings || ratings.length === 0) {
-      return jsonResponse({ ratingAvg: null, punctualityPct: null, totalRatings: 0 });
-    }
-
-    const totalStars = ratings.reduce((sum, r) => sum + r.stars, 0);
-    const ratingAvg = Math.round((totalStars / ratings.length) * 100) / 100;
-
-    const onTimeCount = ratings.filter((r) => r.was_on_time === true).length;
-    const ratedWithTime = ratings.filter((r) => r.was_on_time !== null).length;
-    const punctualityPct = ratedWithTime > 0
-      ? Math.round((onTimeCount / ratedWithTime) * 100)
-      : null;
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        rating_avg: ratingAvg,
-        punctuality_pct: punctualityPct,
-        total_rides: ratings.length,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
-
-    if (updateError) return errorResponse(updateError.message, 500);
-
-    return jsonResponse({
-      ratingAvg,
-      punctualityPct,
-      totalRatings: ratings.length,
-    });
+    return jsonResponse(result);
   } catch (error) {
     return errorResponse(
       error instanceof Error ? error.message : 'Rating update failed',

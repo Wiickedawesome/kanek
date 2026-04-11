@@ -8,24 +8,39 @@ export function createServiceClient() {
   );
 }
 
-/** Standard CORS headers */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-};
+/** Allowed CORS origins */
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'https://tlggdherqjvybpddsqjj.supabase.co',
+];
 
-/** JSON response helper */
-export function jsonResponse(data: unknown, status = 200): Response {
+/** Build CORS headers, restricting to allowed origins */
+export function getCorsHeaders(req?: Request): Record<string, string> {
+  const origin = req?.headers.get('origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
+  };
+}
+
+/** Standard CORS headers — uses restrictive origin allowlist */
+export const corsHeaders = getCorsHeaders();
+
+/** JSON response helper (pass req for origin-aware CORS) */
+export function jsonResponse(data: unknown, status = 200, req?: Request): Response {
+  const headers = req ? getCorsHeaders(req) : corsHeaders;
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...headers, 'Content-Type': 'application/json' },
   });
 }
 
-/** Error response helper */
-export function errorResponse(message: string, status = 400): Response {
-  return jsonResponse({ error: message }, status);
+/** Error response helper (pass req for origin-aware CORS) */
+export function errorResponse(message: string, status = 400, req?: Request): Response {
+  return jsonResponse({ error: message }, status, req);
 }
 
 type AuthSuccess = { userId: string; error?: never };

@@ -19,7 +19,7 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
-import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { PaymentMethod } from '@/types/database';
@@ -77,6 +77,7 @@ export default function PackageFormScreen() {
     const newErrors: Record<string, string> = {};
 
     if (!title.trim()) newErrors.title = 'Title is required';
+    else if (title.trim().length > MAX_TITLE_LENGTH) newErrors.title = `Max ${MAX_TITLE_LENGTH} characters`;
     if (!originAddress.trim()) newErrors.originAddress = 'Pickup location is required';
     if (!destAddress.trim()) newErrors.destAddress = 'Delivery address is required';
 
@@ -180,6 +181,7 @@ export default function PackageFormScreen() {
             value={title}
             onChangeText={setTitle}
             error={errors.title}
+            maxLength={100}
           />
 
           <LocationInput

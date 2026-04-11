@@ -95,8 +95,12 @@ Default size: 24x24. Style: outlined stroke. Colors: `forest-400` inactive, `acc
 | `Filter` | Filter controls |
 | `ChevronLeft` | Back navigation |
 | `ChevronRight` | Forward/detail |
+| `ChevronDown` | Expand / dropdown |
+| `ChevronUp` | Collapse / scroll up |
 | `Bell` | Notifications |
 | `Send` | Send message |
+| `MessageCircle` | Messages / chat |
+| `Package` | Package delivery |
 | `ExternalLink` | External links |
 | `X` | Close / dismiss |
 
@@ -145,6 +149,11 @@ Default size: 24x24. Style: outlined stroke. Colors: `forest-400` inactive, `acc
 | `FilterChip` | Toggle filter button |
 | `EmptyState` | Empty state message with icon |
 | `InAppToast` | Toast notification overlay |
+| `GlassView` | Frosted glass effect container |
+| `ScreenBackground` | Full-screen background wrapper |
+| `ScreenHeader` | Standard screen header with back nav |
+| `Skeleton` | Loading skeleton placeholder |
+| `TopographicBg` | Topographic pattern background |
 
 ---
 

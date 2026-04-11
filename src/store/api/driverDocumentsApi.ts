@@ -25,6 +25,7 @@ export const DRIVER_DOC_ICONS: Record<DriverDocumentType, string> = {
 export const driverDocumentsApi = createApi({
   reducerPath: 'driverDocumentsApi',
   baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 300,
   tagTypes: ['DriverDocuments'],
   endpoints: (builder) => ({
     /** Fetch all driver documents for a user */

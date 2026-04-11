@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { showAlert } from '@/lib/alert';
+import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -36,7 +37,12 @@ export default function IdUploadScreen() {
       allowsEditing: true,
     });
     if (!result.canceled && result.assets[0]) {
-      setIdUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
+        showAlert('File too large', 'Image must be under 5 MB');
+        return;
+      }
+      setIdUri(asset.uri);
     }
   };
 
@@ -48,7 +54,12 @@ export default function IdUploadScreen() {
       cameraType: ImagePicker.CameraType.front,
     });
     if (!result.canceled && result.assets[0]) {
-      setSelfieUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      if (asset.fileSize && asset.fileSize > MAX_UPLOAD_SIZE) {
+        showAlert('File too large', 'Image must be under 5 MB');
+        return;
+      }
+      setSelfieUri(asset.uri);
     }
   };
 

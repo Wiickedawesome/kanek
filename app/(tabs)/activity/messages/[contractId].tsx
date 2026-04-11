@@ -113,6 +113,9 @@ export default function MessagesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.chatContent}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
               <Icon name="message-circle" size={48} color={colors.neutral[300]} />

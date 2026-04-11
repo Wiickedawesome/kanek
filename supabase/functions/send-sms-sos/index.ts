@@ -2,7 +2,7 @@
 
 import {
   createServiceClient,
-  corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   errorResponse,
   verifyAuth,
@@ -10,7 +10,7 @@ import {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   const authResult = await verifyAuth(req);
@@ -19,6 +19,16 @@ Deno.serve(async (req) => {
 
   try {
     const { latitude, longitude } = await req.json();
+
+    // Validate coordinates are numeric and within Belize bounds
+    if (latitude !== undefined && longitude !== undefined) {
+      if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
+          !isFinite(latitude) || !isFinite(longitude) ||
+          latitude < 15.889 || latitude > 18.497 ||
+          longitude < -89.225 || longitude > -87.485) {
+        return errorResponse('Invalid coordinates', 400);
+      }
+    }
 
     const supabase = createServiceClient();
 
@@ -93,9 +103,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ sent: true, to: user.emergency_contact });
   } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : 'SOS send failed',
-      500,
-    );
+    console.error('send-sms-sos error:', error);
+    return errorResponse('SOS send failed', 500);
   }
 });

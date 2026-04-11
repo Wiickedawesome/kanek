@@ -71,6 +71,7 @@ export function InviteAdminForm() {
               onChange={(e) => setFirstName(e.target.value)}
               required
               placeholder="Jane"
+              maxLength={50}
               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
             />
           </div>
@@ -81,6 +82,7 @@ export function InviteAdminForm() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
+              maxLength={50}
               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
             />
           </div>
@@ -94,6 +96,7 @@ export function InviteAdminForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="admin@example.com"
+            maxLength={100}
             className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
           />
         </div>
@@ -105,8 +108,8 @@ export function InviteAdminForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={8}
-            placeholder="Min 8 characters"
+            minLength={12}
+            placeholder="Min 12 chars, upper + lower + digit"
             className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-forest-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-green focus:border-transparent"
           />
         </div>

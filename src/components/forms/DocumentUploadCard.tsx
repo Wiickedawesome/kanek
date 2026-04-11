@@ -244,6 +244,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
               placeholder="Optional"
               placeholderTextColor={colors.neutral[400]}
               autoCapitalize="characters"
+              maxLength={30}
             />
           </View>
 

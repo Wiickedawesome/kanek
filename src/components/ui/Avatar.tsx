@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import React from 'react';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, typography, shadows } from '@/theme';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
@@ -25,13 +25,10 @@ function getInitials(name?: string | null): string {
 }
 
 export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
-  const [imgError, setImgError] = useState(false);
   const dim = sizeMap[size];
   const ringWidth = size === 'lg' ? 2.5 : 2;
 
-  const handleError = useCallback(() => setImgError(true), []);
-
-  if (uri && !imgError) {
+  if (uri) {
     return (
       <View
         style={[
@@ -45,14 +42,16 @@ export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
           style,
         ]}
       >
-        <Animated.Image
-          entering={FadeIn.duration(300)}
+        <Image
           source={{ uri }}
-          onError={handleError}
           style={[
             styles.image,
-            { width: dim, height: dim, borderRadius: dim / 2 } as ImageStyle,
+            { width: dim, height: dim, borderRadius: dim / 2 },
           ]}
+          contentFit="cover"
+          transition={300}
+          recyclingKey={uri}
+          placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
         />
       </View>
     );

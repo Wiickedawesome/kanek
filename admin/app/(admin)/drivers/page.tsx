@@ -9,7 +9,8 @@ export default async function DriversPage() {
   const { data: drivers, error } = await supabase
     .from('driver_details')
     .select('id, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate, review_status, verified, profile:profiles!driver_details_id_fkey(first_name, last_name, phone, created_at)')
-    .order('review_status', { ascending: true });
+    .order('review_status', { ascending: true })
+    .limit(200);
 
   if (error) console.error('drivers query error:', error.message);
 
