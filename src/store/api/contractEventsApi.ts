@@ -17,6 +17,7 @@ export const contractEventsApi = createApi({
   reducerPath: 'contractEventsApi',
   baseQuery: fakeBaseQuery(),
   tagTypes: ['ContractEvent'],
+  keepUnusedDataFor: 60,
   endpoints: (builder) => ({
     getContractEvents: builder.query<ContractEvent[], string>({
       queryFn: async (contractId) => {

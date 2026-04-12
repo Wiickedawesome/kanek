@@ -8,6 +8,7 @@ export const notificationsApi = createApi({
   reducerPath: 'notificationsApi',
   baseQuery: fakeBaseQuery(),
   tagTypes: ['Notification'],
+  keepUnusedDataFor: 30,
   endpoints: (builder) => ({
     getUnreadCount: builder.query<number, string>({
       queryFn: async (userId) => {

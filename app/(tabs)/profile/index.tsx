@@ -295,6 +295,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="receipt"
             label="E-Kyash Wallet"
+            badge="Coming Soon"
             onPress={() => router.push('/(tabs)/profile/wallet')}
           />
           <MenuItem
@@ -369,18 +370,27 @@ function MenuItem({
   icon,
   label,
   subtitle,
+  badge,
   onPress,
 }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   subtitle?: string;
+  badge?: string;
   onPress: () => void;
 }) {
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
       <Icon name={icon} size={20} color={colors.forest[400]} />
       <View style={styles.menuItemContent}>
-        <Text style={styles.menuLabel}>{label}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Text style={styles.menuLabel}>{label}</Text>
+          {badge && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          )}
+        </View>
         {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
       <Icon name="chevron-right" size={16} color={colors.neutral[400]} />
@@ -596,6 +606,20 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.neutral[500],
     marginTop: 2,
+  },
+  badge: {
+    backgroundColor: colors.accent.green + '1A',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: colors.accent.green + '40',
+  },
+  badgeText: {
+    ...typography.caption,
+    color: colors.accent.green,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
   },
   signOutBtn: {
     alignItems: 'center',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { captureError } from '@/lib/sentry';
 import { supabase } from '@/lib/supabase';
 import { addNotification } from '@/store/slices/notificationsSlice';
 import { showToast } from '@/store/slices/toastSlice';
@@ -80,7 +81,7 @@ export function useRealtime() {
                 data: (notif.data as Record<string, unknown>) ?? undefined,
               }));
             } catch (err) {
-              console.error('Failed to parse notification prefs:', err);
+              captureError(err, { context: 'useRealtime.parseNotificationPrefs' });
               // Fallback to showing toast if we can't read prefs securely
               dispatch(showToast({
                 title: notif.title ?? 'New notification',

@@ -21,6 +21,7 @@
     "@react-native-community/netinfo": "11.5.2",
     "@reduxjs/toolkit": "^2.6.1",
     "@rnmapbox/maps": "^10.3.0",
+    "@sentry/react-native": "~7.11.0",
     "@supabase/supabase-js": "^2.49.4",
     "expo": "~55.0.11",
     "expo-blur": "~55.0.12",

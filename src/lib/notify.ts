@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { captureError } from '@/lib/sentry';
 
 export interface NotifyUserPayload {
   userId: string;
@@ -63,6 +64,6 @@ export async function sendPushOnly(payload: SendPushOnlyPayload) {
   });
 
   if (error) {
-    console.warn('Push send failed:', error.message);
+    captureError(error, { context: 'sendPushOnly', payload });
   }
 }

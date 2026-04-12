@@ -90,7 +90,15 @@
           "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "${MAPBOX_DOWNLOAD_TOKEN}"
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "kanekbz"
+        }
+      ]
     ],
     "extra": {
       "router": {},

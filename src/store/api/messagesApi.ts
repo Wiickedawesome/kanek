@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { captureError } from '@/lib/sentry';
 import type { Database } from '@/types/database';
 
 type MessageRow = Database['public']['Tables']['contract_messages']['Row'];
@@ -16,6 +17,7 @@ export const messagesApi = createApi({
   reducerPath: 'messagesApi',
   baseQuery: fakeBaseQuery(),
   tagTypes: ['Message'],
+  keepUnusedDataFor: 30,
   endpoints: (builder) => ({
     getMessages: builder.query<MessageWithSender[], string>({
       queryFn: async (contractId) => {
@@ -74,7 +76,7 @@ export const messagesApi = createApi({
                   data: { contract_id: contractId },
                 },
               });
-              if (pushError) console.warn('[sendMessage] push notification failed:', pushError);
+              if (pushError) captureError(pushError, { context: 'sendMessage.push', contractId });
             }
           }
         } catch {

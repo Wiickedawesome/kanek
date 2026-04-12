@@ -189,6 +189,7 @@ export const bookingsApi = createApi({
   reducerPath: 'bookingsApi',
   baseQuery: fakeBaseQuery(),
   tagTypes: ['Booking', 'Contract'],
+  keepUnusedDataFor: 60,
   endpoints: (builder) => ({
     getMyBookings: builder.query<BookingWithPost[], GetBookingsArgs>({
       queryFn: async ({ userId, status, limit = 20, offset = 0 }) => {
