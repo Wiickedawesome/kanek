@@ -36,6 +36,7 @@ export default function ProfileScreen() {
   const { triggerSOS } = useSOS();
   const [updateProfile] = useUpdateProfileMutation();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   const {
     data: profile,
@@ -116,7 +117,6 @@ export default function ProfileScreen() {
     : 'User';
 
   const hasRecentReviews = (recentReviews?.length ?? 0) > 0;
-  const [showAllReviews, setShowAllReviews] = useState(false);
   const visibleReviews = showAllReviews
     ? (recentReviews ?? [])
     : (recentReviews ?? []).slice(0, 3);
