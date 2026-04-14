@@ -60,14 +60,6 @@ EXPO_PUBLIC_HCAPTCHA_SITE_KEY=your-hcaptcha-site-key
 
 **Important:** Each variable must be on its own line with no trailing spaces. Missing newlines between variables will cause silent failures (learned the hard way).
 
-### Admin Panel (`admin/.env.local`)
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://tlggdherqjvybpddsqjj.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
 ### Edge Function Secrets
 
 Set in Supabase dashboard → Settings → Edge Functions → Secrets:
@@ -92,16 +84,6 @@ npm run ios            # iOS simulator
 npm run android        # Android emulator
 npm run typecheck      # tsc --noEmit
 npm run lint           # ESLint
-```
-
-### Admin Panel
-
-```bash
-cd admin
-npm install
-npm run dev            # Next.js dev server (localhost:3001)
-npm run build          # Production build
-npm run typecheck      # tsc --noEmit
 ```
 
 ### Supabase

@@ -1,10 +1,11 @@
 # Architecture
 
-Kanek is a community mobility board for Belize. The system is split into three layers:
+Kanek is a community mobility board for Belize. The system is split into two layers:
 
 1. **Mobile App** (React Native + Expo) — user-facing feed, posting, booking, payments, tracking
 2. **Backend** (Supabase) — PostgreSQL, Auth, Edge Functions, Realtime, Storage
-3. **Admin Panel** (Next.js) — driver/rider verification, moderation, transaction review
+
+Admin operations are handled via **Supabase Studio** using SQL views and functions (see [admin-studio-workflow.md](admin-studio-workflow.md)).
 
 ---
 
@@ -31,13 +32,13 @@ Kanek is a community mobility board for Belize. The system is split into three l
 │  └──────────────────────────────────────────────────┘   │
 └──────────────────┬──────────────────────────────────────┘
                    │
-        ┌──────────┴──────────┐
-        ▼                     ▼
-┌──────────────┐    ┌─────────────────┐
-│   E-Kyash    │    │  Admin Panel    │
-│   Payment    │    │  Next.js 15.2   │
-│   Gateway    │    │  Tailwind CSS 4 │
-└──────────────┘    └─────────────────┘
+                   │
+                   ▼
+          ┌──────────────┐
+          │   E-Kyash    │
+          │   Payment    │
+          │   Gateway    │
+          └──────────────┘
 ```
 
 ---
@@ -60,9 +61,6 @@ Kanek is a community mobility board for Belize. The system is split into three l
 | Payments | E-Kyash | — | Belizean digital payments (BZD) |
 | Push | Expo Notifications | ~55.0.14 | FCM/APNs push |
 | Email | Resend | — | Transaction receipts |
-| Admin | Next.js | 15.2.4 | Admin dashboard |
-| Admin | Tailwind CSS | 4.1.3 | Styling |
-| Admin | Supabase SSR | 0.5.2 | Server-side auth |
 | Edge Functions | Deno | — | Serverless functions |
 | Node | Node.js | v22 LTS | Runtime |
 

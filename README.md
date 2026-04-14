@@ -61,7 +61,7 @@ kanek/
 │   │   ├── payment/              # E-Kyash payment flow
 │   │   ├── profile/              # Profile cards, trust badges, ratings
 │   │   └── ui/                   # Primitives (Button, TextInput, Badge, Card, etc.)
-│   ├── hooks/                    # useAuth, useLocation, useRealtime, useSOS, useDriverTracking
+│   ├── hooks/                    # useAuth, useRealtime, useSOS, useDriverTracking
 │   ├── lib/                      # Supabase client, Mapbox config, helpers, constants
 │   ├── store/                    # Redux store
 │   │   ├── api/                  # RTK Query API slices (11 slices)
@@ -72,7 +72,6 @@ kanek/
 │   ├── migrations/               # 50 SQL migration files
 │   ├── functions/                # 14 Deno edge functions
 │   └── templates/                # Email templates
-├── admin/                        # Next.js admin panel (separate app)
 ├── docs/                         # Project documentation
 └── assets/                       # Fonts (Work Sans, Manrope), icons, splash
 ```
@@ -175,16 +174,6 @@ npm run typecheck    # tsc --noEmit
 npm run lint         # ESLint
 ```
 
-### Admin Panel
-
-```bash
-cd admin
-npm install
-cp .env.local.example .env.local
-# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-npm run dev          # localhost:3001
-```
-
 ## Database
 
 33 migration files define the schema across 20+ tables with Row Level Security.
@@ -271,18 +260,9 @@ Redux Toolkit with 9 RTK Query API slices (all using `fakeBaseQuery` with Supaba
 
 See [docs/state-management.md](docs/state-management.md) for complete API and slice details.
 
-## Admin Panel
+## Administration
 
-Next.js 15.2.4 dashboard in `admin/` for moderation and management:
-
-- **Driver verification** -- review license, insurance, vehicle documents
-- **Rider document review** -- approve/reject government ID uploads
-- **Post moderation** -- review and remove flagged content
-- **User management** -- issue strikes, suspend/unsuspend accounts
-- **Transaction review** -- monitor E-Kyash payments
-- **Dashboard** -- stats overview, pending queues, recent admin actions
-
-See [docs/admin-panel.md](docs/admin-panel.md) for routes, API endpoints, and setup.
+Admin operations (driver verification, moderation, user management, transaction review) are performed via **Supabase Studio** using SQL views and functions. See [docs/admin-studio-workflow.md](docs/admin-studio-workflow.md) for the complete workflow.
 
 ## Documentation
 
@@ -297,7 +277,7 @@ Complete project documentation lives in the [`docs/`](docs/) folder:
 | [State Management](docs/state-management.md) | Redux store, API slices, hooks |
 | [Design System](docs/design-system.md) | Colors, typography, icons, components |
 | [Environment Setup](docs/environment-setup.md) | Env vars, dev setup, troubleshooting |
-| [Admin Panel](docs/admin-panel.md) | Admin dashboard details |
+| [Admin Workflow](docs/admin-studio-workflow.md) | Supabase Studio admin operations |
 | [Payments](docs/payments.md) | E-Kyash integration flow |
 
 ## App Configuration
