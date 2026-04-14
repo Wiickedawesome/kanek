@@ -31,22 +31,3 @@ jobs:
 
       - name: Test
         run: npm run test -- --passWithNoTests
-
-  admin-check:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: admin
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: admin/package-lock.json
-
-      - run: npm ci
-
-      - name: Typecheck admin
-        run: npx tsc --noEmit

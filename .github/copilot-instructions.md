@@ -19,7 +19,7 @@
 | Payments | Cash (default) + E-Kyash (digital, BZD) | |
 | Push | Expo Notifications + FCM/APNs | |
 | Email | Supabase Edge Functions + Resend | |
-| Admin | Next.js 15.2.4 (App Router, Tailwind CSS 4, Supabase SSR) | |
+| Admin | Supabase Studio (SQL views + functions) | |
 | Edge Functions | Deno (Supabase Edge Functions) | |
 | Node | v22 LTS | |
 
@@ -59,7 +59,6 @@ kanek/
 │   ├── migrations/               # 50 SQL migration files
 │   ├── functions/                # 14 Deno edge functions
 │   └── templates/                # Email templates
-├── admin/                        # Next.js admin panel (separate app)
 └── assets/                       # Fonts (Work Sans, Manrope), icons, splash
 ```
 
@@ -207,13 +206,6 @@ EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=<mapbox-token>
 EXPO_PUBLIC_HCAPTCHA_SITE_KEY=<hcaptcha-site-key>
 ```
 
-**Admin panel** (`admin/.env.local`):
-```
-NEXT_PUBLIC_SUPABASE_URL=https://tlggdherqjvybpddsqjj.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-```
-
 **Edge function secrets** (set in Supabase dashboard):
 ```
 EKYASH_SID, EKYASH_PIN_HASH, EKYASH_API_KEY
@@ -229,8 +221,6 @@ npm run ios                  # iOS simulator
 npm run android              # Android emulator
 npm run typecheck            # tsc --noEmit
 npm run lint                 # ESLint
-
-cd admin && npm run dev      # Admin panel (localhost:3001)
 
 supabase link --project-ref tlggdherqjvybpddsqjj
 supabase db push             # Apply migrations

@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Community Mobility Board for Belize — React Native (Expo SDK 55) + Supabase + Next.js admin.
+Community Mobility Board for Belize — React Native (Expo SDK 55) + Supabase.
 
 ## Architecture
 
-Three apps in one repo: **mobile** (root), **admin** (`admin/`), **edge functions** (`supabase/functions/`).
+Two apps in one repo: **mobile** (root) and **edge functions** (`supabase/functions/`). Admin operations are done via Supabase Studio using SQL views and functions (see `docs/admin-studio-workflow.md`).
 Mobile screens live in `app/` (Expo Router file-based), all business logic in `src/`.
 Path alias `@/*` maps to `src/*` (see `tsconfig.json`).
 
@@ -66,7 +66,6 @@ npm install --legacy-peer-deps    # required flag for peer dep conflicts
 npm start                         # Expo dev server
 npm run typecheck                 # tsc --noEmit
 npm run lint                      # ESLint
-cd admin && npm run dev           # Admin panel (localhost:3001)
 supabase db push                  # Apply migrations
 supabase functions deploy         # Deploy edge functions
 ```

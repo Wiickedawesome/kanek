@@ -31,7 +31,6 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "supabase/functions/**",
-    "admin/**"
+    "supabase/functions/**"
   ]
 }
