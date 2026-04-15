@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { isValidPhone } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
@@ -10,9 +10,11 @@ import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
 
 type AuthMode = 'phone' | 'email';
 
-export default function PhoneVerifyScreen() {
+export default function LoginScreen() {
+  const { signup } = useLocalSearchParams<{ signup?: string }>();
+  const isSignUp = signup === '1';
   const { signInWithPhone, verifyOtp, signInWithEmail, verifyEmailOtp } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('phone');
+  const [mode, setMode] = useState<AuthMode>('email');
   const [phone, setPhone] = useState('+501');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -40,17 +42,21 @@ export default function PhoneVerifyScreen() {
     setIsSubmitting(true);
     try {
       if (mode === 'phone') {
-        const { error } = await signInWithPhone(phone, captchaToken);
+        const { error } = await signInWithPhone(phone, captchaToken, isSignUp);
         if (error) {
           captchaRef.current?.resetCaptcha();
-          showAlert('Error', error.message);
+          showAlert('Error', error.message === 'Signups not allowed for otp'
+            ? 'No account found. Please sign up first.'
+            : error.message);
           return;
         }
       } else {
-        const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken);
+        const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken, isSignUp);
         if (error) {
           captchaRef.current?.resetCaptcha();
-          showAlert('Error', error.message);
+          showAlert('Error', error.message === 'Signups not allowed for otp'
+            ? 'No account found. Please sign up first.'
+            : error.message);
           return;
         }
       }
@@ -97,14 +103,20 @@ export default function PhoneVerifyScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>
           {isInputStep
-            ? mode === 'phone' ? 'Enter your number' : 'Enter your email'
+            ? isSignUp
+              ? mode === 'phone' ? 'Create your account' : 'Create your account'
+              : mode === 'phone' ? 'Welcome back' : 'Welcome back'
             : 'Verify your account'}
         </Text>
         <Text style={styles.subtitle}>
           {isInputStep
-            ? mode === 'phone'
-              ? 'We\'ll send you a verification code via SMS'
-              : 'We\'ll send you a verification code via email'
+            ? isSignUp
+              ? mode === 'phone'
+                ? 'Enter your phone number to get started'
+                : 'Enter your email to get started'
+              : mode === 'phone'
+                ? 'Enter your phone number to sign in'
+                : 'Enter your email to sign in'
             : `Code sent to ${identifier}`}
         </Text>
 

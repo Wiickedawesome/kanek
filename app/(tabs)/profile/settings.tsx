@@ -119,7 +119,8 @@ export default function SettingsScreen() {
       }
 
       showAlert('Saved', 'Your profile has been updated.');
-    } catch {
+    } catch (err) {
+      console.error('[Settings] Save failed:', err);
       showAlert('Error', 'Could not save profile. Please try again.');
     }
   }, [userId, firstName, lastName, email, emergencyContact, role, district, addressLine, updateProfile, switchToDriver, switchToRider, profile?.role]);
@@ -320,18 +321,21 @@ export default function SettingsScreen() {
             {isPhoneInputStep ? (
               <>
                 <Text style={styles.modalDesc}>
-                  Enter your new Belize phone number. A verification code will be sent via SMS.
+                  Enter your new Belize phone number. You can enter just the 7 digits.
                 </Text>
-                <TextInput
-                  style={styles.input}
-                  value={newPhone}
-                  onChangeText={setNewPhone}
-                  placeholder="+501 000 0000"
-                  placeholderTextColor={colors.neutral[400]}
-                  keyboardType="phone-pad"
-                  autoFocus
-                  maxLength={20}
-                />
+                <View style={styles.phoneInputRow}>
+                  <Text style={styles.phonePrefix}>+501</Text>
+                  <TextInput
+                    style={[styles.input, styles.phoneModalInput]}
+                    value={newPhone}
+                    onChangeText={setNewPhone}
+                    placeholder="600 0000"
+                    placeholderTextColor={colors.neutral[400]}
+                    keyboardType="phone-pad"
+                    autoFocus
+                    maxLength={15}
+                  />
+                </View>
               </>
             ) : (
               <>
@@ -488,6 +492,9 @@ const styles = StyleSheet.create({
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   phoneInput: { flex: 1 },
   phoneText: { ...typography.body1, color: colors.forest[900] },
+  phoneInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  phonePrefix: { ...typography.body1Bold, color: colors.forest[900] },
+  phoneModalInput: { flex: 1 },
   changeBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,

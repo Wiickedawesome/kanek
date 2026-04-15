@@ -11,22 +11,21 @@ export default function WelcomeScreen() {
         <Text style={styles.brand}>kanek</Text>
         <Text style={styles.tagline}>Move Belize Forward</Text>
         <Text style={styles.description}>
-          A community board where Belizeans post mobility needs — rides, routes,
-          errands, deliveries — and others respond.
+          A community board where Belizeans post mobility needs and others respond.
         </Text>
       </View>
 
       <View style={styles.actions}>
         <Pressable
           style={styles.primaryButton}
-          onPress={() => router.push('/(auth)/phone-verify')}
+          onPress={() => router.push({ pathname: '/(auth)/login', params: { signup: '1' } })}
         >
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </Pressable>
 
         <Pressable
           style={styles.secondaryButton}
-          onPress={() => router.push('/(auth)/phone-verify')}
+          onPress={() => router.push({ pathname: '/(auth)/login', params: { signup: '0' } })}
         >
           <Text style={styles.secondaryButtonText}>I already have an account</Text>
         </Pressable>

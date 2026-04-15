@@ -45,6 +45,7 @@ export const POI_CATEGORY_LABELS: Record<string, string> = {
   pharmacy: 'Pharmacy',
   community: 'Community',
   market: 'Market',
+  street: 'Street',
 };
 
 // ── Lazy-init search index (deferred from import time) ───────────
@@ -52,16 +53,43 @@ export const POI_CATEGORY_LABELS: Record<string, string> = {
 const pois = poisRaw as RawPoi[];
 
 /** Lowercase name + category for fast matching — built on first use */
-let _searchIndex: { lowerName: string; lowerCategory: string }[] | null = null;
+let _searchIndex: { lowerName: string; lowerCategory: string; lowerAddr: string }[] | null = null;
 
 function getSearchIndex() {
   if (!_searchIndex) {
     _searchIndex = pois.map((p) => ({
       lowerName: p.n.toLowerCase(),
       lowerCategory: p.c.toLowerCase(),
+      lowerAddr: (p.a ?? '').toLowerCase(),
     }));
   }
   return _searchIndex;
+}
+
+// ── Place-name formatting ────────────────────────────────────────
+
+/**
+ * Build a human-readable place_name from a POI entry.
+ * For streets: "6th Street, Stann Creek" (name + district only).
+ * For POIs:    "Tony's, 123 Main St, Store" (name + address + label).
+ */
+function buildPlaceName(poi: RawPoi): string {
+  const label = POI_CATEGORY_LABELS[poi.c] ?? poi.c;
+
+  if (poi.c === 'street') {
+    // Address field is "HighwayType, District" — extract just the district
+    const district = poi.a?.includes(', ')
+      ? poi.a.substring(poi.a.indexOf(', ') + 2)
+      : poi.a;
+    const parts = [poi.n];
+    if (district) parts.push(district);
+    return parts.join(', ');
+  }
+
+  const parts = [poi.n];
+  if (poi.a) parts.push(poi.a);
+  parts.push(label);
+  return parts.join(', ');
 }
 
 // ── Nearest POI (for reverse geocoding) ─────────────────────────
@@ -99,14 +127,10 @@ export function findNearestPoi(
   if (bestDist > radiusSq) return null;
 
   const poi = pois[bestIdx];
-  const label = POI_CATEGORY_LABELS[poi.c] ?? poi.c;
-  const parts = [poi.n];
-  if (poi.a) parts.push(poi.a);
-  parts.push(label);
 
   return {
     id: `local-poi-nearest-${poi.lt}-${poi.ln}`,
-    place_name: parts.join(', '),
+    place_name: buildPlaceName(poi),
     lat: poi.lt,
     lng: poi.ln,
     category: poi.c,
@@ -116,8 +140,8 @@ export function findNearestPoi(
 // ── Search ──────────────────────────────────────────────────────
 
 /**
- * Search local Belize POIs by name. Returns instant results (no network).
- * Scores: exact prefix > word-boundary match > substring match.
+ * Search local Belize POIs by name or address. Returns instant results (no network).
+ * Scores: exact prefix > word-boundary match > substring match > address match.
  */
 export function searchLocalPois(query: string, limit = 5): PoiResult[] {
   if (query.length < 2) return [];
@@ -129,14 +153,14 @@ export function searchLocalPois(query: string, limit = 5): PoiResult[] {
 
   const idx = getSearchIndex();
   for (let i = 0; i < pois.length; i++) {
-    const { lowerName, lowerCategory } = idx[i];
+    const { lowerName, lowerCategory, lowerAddr } = idx[i];
 
-    // Skip if none of the query words appear in name or category
-    if (!words.some((w) => lowerName.includes(w) || lowerCategory.includes(w))) continue;
+    // Skip if none of the query words appear in name, category, or address
+    if (!words.some((w) => lowerName.includes(w) || lowerCategory.includes(w) || lowerAddr.includes(w))) continue;
 
     let score = 0;
 
-    // Exact prefix match on full query (best)
+    // Exact prefix match on full query in name (best)
     if (lowerName.startsWith(q)) {
       score = 100;
     }
@@ -147,6 +171,18 @@ export function searchLocalPois(query: string, limit = 5): PoiResult[] {
     // All query words present in name
     else if (words.every((w) => lowerName.includes(w))) {
       score = 60;
+    }
+    // Address matches — exact prefix on address (e.g. "burns avenue")
+    else if (lowerAddr && lowerAddr.startsWith(q)) {
+      score = 55;
+    }
+    // All query words present in address
+    else if (lowerAddr && words.every((w) => lowerAddr.includes(w))) {
+      score = 50;
+    }
+    // Some query words in address
+    else if (lowerAddr && words.some((w) => lowerAddr.includes(w))) {
+      score = 35;
     }
     // Category match + partial name match
     else if (lowerCategory.includes(q) || words.some((w) => lowerCategory === w)) {
@@ -166,18 +202,11 @@ export function searchLocalPois(query: string, limit = 5): PoiResult[] {
   // Sort by score descending, then alphabetically
   scored.sort((a, b) => b.score - a.score || a.poi.n.localeCompare(b.poi.n));
 
-  return scored.slice(0, limit).map(({ poi }, idx) => {
-    const label = POI_CATEGORY_LABELS[poi.c] ?? poi.c;
-    const parts = [poi.n];
-    if (poi.a) parts.push(poi.a);
-    parts.push(label);
-
-    return {
-      id: `local-poi-${idx}-${poi.lt}-${poi.ln}`,
-      place_name: parts.join(', '),
-      lat: poi.lt,
-      lng: poi.ln,
-      category: poi.c,
-    };
-  });
+  return scored.slice(0, limit).map(({ poi }, idx) => ({
+    id: `local-poi-${idx}-${poi.lt}-${poi.ln}`,
+    place_name: buildPlaceName(poi),
+    lat: poi.lt,
+    lng: poi.ln,
+    category: poi.c,
+  }));
 }

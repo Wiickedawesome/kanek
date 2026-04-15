@@ -41,10 +41,10 @@ export function useAuthListener() {
 export function useAuth() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const signInWithPhone = async (phone: string, captchaToken?: string) => {
+  const signInWithPhone = async (phone: string, captchaToken?: string, shouldCreateUser = true) => {
     const { error } = await supabase.auth.signInWithOtp({
       phone,
-      options: captchaToken ? { captchaToken } : undefined,
+      options: { ...(captchaToken ? { captchaToken } : {}), shouldCreateUser },
     });
     return { error };
   };
@@ -54,10 +54,10 @@ export function useAuth() {
     return { error };
   };
 
-  const signInWithEmail = async (email: string, captchaToken?: string) => {
+  const signInWithEmail = async (email: string, captchaToken?: string, shouldCreateUser = true) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: captchaToken ? { captchaToken } : undefined,
+      options: { ...(captchaToken ? { captchaToken } : {}), shouldCreateUser },
     });
     return { error };
   };

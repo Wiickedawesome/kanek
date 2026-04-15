@@ -31,10 +31,25 @@ export const profilesApi = createApi({
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
         if (error)
           return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
+        // Profile row missing (trigger didn't fire) — create it as a fallback
+        if (!data) {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: created, error: insertErr } = await supabase
+            .from('profiles')
+            .insert({ id: userId, email: user?.email ?? null, phone: user?.phone ?? null })
+            .select()
+            .single();
+
+          if (insertErr)
+            return { error: { status: 'CUSTOM_ERROR' as const, error: insertErr.message } };
+          return { data: created as ProfileRow };
+        }
+
         return { data: data as ProfileRow };
       },
       providesTags: (_result, _error, id) => [{ type: 'Profile', id }],
@@ -65,19 +80,18 @@ export const profilesApi = createApi({
       queryFn: async ({ id, updates }) => {
         // Allowlist: only permit user-editable fields
         const ALLOWED_FIELDS = [
-          'first_name', 'last_name', 'bio', 'avatar_url', 'email',
-          'preferred_districts', 'push_token',
-          'district', 'address_line', 'emergency_contact',
+          'first_name', 'last_name', 'avatar_url', 'email',
+          'push_token', 'district', 'address_line', 'emergency_contact',
         ] as const;
         const safeUpdates: Record<string, unknown> = {};
         for (const key of ALLOWED_FIELDS) {
           if (key in updates) safeUpdates[key] = (updates as Record<string, unknown>)[key];
         }
 
+        // Use upsert so save works even if profile row is missing (trigger didn't fire)
         const { data, error } = await supabase
           .from('profiles')
-          .update(safeUpdates)
-          .eq('id', id)
+          .upsert({ id, ...safeUpdates }, { onConflict: 'id' })
           .select()
           .single();
 
@@ -214,17 +228,12 @@ export const profilesApi = createApi({
       invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
     }),
 
-    /** Switch back to rider — no document validation needed */
-    switchToRider: builder.mutation<ProfileRow, string>({
+    /** Switch back to rider — uses SECURITY DEFINER RPC to bypass RLS role protection */
+    switchToRider: builder.mutation<null, string>({
       queryFn: async (userId) => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ role: 'rider' })
-          .eq('id', userId)
-          .select()
-          .single();
+        const { error } = await supabase.rpc('switch_to_rider_role' as any, { p_user_id: userId });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: data as ProfileRow };
+        return { data: null };
       },
       invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
     }),

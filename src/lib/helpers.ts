@@ -101,10 +101,25 @@ export function isValidPhone(phone: string): boolean {
   return PHONE_REGEX.test(phone);
 }
 
-/** Strip spaces, dashes, and parens from a phone string for validation */
+/** Normalize a phone string into +501XXXXXXX format when possible */
 export function normalizePhone(raw: string): string | null {
   const stripped = raw.replace(/[\s\-()]/g, '').trim();
-  return stripped || null;
+  if (!stripped) return null;
+
+  // Already in correct format
+  if (/^\+501\d{7}$/.test(stripped)) return stripped;
+
+  // Has +501 prefix but with extra chars already stripped
+  if (stripped.startsWith('+501') && stripped.length > 4) return stripped;
+
+  // 501XXXXXXX without the +
+  if (/^501\d{7}$/.test(stripped)) return `+${stripped}`;
+
+  // Just 7 digits — assume Belize local number
+  if (/^\d{7}$/.test(stripped)) return `+501${stripped}`;
+
+  // Return as-is for validation to reject if needed
+  return stripped;
 }
 
 /** Check if coordinates are within Belize */
