@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { supabase } from '@/lib/supabase';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { profilesApi } from '@/store/api/profilesApi';
+import { profilesApi, useSetInitialRoleMutation } from '@/store/api/profilesApi';
 import type { RootState, AppDispatch } from '@/store';
 
 type RoleChoice = 'rider' | 'driver';
@@ -19,30 +19,41 @@ export default function RoleSelectScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [setInitialRole] = useSetInitialRoleMutation();
 
-  const isFormValid = selected && firstName.trim();
+  const isFormValid = selected && firstName.trim() && lastName.trim();
 
   const handleContinue = async () => {
     if (!isFormValid || !user) return;
     setIsSaving(true);
 
+    // Update name only — RLS policy blocks direct role changes
     const { error } = await supabase
       .from('profiles')
       .update({
         first_name: firstName.trim(),
-        last_name: lastName.trim() || null,
-        role: selected,
+        last_name: lastName.trim(),
       })
       .eq('id', user.id);
 
-    setIsSaving(false);
-
     if (error) {
+      setIsSaving(false);
       showAlert('Error', error.message);
       return;
     }
 
-    // Invalidate cached profile so auth layout picks up the new first_name
+    // Set role via SECURITY DEFINER RPC (bypasses RLS role protection)
+    try {
+      await setInitialRole(selected).unwrap();
+    } catch (err: any) {
+      setIsSaving(false);
+      showAlert('Error', err?.data ?? 'Could not set role. Please try again.');
+      return;
+    }
+
+    setIsSaving(false);
+
+    // Invalidate cached profile so auth layout picks up the new name + role
     dispatch(profilesApi.util.invalidateTags([{ type: 'Profile', id: user.id }]));
 
     router.replace('/(auth)/id-upload');
@@ -65,7 +76,7 @@ export default function RoleSelectScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Last name (optional)"
+          placeholder="Last name"
           placeholderTextColor={colors.neutral[400]}
           value={lastName}
           onChangeText={setLastName}
@@ -81,7 +92,7 @@ export default function RoleSelectScreen() {
             <Text style={[styles.cardTitle, selected === 'rider' && styles.cardTitleSelected]}>
               I need rides
             </Text>
-            <Text style={styles.cardDesc}>Find routes, request errands, browse the board</Text>
+            <Text style={styles.cardDesc}>Find rides, request errands, browse the board</Text>
           </View>
         </Pressable>
 
@@ -94,7 +105,7 @@ export default function RoleSelectScreen() {
             <Text style={[styles.cardTitle, selected === 'driver' && styles.cardTitleSelected]}>
               I drive
             </Text>
-            <Text style={styles.cardDesc}>Post routes, accept bookings, run errands</Text>
+            <Text style={styles.cardDesc}>Post rides, accept bookings, run errands</Text>
           </View>
         </Pressable>
 

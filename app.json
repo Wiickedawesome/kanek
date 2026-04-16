@@ -19,7 +19,7 @@
         "applinks:kanek.bz"
       ],
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Kanek needs your location to show routes and posts near you.",
+        "NSLocationWhenInUseUsageDescription": "Kanek needs your location to show rides and posts near you.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Kanek needs your location to share your position during active trips.",
         "NSCameraUsageDescription": "Kanek needs camera access for ID verification photos.",
         "NSPhotoLibraryUsageDescription": "Kanek needs photo library access for ID verification uploads.",

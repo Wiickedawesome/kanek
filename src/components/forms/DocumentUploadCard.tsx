@@ -65,6 +65,18 @@ function requiresExpiration(_type: DriverDocumentType): boolean {
   return true;
 }
 
+/** Convert DD/MM/YYYY → YYYY-MM-DD for storage */
+function toISODate(ddmmyyyy: string): string {
+  const [dd, mm, yyyy] = ddmmyyyy.split('/');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Convert YYYY-MM-DD → DD/MM/YYYY for display */
+function toDisplayDate(isoDate: string): string {
+  const [yyyy, mm, dd] = isoDate.split('-');
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 /** Label for the document number field */
 function numberFieldLabel(type: DriverDocumentType): string {
   switch (type) {
@@ -79,21 +91,26 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
   const [expanded, setExpanded] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [docNumber, setDocNumber] = useState(existingDoc?.document_number ?? '');
-  const [expirationDate, setExpirationDate] = useState(existingDoc?.expiration_date ?? '');
+  const [expirationDate, setExpirationDate] = useState(
+    existingDoc?.expiration_date ? toDisplayDate(existingDoc.expiration_date) : '',
+  );
   const [uploading, setUploading] = useState(false);
 
   const label = DRIVER_DOC_LABELS[documentType];
   const iconName = DRIVER_DOC_ICONS[documentType];
 
   const pickImage = useCallback(async (useCamera: boolean) => {
-    const permRequest = useCamera
-      ? ImagePicker.requestCameraPermissionsAsync
-      : ImagePicker.requestMediaLibraryPermissionsAsync;
+    // On web, browser handles permissions natively — skip expo permission check
+    if (Platform.OS !== 'web') {
+      const permRequest = useCamera
+        ? ImagePicker.requestCameraPermissionsAsync
+        : ImagePicker.requestMediaLibraryPermissionsAsync;
 
-    const { status: perm } = await permRequest();
-    if (perm !== 'granted') {
-      showAlert('Permission needed', `Please allow ${useCamera ? 'camera' : 'photo library'} access.`);
-      return;
+      const { status: perm } = await permRequest();
+      if (perm !== 'granted') {
+        showAlert('Permission needed', `Please allow ${useCamera ? 'camera' : 'photo library'} access.`);
+        return;
+      }
     }
 
     const launcher = useCamera
@@ -129,11 +146,11 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
       return;
     }
 
-    // Validate date format if provided
+    // Validate date format DD/MM/YYYY
     if (expirationDate.trim()) {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(expirationDate.trim())) {
-        showAlert('Invalid date', 'Expiration date must be YYYY-MM-DD format.');
+        showAlert('Invalid date', 'Expiration date must be DD/MM/YYYY format.');
         return;
       }
     }
@@ -165,7 +182,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
       await onUpsert({
         documentUrl,
         documentNumber: docNumber.trim() || null,
-        expirationDate: expirationDate.trim() || null,
+        expirationDate: expirationDate.trim() ? toISODate(expirationDate.trim()) : null,
       });
 
       setImageUri(null);
@@ -196,7 +213,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
           </Text>
           {existingDoc?.expiration_date && (
             <Text style={[styles.expText, showExpirationWarning && styles.expExpired]}>
-              Expires: {existingDoc.expiration_date}
+              Expires: {toDisplayDate(existingDoc.expiration_date)}
             </Text>
           )}
           {existingDoc?.rejection_reason && (
@@ -256,7 +273,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
                 style={styles.input}
                 value={expirationDate}
                 onChangeText={setExpirationDate}
-                placeholder="YYYY-MM-DD"
+              placeholder="DD/MM/YYYY"
                 placeholderTextColor={colors.neutral[400]}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'}
                 maxLength={10}

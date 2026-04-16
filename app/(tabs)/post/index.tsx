@@ -36,7 +36,7 @@ const POST_OPTIONS: PostTypeOption[] = [
   },
   {
     type: 'route_request',
-    label: 'Request a Route',
+    label: 'Request a Ride',
     description: 'Find or request a ride somewhere',
     icon: 'compass',
     color: colors.accent.blue,

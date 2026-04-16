@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,8 @@ import { safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import type { RootState } from '@/store';
 
+const MESSAGING_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 export default function MessagesScreen() {
   const { contractId } = useLocalSearchParams<{ contractId: string }>();
   const authUser = useSelector((state: RootState) => state.auth.user);
@@ -36,6 +38,15 @@ export default function MessagesScreen() {
   });
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
   const { subscribeToMessages } = useRealtime();
+
+  // Disable messaging 24h after contract is completed or cancelled
+  const messagingExpired = useMemo(() => {
+    if (!contract) return false;
+    const endedStatuses = ['completed', 'cancelled'];
+    if (!endedStatuses.includes(contract.status)) return false;
+    const endedAt = contract.completed_at ?? contract.created_at;
+    return Date.now() - new Date(endedAt).getTime() > MESSAGING_GRACE_PERIOD_MS;
+  }, [contract]);
 
   const [messageText, setMessageText] = useState('');
   const chatListRef = useRef<FlatList<MessageWithSender>>(null);
@@ -128,35 +139,44 @@ export default function MessagesScreen() {
         />
 
         {/* Input bar */}
-        <View style={styles.inputBar}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.neutral[400]}
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={500}
-          />
-          <Pressable
-            style={[
-              styles.sendButton,
-              (!messageText.trim() || isSending) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!messageText.trim() || isSending}
-          >
-            <Icon
-              name="send"
-              size={18}
-              color={
-                !messageText.trim() || isSending
-                  ? colors.neutral[400]
-                  : colors.neutral[0]
-              }
+        {messagingExpired ? (
+          <View style={styles.expiredBar}>
+            <Icon name="lock" size={16} color={colors.neutral[400]} />
+            <Text style={styles.expiredText}>
+              Messaging disabled — this job ended more than 24 hours ago
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.inputBar}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.neutral[400]}
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              maxLength={500}
             />
-          </Pressable>
-        </View>
+            <Pressable
+              style={[
+                styles.sendButton,
+                (!messageText.trim() || isSending) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSend}
+              disabled={!messageText.trim() || isSending}
+            >
+              <Icon
+                name="send"
+                size={18}
+                color={
+                  !messageText.trim() || isSending
+                    ? colors.neutral[400]
+                    : colors.neutral[0]
+                }
+              />
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -261,5 +281,21 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: colors.neutral[200],
+  },
+  expiredBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+    backgroundColor: colors.neutral[100],
+  },
+  expiredText: {
+    ...typography.caption,
+    color: colors.neutral[400],
+    flexShrink: 1,
   },
 });

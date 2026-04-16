@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { showAlert, showConfirm } from '@/lib/alert';
@@ -331,12 +332,12 @@ export default function ProfileScreen() {
           <MenuItem
             icon="clipboard-list"
             label="Privacy Policy"
-            onPress={() => router.push('/(tabs)/profile/privacy')}
+            onPress={() => Linking.openURL('https://kanek.bz/privacy')}
           />
           <MenuItem
             icon="clipboard-list"
             label="Terms of Service"
-            onPress={() => router.push('/(tabs)/profile/terms')}
+            onPress={() => Linking.openURL('https://kanek.bz/terms')}
           />
         </View>
 

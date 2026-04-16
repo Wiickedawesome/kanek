@@ -22,6 +22,7 @@ import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyBookingsQuery, useGetMyContractsQuery, useCancelBookingMutation, type BookingWithPost, type ContractWithDetails } from '@/store/api/bookingsApi';
 import { useGetMyPostsQuery, useDeletePostMutation, type ActiveBookingPreview, type MyPostWithBookings } from '@/store/api/postsApi';
+import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
@@ -32,6 +33,7 @@ type Tab = 'my_posts' | 'history';
 const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
 const HISTORY_CONTRACT_STATUSES: ContractStatus[] = ['completed', 'cancelled'];
 const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
+const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
 
 export default function ActivityScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -39,7 +41,10 @@ export default function ActivityScreen() {
   const [tab, setTab] = useState<Tab>(initialTab);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
 
-  const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
+  const { data: unreadCount = 0 } = useGetUnreadCountQuery(userId ?? '', {
+    skip: !userId,
+    pollingInterval: 60_000,
+  });
 
   const {
     data: bookings,
@@ -70,6 +75,22 @@ export default function ActivityScreen() {
     { userId: userId ?? '' },
     { skip: !userId || tab !== 'my_posts' },
   );
+
+  const {
+    data: activeContracts,
+    isLoading: activeContractsLoading,
+    isFetching: activeContractsFetching,
+    refetch: refetchActiveContracts,
+  } = useGetMyContractsQuery(
+    { userId: userId ?? '', status: ACTIVE_CONTRACT_STATUSES },
+    { skip: !userId || tab !== 'my_posts' },
+  );
+
+  // Active contracts where user is booker/helper (not post author)
+  const activeJobs = React.useMemo(() => {
+    if (!activeContracts || !userId) return [];
+    return activeContracts.filter(c => c.post?.author_id !== userId);
+  }, [activeContracts, userId]);
 
   const [deletePost] = useDeletePostMutation();
   const [cancelBooking] = useCancelBookingMutation();
@@ -117,11 +138,12 @@ export default function ActivityScreen() {
   const onRefresh = useCallback(() => {
     if (tab === 'my_posts') {
       refetchPosts();
+      refetchActiveContracts();
     } else {
       refetchBookings();
       refetchContracts();
     }
-  }, [tab, refetchPosts, refetchBookings, refetchContracts]);
+  }, [tab, refetchPosts, refetchActiveContracts, refetchBookings, refetchContracts]);
 
   const renderBooking = useCallback(
     ({ item, index }: { item: BookingWithPost; index?: number }) => {
@@ -378,30 +400,56 @@ export default function ActivityScreen() {
     [handleDeletePost, getContractIdForPost],
   );
 
-  type MyPostSection = { title: string; data: MyPostWithBookings[] };
+  type SectionItem =
+    | { kind: 'post'; data: MyPostWithBookings }
+    | { kind: 'contract'; data: ContractWithDetails };
 
-  const sections = React.useMemo((): MyPostSection[] => {
-    if (!myPosts) return [];
-    const filtered = myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
-    const active: MyPostWithBookings[] = [];
-    const regular: MyPostWithBookings[] = [];
+  type ActivitySection = { title: string; data: SectionItem[] };
 
-    for (const post of filtered) {
-      if (post.status === 'filled') {
-        active.push(post);
-      } else {
-        regular.push(post);
-      }
+  const sections = React.useMemo((): ActivitySection[] => {
+    const result: ActivitySection[] = [];
+
+    // Active jobs (user is booker/helper, not post author)
+    if (activeJobs.length > 0) {
+      result.push({
+        title: 'Active Jobs',
+        data: activeJobs.map(c => ({ kind: 'contract' as const, data: c })),
+      });
     }
 
-    const result: MyPostSection[] = [];
-    if (active.length > 0) result.push({ title: 'Active', data: active });
-    if (regular.length > 0) result.push({ title: 'My Posts', data: regular });
+    if (myPosts) {
+      const filtered = myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
+      const active: SectionItem[] = [];
+      const regular: SectionItem[] = [];
+
+      for (const post of filtered) {
+        const item: SectionItem = { kind: 'post', data: post };
+        if (post.status === 'filled') {
+          active.push(item);
+        } else {
+          regular.push(item);
+        }
+      }
+
+      if (active.length > 0) result.push({ title: 'Active', data: active });
+      if (regular.length > 0) result.push({ title: 'My Posts', data: regular });
+    }
+
     return result;
-  }, [myPosts]);
+  }, [myPosts, activeJobs]);
+
+  const renderSectionItem = useCallback(
+    ({ item, index }: { item: SectionItem; index: number }) => {
+      if (item.kind === 'contract') {
+        return renderContract({ item: item.data, index });
+      }
+      return renderMyPost({ item: item.data, index });
+    },
+    [renderContract, renderMyPost],
+  );
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: MyPostSection }) => (
+    ({ section }: { section: ActivitySection }) => (
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionHeaderText}>{section.title}</Text>
       </View>
@@ -409,8 +457,8 @@ export default function ActivityScreen() {
     [],
   );
 
-  const isLoading = tab === 'my_posts' ? postsLoading : (bookingsLoading || contractsLoading);
-  const isFetching = tab === 'my_posts' ? postsFetching : (bookingsFetching || contractsFetching);
+  const isLoading = tab === 'my_posts' ? (postsLoading || activeContractsLoading) : (bookingsLoading || contractsLoading);
+  const isFetching = tab === 'my_posts' ? (postsFetching || activeContractsFetching) : (bookingsFetching || contractsFetching);
 
   let content: React.ReactNode;
 
@@ -424,9 +472,9 @@ export default function ActivityScreen() {
     content = (
       <SectionList
         sections={sections}
-        renderItem={renderMyPost}
+        renderItem={renderSectionItem}
         renderSectionHeader={renderSectionHeader}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.kind === 'contract' ? `c_${item.data.id}` : item.data.id}
         contentContainerStyle={styles.feed}
         initialNumToRender={8}
         maxToRenderPerBatch={6}

@@ -139,7 +139,7 @@ export const selectTopRoutes = createSelector(
   (posts, typeFilter, userDistrict) => {
     if (typeFilter !== null) return [];
     const routes = (posts ?? []).filter(
-      (p) => p.type === 'route_offer' || p.type === 'route_request',
+      (p) => p.type === 'route_offer',
     );
     if (userDistrict) {
       routes.sort((a, b) => {

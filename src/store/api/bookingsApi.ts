@@ -132,7 +132,7 @@ function buildAuthorJoinNotification(
     return {
       type: 'new_applicant',
       title: 'Driver Offered!',
-      body: `${bookerName} offered to drive your route "${postTitle}". Review and accept.`,
+      body: `${bookerName} offered to drive your ride "${postTitle}". Review and accept.`,
     };
   }
 

@@ -321,6 +321,14 @@ export default function PostDetailScreen({ backFallback }: Props) {
       );
     }
   } else if (showOpenBookingBar) {
+    const isRiderOnRouteRequest = myProfile?.role === 'rider' && post.type === 'route_request';
+    if (isRiderOnRouteRequest) {
+      bottomAction = (
+        <View style={styles.bottomBar}>
+          <Text style={styles.bottomStatusText}>Only drivers can offer to drive</Text>
+        </View>
+      );
+    } else {
     bottomAction = (
       <View style={styles.bottomBar}>
         <Button
@@ -370,6 +378,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         />
       </View>
     );
+    }
   } else if (showOwnerActiveBar) {
     bottomAction = (
       <View style={styles.bottomBar}>
@@ -733,8 +742,8 @@ function getBookingRole(postType: string): 'rider' | 'driver' {
 
 function getConfirmMessage(type: string): string {
   switch (type) {
-    case 'route_offer': return 'Book 1 seat on this route?';
-    case 'route_request': return 'Offer to drive this route?';
+    case 'route_offer': return 'Book 1 seat on this ride?';
+    case 'route_request': return 'Offer to drive this ride?';
     case 'errand': return 'Accept this errand?';
     case 'package': return 'Offer to deliver this package?';
     case 'job': return 'Apply for this job?';

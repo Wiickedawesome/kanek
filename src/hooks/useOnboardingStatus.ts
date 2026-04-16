@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetDriverDetailsQuery, useGetLatestRiderDocumentQuery, useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { useReactivateAccountMutation } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 
 export function useOnboardingStatus() {
@@ -10,7 +12,20 @@ export function useOnboardingStatus() {
     skip: !userId,
   });
 
-  const needsRoleSelection = !!userId && !!profile && !profile.first_name;
+  // Auto-reactivate if user signed back in within 90-day recovery window
+  const [reactivateAccount] = useReactivateAccountMutation();
+  const hasTriggeredReactivation = useRef(false);
+  useEffect(() => {
+    if (
+      profile?.account_status === 'suspended_pending_deletion' &&
+      !hasTriggeredReactivation.current
+    ) {
+      hasTriggeredReactivation.current = true;
+      reactivateAccount();
+    }
+  }, [profile?.account_status, reactivateAccount]);
+
+  const needsRoleSelection = !!userId && !!profile && (!profile.first_name || !profile.last_name);
 
   const { data: riderDocument, isLoading: riderDocumentLoading } = useGetLatestRiderDocumentQuery(
     userId ?? '',

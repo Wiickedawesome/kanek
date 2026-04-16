@@ -237,6 +237,37 @@ export const profilesApi = createApi({
       },
       invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
     }),
+
+    /** Set role during onboarding — no doc checks, just declares intent */
+    setInitialRole: builder.mutation<null, 'rider' | 'driver'>({
+      queryFn: async (role) => {
+        const { error } = await supabase.rpc('set_initial_role' as any, { p_role: role });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: () => ['Profile'],
+    }),
+
+    /** Delete account via edge function — soft-delete with 90-day recovery */
+    deleteAccount: builder.mutation<{ success: boolean }, void>({
+      queryFn: async () => {
+        const { data, error } = await supabase.functions.invoke('delete-account', {
+          body: {},
+        });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: data as { success: boolean } };
+      },
+    }),
+
+    /** Reactivate account — clears suspended_pending_deletion within 90-day window */
+    reactivateAccount: builder.mutation<null, void>({
+      queryFn: async () => {
+        const { error } = await supabase.rpc('reactivate_account');
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: ['Profile'],
+    }),
   }),
 });
 
@@ -250,4 +281,7 @@ export const {
   useVerifyPhoneChangeMutation,
   useSwitchToDriverMutation,
   useSwitchToRiderMutation,
+  useSetInitialRoleMutation,
+  useDeleteAccountMutation,
+  useReactivateAccountMutation,
 } = profilesApi;

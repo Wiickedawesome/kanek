@@ -23,6 +23,7 @@ import {
   useSwitchToRiderMutation,
   useRequestPhoneChangeMutation,
   useVerifyPhoneChangeMutation,
+  useDeleteAccountMutation,
 } from '@/store/api/profilesApi';
 import {
   useGetDriverDocumentsQuery,
@@ -31,6 +32,7 @@ import {
   DRIVER_DOC_LABELS,
 } from '@/store/api/driverDocumentsApi';
 import { isValidPhone, normalizePhone, safeGoBack } from '@/lib/helpers';
+import { useAuth } from '@/hooks/useAuth';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
 import { showAlert } from '@/lib/alert';
@@ -54,6 +56,8 @@ export default function SettingsScreen() {
   const [switchToRider] = useSwitchToRiderMutation();
   const [requestPhoneChange, { isLoading: isRequestingPhone }] = useRequestPhoneChangeMutation();
   const [verifyPhoneChange, { isLoading: isVerifyingPhone }] = useVerifyPhoneChangeMutation();
+  const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation();
+  const { signOut } = useAuth();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -69,6 +73,10 @@ export default function SettingsScreen() {
   const [phoneOtp, setPhoneOtp] = useState('');
   const [phoneStep, setPhoneStep] = useState<'input' | 'verify'>('input');
   const [phoneError, setPhoneError] = useState('');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -95,12 +103,17 @@ export default function SettingsScreen() {
 
     const validContact = normalized && isValidPhone(normalized) ? normalized : null;
 
+    if (!firstName.trim() || !lastName.trim()) {
+      showAlert('Name Required', 'First name and last name are both required.');
+      return;
+    }
+
     try {
       await updateProfile({
         id: userId,
         updates: {
-          first_name: firstName.trim() || null,
-          last_name: lastName.trim() || null,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
           email: email.trim() || null,
           emergency_contact: validContact,
           district,
@@ -303,6 +316,17 @@ export default function SettingsScreen() {
           onPress={handleSave}
           disabled={isSaving}
         />
+
+        {/* Delete Account */}
+        <Pressable
+          style={styles.deleteBtn}
+          onPress={() => {
+            setDeleteConfirmText('');
+            setShowDeleteModal(true);
+          }}
+        >
+          <Text style={styles.deleteBtnText}>Delete Account</Text>
+        </Pressable>
       </ScrollView>
 
       {/* Phone Change Modal */}
@@ -415,6 +439,66 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalDesc}>
+              Your account will be deactivated immediately. You have 90 days to sign back in to recover it. After 90 days your personal info is removed, and after 1 year all data is permanently deleted.
+            </Text>
+            <Text style={styles.modalDesc}>
+              Type <Text style={{ fontWeight: '700', color: colors.error }}>DELETE</Text> to confirm.
+            </Text>
+            <TextInput
+              style={[styles.input, { borderColor: deleteConfirmText === 'DELETE' ? colors.error : colors.neutral[300] }]}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              placeholder="Type DELETE"
+              placeholderTextColor={colors.neutral[400]}
+              autoCapitalize="characters"
+              autoFocus
+            />
+            <View style={styles.modalBtns}>
+              <Pressable
+                style={styles.modalCancelBtn}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.deleteConfirmBtn,
+                  deleteConfirmText !== 'DELETE' && styles.deleteConfirmBtnDisabled,
+                ]}
+                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                onPress={async () => {
+                  try {
+                    await deleteAccount().unwrap();
+                    setShowDeleteModal(false);
+                    await signOut();
+                  } catch (err: any) {
+                    showAlert('Delete Failed', err?.error || err?.data || 'Could not delete account. Try again later.');
+                  }
+                }}
+              >
+                <Text style={[
+                  styles.deleteConfirmBtnText,
+                  deleteConfirmText !== 'DELETE' && { opacity: 0.5 },
+                ]}>
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -522,4 +606,24 @@ const styles = StyleSheet.create({
   modalCancelBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   modalCancelText: { ...typography.body2Bold, color: colors.neutral[500] },
   phoneErrorText: { ...typography.caption, color: colors.error },
+
+  deleteBtn: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.error,
+    marginTop: spacing.lg,
+  },
+  deleteBtnText: { ...typography.body1Bold, color: colors.error },
+  deleteConfirmBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.error,
+  },
+  deleteConfirmBtnDisabled: {
+    backgroundColor: colors.neutral[200],
+  },
+  deleteConfirmBtnText: { ...typography.body2Bold, color: colors.neutral[0] },
 });

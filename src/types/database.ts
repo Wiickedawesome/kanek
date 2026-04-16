@@ -1,30 +1,3 @@
-// Convenience type aliases — mirrors Database['public']['Enums'][...]
-// Regenerate with `supabase gen types typescript` after pushing migrations
-export type Role = 'rider' | 'driver' | 'admin';
-export type AccountStatus = 'pending' | 'active' | 'restricted' | 'suspended' | 'dormant';
-export type ReviewStatus = 'pending' | 'approved' | 'rejected';
-export type PostType = 'route_offer' | 'route_request' | 'errand' | 'package' | 'job';
-export type PostStatus = 'open' | 'activated' | 'in_progress' | 'filled' | 'completed' | 'cancelled' | 'expired';
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'rejected' | 'no_show' | 'completed';
-export type ContractStatus = 'active' | 'completed' | 'disputed' | 'cancelled';
-export type PaymentMethod = 'cash' | 'ekyash';
-export type StrikeType = 'soft' | 'hard';
-export type EkyashStatus = 'pending' | 'approved' | 'cancelled' | 'refunded';
-export type FlagReason = 'spam' | 'scam' | 'harassment' | 'fake_account' | 'safety' | 'other';
-export type FlagStatus = 'pending' | 'reviewed' | 'action_taken' | 'dismissed';
-export type ErrandCategory = 'grocery' | 'bill' | 'pharmacy' | 'document' | 'delivery' | 'food' | 'hardware' | 'other';
-export type PickupStyle = 'single' | 'multi_stop';
-export type RoadReportType = 'accident' | 'checkpoint' | 'traffic' | 'flooding' | 'construction' | 'road_damage';
-export type JobCategory = 'skilled_trade' | 'cleaning' | 'delivery' | 'handyman' | 'landscaping' | 'moving' | 'tutoring' | 'tech' | 'other';
-export type PayType = 'hourly' | 'fixed';
-export type JobTimeline = 'asap' | 'today' | 'this_week' | 'flexible';
-export type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
-export type BookingRole = 'rider' | 'driver';
-export type BelizeDistrict = 'belize' | 'cayo' | 'corozal' | 'orange_walk' | 'stann_creek' | 'toledo';
-export type DriverDocumentType = 'drivers_license' | 'vehicle_insurance' | 'vehicle_registration';
-export type FlagTarget = 'post' | 'user' | 'booking';
-export type AdminActionType = 'approve_driver' | 'reject_driver' | 'approve_rider_doc' | 'reject_rider_doc' | 'suspend_user' | 'unsuspend_user' | 'remove_post' | 'dismiss_flag' | 'issue_strike';
-
 export type Json =
   | string
   | number
@@ -73,6 +46,13 @@ export type Database = {
           target_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "admin_actions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
           {
             foreignKeyName: "admin_actions_admin_id_fkey"
             columns: ["admin_id"]
@@ -137,8 +117,22 @@ export type Database = {
             foreignKeyName: "bookings_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
+            referencedRelation: "admin_posts_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "bookings_user_id_fkey"
@@ -158,36 +152,36 @@ export type Database = {
       }
       contract_events: {
         Row: {
-          id: string
-          contract_id: string
           actor_id: string
-          event_type: string
-          note: string | null
+          contract_id: string
           created_at: string
+          event_type: string
+          id: string
+          note: string | null
         }
         Insert: {
-          id?: string
-          contract_id: string
           actor_id: string
-          event_type: string
-          note?: string | null
+          contract_id: string
           created_at?: string
+          event_type: string
+          id?: string
+          note?: string | null
         }
         Update: {
-          id?: string
-          contract_id?: string
           actor_id?: string
-          event_type?: string
-          note?: string | null
+          contract_id?: string
           created_at?: string
+          event_type?: string
+          id?: string
+          note?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "contract_events_contract_id_fkey"
-            columns: ["contract_id"]
+            foreignKeyName: "contract_events_actor_id_fkey"
+            columns: ["actor_id"]
             isOneToOne: false
-            referencedRelation: "contracts"
-            referencedColumns: ["id"]
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "contract_events_actor_id_fkey"
@@ -196,64 +190,18 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      driver_documents: {
-        Row: {
-          id: string
-          profile_id: string
-          document_type: Database["public"]["Enums"]["driver_document_type"]
-          document_url: string
-          document_number: string | null
-          expiration_date: string | null
-          review_status: Database["public"]["Enums"]["review_status"]
-          rejection_reason: string | null
-          reviewed_by: string | null
-          reviewed_at: string | null
-          uploaded_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          profile_id: string
-          document_type: Database["public"]["Enums"]["driver_document_type"]
-          document_url: string
-          document_number?: string | null
-          expiration_date?: string | null
-          review_status?: Database["public"]["Enums"]["review_status"]
-          rejection_reason?: string | null
-          reviewed_by?: string | null
-          reviewed_at?: string | null
-          uploaded_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          profile_id?: string
-          document_type?: Database["public"]["Enums"]["driver_document_type"]
-          document_url?: string
-          document_number?: string | null
-          expiration_date?: string | null
-          review_status?: Database["public"]["Enums"]["review_status"]
-          rejection_reason?: string | null
-          reviewed_by?: string | null
-          reviewed_at?: string | null
-          uploaded_at?: string
-          created_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "driver_documents_profile_id_fkey"
-            columns: ["profile_id"]
+            foreignKeyName: "contract_events_actor_id_fkey"
+            columns: ["actor_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "driver_documents_reviewed_by_fkey"
-            columns: ["reviewed_by"]
+            foreignKeyName: "contract_events_contract_id_fkey"
+            columns: ["contract_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
         ]
@@ -287,6 +235,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contracts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "contract_messages_sender_id_fkey"
@@ -365,6 +320,13 @@ export type Database = {
             foreignKeyName: "contracts_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
+            referencedRelation: "admin_posts_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
@@ -423,6 +385,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contracts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_checkins_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "driver_checkins_driver_id_fkey"
@@ -494,6 +463,13 @@ export type Database = {
             foreignKeyName: "driver_details_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -508,12 +484,107 @@ export type Database = {
             foreignKeyName: "driver_details_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_details_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "driver_details_verified_by_fkey"
             columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_documents: {
+        Row: {
+          created_at: string
+          document_number: string | null
+          document_type: Database["public"]["Enums"]["driver_document_type"]
+          document_url: string
+          expiration_date: string | null
+          id: string
+          profile_id: string
+          rejection_reason: string | null
+          review_status: Database["public"]["Enums"]["review_status"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_number?: string | null
+          document_type: Database["public"]["Enums"]["driver_document_type"]
+          document_url: string
+          expiration_date?: string | null
+          id?: string
+          profile_id: string
+          rejection_reason?: string | null
+          review_status?: Database["public"]["Enums"]["review_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_number?: string | null
+          document_type?: Database["public"]["Enums"]["driver_document_type"]
+          document_url?: string
+          expiration_date?: string | null
+          id?: string
+          profile_id?: string
+          rejection_reason?: string | null
+          review_status?: Database["public"]["Enums"]["review_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
@@ -587,6 +658,13 @@ export type Database = {
             foreignKeyName: "ekyash_transactions_payee_id_fkey"
             columns: ["payee_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "ekyash_transactions_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -596,6 +674,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ekyash_transactions_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "ekyash_transactions_payer_id_fkey"
@@ -662,8 +747,22 @@ export type Database = {
             foreignKeyName: "email_receipts_ekyash_txn_id_fkey"
             columns: ["ekyash_txn_id"]
             isOneToOne: false
+            referencedRelation: "admin_transactions_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_receipts_ekyash_txn_id_fkey"
+            columns: ["ekyash_txn_id"]
+            isOneToOne: false
             referencedRelation: "ekyash_transactions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_receipts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "email_receipts_user_id_fkey"
@@ -723,6 +822,13 @@ export type Database = {
             foreignKeyName: "flags_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "flags_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -732,6 +838,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flags_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "flags_reviewed_by_fkey"
@@ -817,6 +930,13 @@ export type Database = {
             foreignKeyName: "gas_prices_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "gas_prices_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -865,6 +985,13 @@ export type Database = {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -904,6 +1031,8 @@ export type Database = {
           pickup_notes: string | null
           pickup_style: Database["public"]["Enums"]["pickup_style"] | null
           price_cents: number | null
+          repeat_days: number[] | null
+          return_time: string | null
           route_distance_km: number | null
           route_duration_min: number | null
           route_fuel_cost_cents: number | null
@@ -944,6 +1073,8 @@ export type Database = {
           pickup_notes?: string | null
           pickup_style?: Database["public"]["Enums"]["pickup_style"] | null
           price_cents?: number | null
+          repeat_days?: number[] | null
+          return_time?: string | null
           route_distance_km?: number | null
           route_duration_min?: number | null
           route_fuel_cost_cents?: number | null
@@ -984,6 +1115,8 @@ export type Database = {
           pickup_notes?: string | null
           pickup_style?: Database["public"]["Enums"]["pickup_style"] | null
           price_cents?: number | null
+          repeat_days?: number[] | null
+          return_time?: string | null
           route_distance_km?: number | null
           route_duration_min?: number | null
           route_fuel_cost_cents?: number | null
@@ -997,6 +1130,13 @@ export type Database = {
           vehicle_description?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
           {
             foreignKeyName: "posts_author_id_fkey"
             columns: ["author_id"]
@@ -1019,6 +1159,8 @@ export type Database = {
           address_line: string | null
           avatar_url: string | null
           created_at: string
+          deleted_at: string | null
+          deletion_reason: string | null
           district: Database["public"]["Enums"]["belize_district"] | null
           email: string | null
           emergency_contact: string | null
@@ -1041,6 +1183,8 @@ export type Database = {
           address_line?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
           district?: Database["public"]["Enums"]["belize_district"] | null
           email?: string | null
           emergency_contact?: string | null
@@ -1063,6 +1207,8 @@ export type Database = {
           address_line?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
           district?: Database["public"]["Enums"]["belize_district"] | null
           email?: string | null
           emergency_contact?: string | null
@@ -1128,6 +1274,13 @@ export type Database = {
             foreignKeyName: "ratings_rated_id_fkey"
             columns: ["rated_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1137,6 +1290,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "ratings_rater_id_fkey"
@@ -1190,6 +1350,13 @@ export type Database = {
             foreignKeyName: "rider_documents_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "rider_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1204,6 +1371,13 @@ export type Database = {
             foreignKeyName: "rider_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "rider_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1212,6 +1386,32 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      road_report_gone_votes: {
+        Row: {
+          created_at: string | null
+          report_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          report_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          report_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "road_report_gone_votes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "road_reports"
             referencedColumns: ["id"]
           },
         ]
@@ -1284,6 +1484,13 @@ export type Database = {
             foreignKeyName: "road_reports_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "road_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1336,6 +1543,13 @@ export type Database = {
             foreignKeyName: "strikes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "strikes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1375,8 +1589,22 @@ export type Database = {
             foreignKeyName: "waitlist_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
+            referencedRelation: "admin_posts_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
           },
           {
             foreignKeyName: "waitlist_user_id_fkey"
@@ -1396,6 +1624,242 @@ export type Database = {
       }
     }
     Views: {
+      admin_dashboard_stats: {
+        Row: {
+          active_posts: number | null
+          completed_contracts: number | null
+          pending_drivers: number | null
+          pending_flags: number | null
+          pending_rider_docs: number | null
+          total_users: number | null
+        }
+        Relationships: []
+      }
+      admin_drivers_list: {
+        Row: {
+          account_status: Database["public"]["Enums"]["account_status"] | null
+          created_at: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          phone: string | null
+          rejection_reason: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
+          vehicle_color: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_plate: string | null
+          vehicle_year: number | null
+          verified: boolean | null
+          verified_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_flag_detail: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          reason: Database["public"]["Enums"]["flag_reason"] | null
+          reporter_first_name: string | null
+          reporter_id: string | null
+          reporter_last_name: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["flag_status"] | null
+          target_id: string | null
+          target_post_author_first_name: string | null
+          target_post_author_id: string | null
+          target_post_author_last_name: string | null
+          target_post_status: Database["public"]["Enums"]["post_status"] | null
+          target_post_title: string | null
+          target_post_type: Database["public"]["Enums"]["post_type"] | null
+          target_type: Database["public"]["Enums"]["flag_target"] | null
+          target_user_account_status:
+            | Database["public"]["Enums"]["account_status"]
+            | null
+          target_user_first_name: string | null
+          target_user_last_name: string | null
+          target_user_role: Database["public"]["Enums"]["role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flags_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "flags_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flags_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flags_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "flags_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flags_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_flags_list: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          reason: Database["public"]["Enums"]["flag_reason"] | null
+          reporter_first_name: string | null
+          reporter_last_name: string | null
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["flag_status"] | null
+          target_id: string | null
+          target_type: Database["public"]["Enums"]["flag_target"] | null
+        }
+        Relationships: []
+      }
+      admin_posts_list: {
+        Row: {
+          author_first_name: string | null
+          author_last_name: string | null
+          created_at: string | null
+          departure_at: string | null
+          id: string | null
+          price_cents: number | null
+          seats_filled: number | null
+          seats_total: number | null
+          status: Database["public"]["Enums"]["post_status"] | null
+          title: string | null
+          type: Database["public"]["Enums"]["post_type"] | null
+        }
+        Relationships: []
+      }
+      admin_recent_actions: {
+        Row: {
+          action: Database["public"]["Enums"]["admin_action_type"] | null
+          admin_first_name: string | null
+          admin_last_name: string | null
+          created_at: string | null
+          id: string | null
+          metadata: Json | null
+          reason: string | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Relationships: []
+      }
+      admin_rider_docs_list: {
+        Row: {
+          account_status: Database["public"]["Enums"]["account_status"] | null
+          document_url: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          phone: string | null
+          rejection_reason: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
+          uploaded_at: string | null
+          user_id: string | null
+          verified: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "rider_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rider_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_transactions_list: {
+        Row: {
+          amount_cents: number | null
+          contract_id: string | null
+          created_at: string | null
+          currency: string | null
+          donation_cents: number | null
+          id: string | null
+          invoice_id: string | null
+          order_id: string | null
+          payee_first_name: string | null
+          payee_last_name: string | null
+          payer_first_name: string | null
+          payer_last_name: string | null
+          platform_fee_cents: number | null
+          status: Database["public"]["Enums"]["ekyash_status"] | null
+          transaction_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ekyash_transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"] | null
@@ -1441,13 +1905,114 @@ export type Database = {
         }
         Relationships: []
       }
+      ratings_public: {
+        Row: {
+          comment: string | null
+          contract_id: string | null
+          created_at: string | null
+          id: string | null
+          is_anonymous: boolean | null
+          rated_id: string | null
+          rater_avatar_url: string | null
+          rater_first_name: string | null
+          rater_id: string | null
+          rater_last_name: string | null
+          rater_role: Database["public"]["Enums"]["role"] | null
+          stars: number | null
+          was_on_time: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _admin_check: { Args: { p_admin_id: string }; Returns: undefined }
+      accept_applicant: { Args: { p_booking_id: string }; Returns: undefined }
       accept_job_application: {
         Args: { p_booking_id: string }
         Returns: undefined
       }
+      admin_moderate_flag: {
+        Args: {
+          p_action: string
+          p_admin_id?: string
+          p_flag_id: string
+          p_reason?: string
+        }
+        Returns: string
+      }
+      admin_review_driver: {
+        Args: {
+          p_action: string
+          p_admin_id?: string
+          p_driver_id: string
+          p_reason?: string
+        }
+        Returns: string
+      }
+      admin_review_rider_doc: {
+        Args: {
+          p_action: string
+          p_admin_id?: string
+          p_doc_id: string
+          p_reason?: string
+        }
+        Returns: string
+      }
+      admin_user_action: {
+        Args: {
+          p_action: string
+          p_admin_id?: string
+          p_reason?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      check_driver_documents_complete: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
+      compute_rating_avg: { Args: { p_user_id: string }; Returns: Json }
+      is_active_account: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      process_ekyash_payment: {
+        Args: {
+          p_callback_payload: Json
+          p_order_id: string
+          p_transaction_id: string
+        }
+        Returns: Json
+      }
+      reactivate_account: { Args: never; Returns: undefined }
+      reject_applicant: { Args: { p_booking_id: string }; Returns: undefined }
       reject_job_application: {
         Args: { p_booking_id: string }
         Returns: undefined
@@ -1456,6 +2021,9 @@ export type Database = {
         Args: { report_id: string }
         Returns: undefined
       }
+      set_initial_role: { Args: { p_role: string }; Returns: undefined }
+      switch_to_driver_role: { Args: { p_user_id: string }; Returns: undefined }
+      switch_to_rider_role: { Args: { p_user_id: string }; Returns: undefined }
       upvote_road_report: {
         Args: { report_id: string }
         Returns: {
@@ -1516,6 +2084,7 @@ export type Database = {
         | "remove_post"
         | "dismiss_flag"
         | "issue_strike"
+        | "invite_admin"
       belize_district:
         | "belize"
         | "cayo"
@@ -1530,11 +2099,13 @@ export type Database = {
         | "cancelled"
         | "no_show"
         | "completed"
+        | "rejected"
       contract_status: "active" | "completed" | "disputed" | "cancelled"
       driver_document_type:
         | "drivers_license"
         | "vehicle_insurance"
         | "vehicle_registration"
+        | "police_record"
       ekyash_status: "pending" | "approved" | "cancelled" | "refunded"
       errand_category:
         | "grocery"
@@ -1737,6 +2308,7 @@ export const Constants = {
         "remove_post",
         "dismiss_flag",
         "issue_strike",
+        "invite_admin",
       ],
       belize_district: [
         "belize",
@@ -1753,8 +2325,15 @@ export const Constants = {
         "cancelled",
         "no_show",
         "completed",
+        "rejected",
       ],
       contract_status: ["active", "completed", "disputed", "cancelled"],
+      driver_document_type: [
+        "drivers_license",
+        "vehicle_insurance",
+        "vehicle_registration",
+        "police_record",
+      ],
       ekyash_status: ["pending", "approved", "cancelled", "refunded"],
       errand_category: [
         "grocery",

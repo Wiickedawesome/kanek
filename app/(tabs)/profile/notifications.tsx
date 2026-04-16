@@ -154,8 +154,8 @@ export default function NotificationSettingsScreen() {
           />
           <ToggleRow
             icon="map-pin"
-            label="Routes"
-            description="Route updates and status changes"
+            label="Rides"
+            description="Ride updates and status changes"
             value={prefs.routes}
             onToggle={(v) => updatePref('routes', v)}
           />

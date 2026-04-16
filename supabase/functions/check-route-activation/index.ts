@@ -60,8 +60,8 @@ Deno.serve(async (req) => {
         await supabase.from('notifications').insert({
           user_id: route.author_id,
           type: 'route_activated',
-          title: 'Route Activated!',
-          body: `Your route "${route.title}" has reached the minimum riders and is now active.`,
+          title: 'Ride Activated!',
+          body: `Your ride "${route.title}" has reached the minimum riders and is now active.`,
           data: { postId: route.id },
         });
 
@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
           const notifications = bookings.map((b) => ({
             user_id: b.user_id,
             type: 'route_activated',
-            title: 'Route Confirmed!',
-            body: `The route "${route.title}" is confirmed and will depart as scheduled.`,
+            title: 'Ride Confirmed!',
+            body: `The ride "${route.title}" is confirmed and will depart as scheduled.`,
             data: { postId: route.id },
           }));
           if (notifications.length > 0) {

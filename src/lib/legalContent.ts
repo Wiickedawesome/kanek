@@ -5,7 +5,7 @@ export const PRIVACY_POLICY_SECTIONS = [
   },
   {
     heading: '1. Information We Collect',
-    body: 'We collect the following categories of information:\n\n• Account information: phone number, name, email address, profile photo, district, and role (rider or driver).\n• Identity verification: government-issued ID photos and selfies for driver verification.\n• Driver documents: driver\'s license, insurance, and vehicle details (make, model, year, color, plate number).\n• Location data: GPS coordinates when you use the app to browse posts, create routes, or share your position during active trips.\n• Transaction data: payment amounts, E-Kyash transaction IDs, and payment status for completed transactions.\n• Usage data: posts created, bookings made, ratings given, messages sent within contracts, and interaction with the feed.\n• Device information: push notification tokens, device type, and operating system version.\n• Emergency contact: an optional phone number you provide for the SOS feature.',
+    body: 'We collect the following categories of information:\n\n• Account information: phone number, name, email address, profile photo, district, and role (rider or driver).\n• Identity verification: government-issued ID photos and selfies for driver verification.\n• Driver documents: driver\'s license, insurance, and vehicle details (make, model, year, color, plate number).\n• Location data: GPS coordinates when you use the app to browse posts, create rides, or share your position during active trips.\n• Transaction data: payment amounts, E-Kyash transaction IDs, and payment status for completed transactions.\n• Usage data: posts created, bookings made, ratings given, messages sent within contracts, and interaction with the feed.\n• Device information: push notification tokens, device type, and operating system version.\n• Emergency contact: an optional phone number you provide for the SOS feature.',
   },
   {
     heading: '2. How We Use Your Information',
@@ -21,7 +21,7 @@ export const PRIVACY_POLICY_SECTIONS = [
   },
   {
     heading: '5. Location Data',
-    body: 'We collect location data in two ways:\n\n• When browsing: approximate location to show nearby posts and routes within Belize.\n• During active trips: precise GPS location shared with trip participants for live tracking. Background location is used only during active driver trips and can be revoked at any time through your device settings.\n\nLocation data is not stored beyond what is necessary for the services described above.',
+    body: 'We collect location data in two ways:\n\n• When browsing: approximate location to show nearby posts and rides within Belize.\n• During active trips: precise GPS location shared with trip participants for live tracking. Background location is used only during active driver trips and can be revoked at any time through your device settings.\n\nLocation data is not stored beyond what is necessary for the services described above.',
   },
   {
     heading: '6. Your Rights',
@@ -48,7 +48,7 @@ export const TERMS_OF_SERVICE_SECTIONS = [
   },
   {
     heading: '1. What Kanek Is',
-    body: 'Kanek is a community mobility board for Belize. It is a platform where users can post and discover rides, routes, errands, deliveries, and jobs. Kanek is NOT a dispatch service. Kanek is NOT a ride-hailing app. We do not employ drivers, assign rides, set prices, or guarantee availability. All arrangements are made directly between users.',
+    body: 'Kanek is a community mobility board for Belize. It is a platform where users can post and discover rides, errands, deliveries, and jobs. Kanek is NOT a dispatch service. Kanek is NOT a ride-hailing app. We do not employ drivers, assign rides, set prices, or guarantee availability. All arrangements are made directly between users.',
   },
   {
     heading: '2. Eligibility',
@@ -64,7 +64,7 @@ export const TERMS_OF_SERVICE_SECTIONS = [
   },
   {
     heading: '5. Posts & Content',
-    body: 'Users may create posts for routes, errands, package deliveries, and jobs. All posts must:\n\n• Be accurate and truthful.\n• Include valid locations within Belize.\n• Set prices in Belizean Dollars (BZD) at fair market rates.\n• Not contain inappropriate, illegal, or harmful content.\n\nPosts expire automatically. We reserve the right to remove any post that violates these Terms.',
+    body: 'Users may create posts for rides, errands, package deliveries, and jobs. All posts must:\n\n• Be accurate and truthful.\n• Include valid locations within Belize.\n• Set prices in Belizean Dollars (BZD) at fair market rates.\n• Not contain inappropriate, illegal, or harmful content.\n\nPosts expire automatically. We reserve the right to remove any post that violates these Terms.',
   },
   {
     heading: '6. Payments',

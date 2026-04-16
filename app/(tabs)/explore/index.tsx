@@ -32,7 +32,7 @@ type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'All', value: null },
   { label: 'Routes', value: 'route_offer' },
-  { label: 'Riders', value: 'route_request' },
+  { label: 'Rides', value: 'route_request' },
   { label: 'Errands', value: 'errand' },
   { label: 'Packages', value: 'package' },
   { label: 'Jobs', value: 'job' },
@@ -174,7 +174,7 @@ export default function ExploreScreen() {
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
-              placeholder="Search routes, errands..."
+              placeholder="Search rides, errands..."
               placeholderTextColor={'rgba(255,255,255,0.45)'}
               returnKeyType="search"
             />
@@ -263,7 +263,7 @@ export default function ExploreScreen() {
             <EmptyState
               icon="compass"
               title="No posts yet"
-              message="Be the first to post a route, errand, or job to the community board."
+              message="Be the first to post a ride, errand, or job to the community board."
             />
           )
         }

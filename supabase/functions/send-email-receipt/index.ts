@@ -181,7 +181,7 @@ function buildReceiptHtml(params: {
           <span style="color:#656e5e;">Amount</span>
           <strong style="color:#142800;font-size:20px;">${safe.amount}</strong>
         </div>
-        ${params.description ? `<div style="margin-bottom:8px;"><span style="color:#656e5e;">Route:</span> <span style="color:#142800;">${safe.description}</span></div>` : ''}
+        ${params.description ? `<div style="margin-bottom:8px;"><span style="color:#656e5e;">Ride:</span> <span style="color:#142800;">${safe.description}</span></div>` : ''}
         ${params.reference ? `<div style="margin-bottom:8px;"><span style="color:#656e5e;">Reference:</span> <span style="color:#142800;font-family:monospace;">${safe.reference}</span></div>` : ''}
         ${params.feeBreakdown ? `<div style="margin-bottom:8px;font-size:13px;color:#8b9182;">${safe.feeBreakdown}</div>` : ''}
         <div><span style="color:#656e5e;">Date:</span> <span style="color:#142800;">${safe.date}</span></div>

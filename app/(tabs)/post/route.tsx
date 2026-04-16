@@ -30,6 +30,8 @@ import type { PostType, PickupStyle, PaymentMethod } from '@/types/database';
 
 const safeBack = () => safeGoBack('/(tabs)/post/');
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export default function RouteFormScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const postType = (type as PostType) || 'route_offer';
@@ -53,6 +55,9 @@ export default function RouteFormScreen() {
   const [vehicleDescription, setVehicleDescription] = useState('');
   const [pickupNotes, setPickupNotes] = useState('');
   const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [returnDate, setReturnDate] = useState('');
+  const [returnTime, setReturnTime] = useState('');
+  const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   // Auto-fill vehicle description from driver_details
@@ -71,6 +76,12 @@ export default function RouteFormScreen() {
   }, [driverDetails]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const toggleRepeatDay = useCallback((day: number) => {
+    setRepeatDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
+    );
+  }, []);
 
   // Route calculation state
   const [originCoords, setOriginCoords] = useState<LocationCoords | null>(null);
@@ -165,9 +176,22 @@ export default function RouteFormScreen() {
       }
     }
 
+    // Validate return time for round trips
+    if (isOffer && isRoundTrip) {
+      if (!returnDate.trim()) newErrors.returnDate = 'Return date is required';
+      if (!returnTime.trim()) newErrors.returnTime = 'Return time is required';
+      if (returnDate.trim() && returnTime.trim() && departureDate.trim() && departureTime.trim()) {
+        const depDt = new Date(`${departureDate}T${departureTime}`);
+        const retDt = new Date(`${returnDate}T${returnTime}`);
+        if (!isNaN(retDt.getTime()) && !isNaN(depDt.getTime()) && retDt <= depDt) {
+          newErrors.returnTime = 'Return must be after departure';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription]);
+  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -199,6 +223,8 @@ export default function RouteFormScreen() {
         vehicle_description: isOffer ? vehicleDescription.trim() : null,
         pickup_notes: isOffer && pickupNotes.trim() ? pickupNotes.trim() : null,
         is_round_trip: isOffer ? isRoundTrip : false,
+        return_time: isOffer && isRoundTrip && returnTime.trim() ? returnTime.trim() : null,
+        repeat_days: isOffer && repeatDays.length > 0 ? repeatDays : null,
         payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
@@ -227,7 +253,7 @@ export default function RouteFormScreen() {
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {isOffer ? 'Offer a Route' : 'Request a Route'}
+          {isOffer ? 'Offer a Route' : 'Request a Ride'}
         </Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
@@ -280,18 +306,35 @@ export default function RouteFormScreen() {
 
           <View style={styles.row}>
             <DateInput
-              label="Date"
+              label="Departure date"
               value={departureDate}
               onChangeText={setDepartureDate}
               error={errors.departureDate}
             />
             <TimeInput
-              label="Time"
+              label="Departure time"
               value={departureTime}
               onChangeText={setDepartureTime}
               error={errors.departureTime}
             />
           </View>
+
+          {isOffer && isRoundTrip && (
+            <View style={styles.row}>
+              <DateInput
+                label="Return date"
+                value={returnDate}
+                onChangeText={setReturnDate}
+                error={errors.returnDate}
+              />
+              <TimeInput
+                label="Return time"
+                value={returnTime}
+                onChangeText={setReturnTime}
+                error={errors.returnTime}
+              />
+            </View>
+          )}
 
           <TextInput
             label={isOffer ? 'Price per seat (BZD)' : 'Offering price (BZD)'}
@@ -392,6 +435,35 @@ export default function RouteFormScreen() {
                       Round trip
                     </Text>
                   </Pressable>
+                </View>
+              </View>
+
+              {/* Repeat trip toggle + day-of-week checkboxes */}
+              <View style={styles.pickupSection}>
+                <Text style={styles.fieldLabel}>Repeat trip</Text>
+                <Pressable
+                  style={[styles.repeatToggle, repeatDays.length > 0 && styles.repeatToggleActive]}
+                  onPress={() => {
+                    if (repeatDays.length > 0) setRepeatDays([]);
+                  }}
+                >
+                  <View style={[styles.checkbox, repeatDays.length > 0 && styles.checkboxChecked]} />
+                  <Text style={styles.repeatToggleText}>
+                    This trip repeats on specific days
+                  </Text>
+                </Pressable>
+                <View style={styles.daysRow}>
+                  {DAY_LABELS.map((label, idx) => (
+                    <Pressable
+                      key={idx}
+                      style={[styles.dayChip, repeatDays.includes(idx) && styles.dayChipSelected]}
+                      onPress={() => toggleRepeatDay(idx)}
+                    >
+                      <Text style={[styles.dayChipText, repeatDays.includes(idx) && styles.dayChipTextSelected]}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  ))}
                 </View>
               </View>
 
@@ -537,6 +609,57 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  repeatToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  repeatToggleActive: {},
+  repeatToggleText: {
+    ...typography.body2,
+    color: colors.forest[900],
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.neutral[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.neutral[0],
+  },
+  checkboxChecked: {
+    borderColor: colors.accent.green,
+    backgroundColor: colors.accent.green,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  dayChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    alignItems: 'center',
+    backgroundColor: colors.neutral[0],
+  },
+  dayChipSelected: {
+    borderColor: colors.accent.green,
+    backgroundColor: colors.accent.green,
+  },
+  dayChipText: {
+    ...typography.caption,
+    color: colors.neutral[500],
+  },
+  dayChipTextSelected: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.neutral[0],
   },
   charCount: {
     ...typography.caption,

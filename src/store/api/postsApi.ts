@@ -31,7 +31,7 @@ export interface MyPostWithBookings extends PostWithAuthor {
 }
 
 interface GetPostsArgs {
-  type?: PostType | null;
+  type?: PostType | PostType[] | null;
   status?: PostStatus;
   limit?: number;
   offset?: number;
@@ -71,7 +71,11 @@ export const postsApi = createApi({
           .range(offset, offset + limit - 1);
 
         if (type) {
-          query = query.eq('type', type);
+          if (Array.isArray(type)) {
+            query = query.in('type', type);
+          } else {
+            query = query.eq('type', type);
+          }
         }
 
         if (search) {
@@ -123,6 +127,7 @@ export const postsApi = createApi({
           'departure_at', 'expires_at', 'price_cents', 'seats_total',
           'payment_method', 'pickup_notes', 'pickup_style',
           'is_round_trip', 'vehicle_description', 'min_riders',
+          'return_time', 'repeat_days',
           'route_geometry', 'route_distance_km', 'route_duration_min',
           'route_fuel_cost_cents',
           'errand_category', 'errand_fee_cents', 'item_cost_cents',
