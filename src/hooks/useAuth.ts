@@ -3,6 +3,9 @@ import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { setSession } from '@/store/slices/authSlice';
+import { clearNotifications } from '@/store/slices/notificationsSlice';
+import { dismissToast } from '@/store/slices/toastSlice';
+import { resetLocation } from '@/store/slices/locationSlice';
 import { profilesApi } from '@/store/api/profilesApi';
 import { postsApi } from '@/store/api/postsApi';
 import { bookingsApi } from '@/store/api/bookingsApi';
@@ -81,6 +84,10 @@ export function useAuth() {
     dispatch(messagesApi.util.resetApiState());
     dispatch(contractEventsApi.util.resetApiState());
     dispatch(driverDocumentsApi.util.resetApiState());
+    // Clear sync slices
+    dispatch(clearNotifications());
+    dispatch(dismissToast());
+    dispatch(resetLocation());
     // Clear Supabase session from server + AsyncStorage
     try {
       await supabase.auth.signOut();

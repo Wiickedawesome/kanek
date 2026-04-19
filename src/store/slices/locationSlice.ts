@@ -49,9 +49,12 @@ const locationSlice = createSlice({
     setDriverLocation(state, action: PayloadAction<DriverLocationUpdate | null>) {
       state.driverLocation = action.payload;
     },
+    resetLocation() {
+      return initialState;
+    },
   },
 });
 
-export const { setLocation, setTracking, setActiveContractId, setDriverLocation } =
+export const { setLocation, setTracking, setActiveContractId, setDriverLocation, resetLocation } =
   locationSlice.actions;
 export default locationSlice.reducer;

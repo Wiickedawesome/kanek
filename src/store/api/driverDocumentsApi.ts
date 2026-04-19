@@ -14,12 +14,14 @@ export const DRIVER_DOC_LABELS: Record<DriverDocumentType, string> = {
   drivers_license: "Driver's License",
   vehicle_insurance: 'Vehicle Insurance',
   vehicle_registration: 'Vehicle Registration',
+  police_record: 'Police Record',
 };
 
 export const DRIVER_DOC_ICONS: Record<DriverDocumentType, string> = {
   drivers_license: 'user',
   vehicle_insurance: 'shield-alert',
   vehicle_registration: 'clipboard-list',
+  police_record: 'shield-alert',
 };
 
 export const driverDocumentsApi = createApi({

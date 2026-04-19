@@ -14,7 +14,7 @@ import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { navigateToNotification } from '@/lib/helpers';
 import { hapticLight } from '@/lib/haptics';
 import type { RootState, AppDispatch } from '@/store';
-import { dismissToast } from '@/store/slices/toastSlice';
+import { dismissToast, selectCurrentToast } from '@/store/slices/toastSlice';
 import type { IconName } from '@/components/icons';
 
 const NOTIFICATION_ICON_MAP: Record<string, IconName> = {
@@ -47,7 +47,7 @@ const NOTIFICATION_ICON_MAP: Record<string, IconName> = {
 export function InAppToast() {
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
-  const toast = useSelector((s: RootState) => s.toast.current);
+  const toast = useSelector(selectCurrentToast);
   const translateY = useSharedValue(-120);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 

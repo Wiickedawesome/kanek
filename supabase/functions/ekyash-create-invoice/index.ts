@@ -59,6 +59,20 @@ Deno.serve(async (req) => {
       return errorResponse('Forbidden: caller is not the payer', 403);
     }
 
+    // H-3: Idempotency — reject if there's already a pending transaction for this contract
+    const supabase = createServiceClient();
+    const { data: existingTxn } = await supabase
+      .from('ekyash_transactions')
+      .select('order_id, status')
+      .eq('contract_id', contractId)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existingTxn) {
+      return errorResponse('A pending payment already exists for this contract', 409, req);
+    }
+
     const { sid, pinHash, apiKey } = getEkyashCredentials();
     const apiUrl = getEkyashApiUrl();
 
@@ -119,7 +133,6 @@ Deno.serve(async (req) => {
     const invoiceData = await invoiceRes.json();
 
     // 3. Store transaction record
-    const supabase = createServiceClient();
     const { error: dbError } = await supabase
       .from('ekyash_transactions')
       .insert({

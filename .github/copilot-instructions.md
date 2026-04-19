@@ -56,8 +56,8 @@ kanek/
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 50 SQL migration files
-│   ├── functions/                # 14 Deno edge functions
+│   ├── migrations/               # 11 SQL migration files (squashed)
+│   ├── functions/                # 16 Deno edge functions
 │   └── templates/                # Email templates
 └── assets/                       # Fonts (Work Sans, Manrope), icons, splash
 ```
@@ -131,7 +131,7 @@ const api = createApi({
 ### 4. Database — Key Facts
 
 - **Supabase project:** `tlggdherqjvybpddsqjj`
-- **50 migrations** — run sequentially, never modify deployed migrations
+- **11 migrations** (squashed from 50) — run sequentially, never modify deployed migrations
 - **20+ tables** with RLS policies (see `docs/database-schema.md` for full reference)
 - **Types generated** via `supabase gen types typescript` → `src/types/database.ts`
 - **All prices in cents** (integer) — display as `$X.XX BZD`
@@ -154,7 +154,7 @@ Validate at boundaries only (forms + edge functions). Internal code trusts valid
 
 ### 6. Edge Functions
 
-14 Deno edge functions in `supabase/functions/`:
+16 Deno edge functions in `supabase/functions/`:
 
 | Function | Purpose |
 |----------|---------|
@@ -172,6 +172,8 @@ Validate at boundaries only (forms + edge functions). Internal code trusts valid
 | `check-route-activation` | Check if route can activate |
 | `update-rating-avg` | Trigger: recalculate rating after new review |
 | `notify-user` | Send targeted notification to a specific user |
+| `delete-account` | Soft-delete user account and anonymize profile data |
+| `purge-deleted-accounts` | Cron: permanently remove accounts past retention period |
 
 ### 7. E-Kyash Payment Flow
 

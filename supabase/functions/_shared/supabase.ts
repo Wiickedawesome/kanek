@@ -8,17 +8,21 @@ export function createServiceClient() {
   );
 }
 
+import { timingSafeEqual } from 'https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts';
+
 /** Allowed CORS origins */
 const ALLOWED_ORIGINS = [
   'http://localhost:8081',
   'http://localhost:19006',
   'https://tlggdherqjvybpddsqjj.supabase.co',
+  'https://kanek.bz',
+  'https://www.kanek.bz',
 ];
 
 /** Build CORS headers, restricting to allowed origins */
 export function getCorsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get('origin') ?? '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers':
@@ -79,7 +83,10 @@ export async function verifyAuthOrInternal(
   const token = authHeader.slice(7);
   // Internal edge-function call uses service role key as bearer token
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  if (token === serviceKey) {
+  // M-2: Timing-safe comparison to prevent side-channel attacks
+  const tokenBytes = new TextEncoder().encode(token);
+  const keyBytes = new TextEncoder().encode(serviceKey);
+  if (tokenBytes.length === keyBytes.length && timingSafeEqual(tokenBytes, keyBytes)) {
     return { userId: null };
   }
   const supabase = createServiceClient();

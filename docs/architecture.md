@@ -26,9 +26,10 @@ Admin operations are handled via **Supabase Studio** using SQL views and functio
 │  │ 17 + RLS │ │ Phone OTP│ │ Buckets  │ │ Channels │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │           14 Deno Edge Functions                  │   │
-│  │  E-Kyash (6) · Push · Email · SMS · Cron (2)     │   │
+│  │           16 Deno Edge Functions                  │   │
+│  │  E-Kyash (6) · Push · Email · SMS · Cron (3)     │   │
 │  │  Route Activation · Rating Trigger · Notify      │   │
+│  │  Delete Account · Purge Deleted Accounts         │   │
 │  └──────────────────────────────────────────────────┘   │
 └──────────────────┬──────────────────────────────────────┘
                    │

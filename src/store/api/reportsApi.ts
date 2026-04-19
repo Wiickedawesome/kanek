@@ -38,14 +38,28 @@ export const reportsApi = createApi({
   endpoints: (builder) => ({
     getRoadReports: builder.query<RoadReportRow[], GetRoadReportsArgs | void>({
       queryFn: async (args) => {
-        const { limit = 50 } = args ?? {};
+        const { lat, lng, radiusKm, limit = 50 } = args ?? {};
 
-        const { data, error } = await supabase
+        let query = supabase
           .from('road_reports')
           .select('*')
           .gte('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false })
           .limit(limit);
+
+        // H-12: Apply bounding-box filter when location is provided
+        if (lat != null && lng != null && radiusKm != null && radiusKm > 0) {
+          // Approximate degrees per km at Belize's latitude (~17°N)
+          const latDelta = radiusKm / 111;
+          const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+          query = query
+            .gte('lat', lat - latDelta)
+            .lte('lat', lat + latDelta)
+            .gte('lng', lng - lngDelta)
+            .lte('lng', lng + lngDelta);
+        }
+
+        const { data, error } = await query;
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: (data as RoadReportRow[]) ?? [] };

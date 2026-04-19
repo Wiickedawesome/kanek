@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -40,18 +40,32 @@ export default function EkyashPayModal() {
     }>();
 
   const amount = Number(amountCents) || 0;
+  const [pollingTimedOut, setPollingTimedOut] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [createPayment, { data: payment, isLoading, error }] =
     useCreatePaymentMutation();
 
-  // Poll for status once we have an orderId
+  // Poll for status once we have an orderId (stop after 10min timeout)
   const { data: statusData } = useGetPaymentStatusQuery(
     payment?.orderId ?? '',
     {
-      skip: !payment?.orderId,
+      skip: !payment?.orderId || pollingTimedOut,
       pollingInterval: 5000,
     },
   );
+
+  // M-11: 10-minute polling timeout
+  useEffect(() => {
+    if (payment?.orderId && !pollingTimedOut) {
+      timeoutRef.current = setTimeout(() => {
+        setPollingTimedOut(true);
+      }, 10 * 60 * 1000);
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [payment?.orderId, pollingTimedOut]);
 
   // Create invoice on mount
   useEffect(() => {
@@ -70,13 +84,25 @@ export default function EkyashPayModal() {
   // Handle status changes
   useEffect(() => {
     if (statusData?.status === 'approved') {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       showAlert('Payment Successful', 'Your E-Kyash payment has been confirmed!');
       router.dismiss();
     } else if (statusData?.status === 'cancelled') {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       showAlert('Payment Cancelled', 'This payment was declined or cancelled.');
       router.back();
     }
   }, [statusData?.status]);
+
+  // Handle polling timeout
+  useEffect(() => {
+    if (pollingTimedOut) {
+      showAlert(
+        'Payment Not Confirmed',
+        'We did not receive confirmation within 10 minutes. Check your E-Kyash app or try again.',
+      );
+    }
+  }, [pollingTimedOut]);
 
   const handleOpenEkyash = async () => {
     if (!payment?.paymentLink) return;
@@ -171,8 +197,14 @@ export default function EkyashPayModal() {
 
         {/* Waiting indicator */}
         <View style={styles.waitingRow}>
-          <ActivityIndicator size="small" color={colors.accent.green} />
-          <Text style={styles.waitingText}>Waiting for payment…</Text>
+          {pollingTimedOut ? (
+            <Text style={styles.timeoutText}>Payment confirmation timed out.</Text>
+          ) : (
+            <>
+              <ActivityIndicator size="small" color={colors.accent.green} />
+              <Text style={styles.waitingText}>Waiting for payment…</Text>
+            </>
+          )}
         </View>
       </View>
     );
@@ -290,5 +322,9 @@ const styles = StyleSheet.create({
   waitingText: {
     ...typography.body2,
     color: colors.accent.green,
+  },
+  timeoutText: {
+    ...typography.body2,
+    color: colors.error,
   },
 });

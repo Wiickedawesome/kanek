@@ -83,6 +83,7 @@ function numberFieldLabel(type: DriverDocumentType): string {
     case 'drivers_license': return 'License Number';
     case 'vehicle_insurance': return 'Policy Number';
     case 'vehicle_registration': return 'Registration Number';
+    case 'police_record': return 'Record Number';
   }
 }
 

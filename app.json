@@ -61,6 +61,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "jsEngine": "hermes",
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/71a76ae0-95d7-41de-9ce0-b396dc088437"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-router",
       "expo-font",

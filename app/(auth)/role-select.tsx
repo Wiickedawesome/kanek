@@ -59,11 +59,20 @@ export default function RoleSelectScreen() {
     router.replace('/(auth)/id-upload');
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.replace('/(auth)/login');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Tell us about yourself</Text>
         <Text style={styles.subtitle}>Your name and how you plan to use kanek</Text>
+
+        <Pressable onPress={handleSignOut} style={styles.notYou}>
+          <Text style={styles.notYouText}>Not you? Sign in with a different number</Text>
+        </Pressable>
 
         <TextInput
           style={styles.input}
@@ -193,5 +202,12 @@ const styles = StyleSheet.create({
   buttonText: {
     ...typography.body1Bold,
     color: colors.neutral[0],
+  },
+  notYou: {
+    marginBottom: spacing.lg,
+  },
+  notYouText: {
+    ...typography.body2,
+    color: colors.accent.blue,
   },
 });

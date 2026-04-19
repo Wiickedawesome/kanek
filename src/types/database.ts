@@ -2073,6 +2073,7 @@ export type Database = {
         | "active"
         | "restricted"
         | "suspended"
+        | "suspended_pending_deletion"
         | "dormant"
       admin_action_type:
         | "approve_driver"
@@ -2296,6 +2297,7 @@ export const Constants = {
         "active",
         "restricted",
         "suspended",
+        "suspended_pending_deletion",
         "dormant",
       ],
       admin_action_type: [
@@ -2401,3 +2403,22 @@ export const Constants = {
     },
   },
 } as const
+
+// Convenience type aliases for enums
+export type AccountStatus = Enums<'account_status'>
+export type BelizeDistrict = Enums<'belize_district'>
+export type BookingStatus = Enums<'booking_status'>
+export type ContractStatus = Enums<'contract_status'>
+export type DriverDocumentType = Enums<'driver_document_type'>
+export type ErrandCategory = Enums<'errand_category'>
+export type FlagReason = Enums<'flag_reason'>
+export type JobCategory = Enums<'job_category'>
+export type JobTimeline = Enums<'job_timeline'>
+export type PayType = Enums<'pay_type'>
+export type PaymentMethod = Enums<'payment_method'>
+export type PickupStyle = Enums<'pickup_style'>
+export type PostStatus = Enums<'post_status'>
+export type PostType = Enums<'post_type'>
+export type ReviewStatus = Enums<'review_status'>
+export type RoadReportType = Enums<'road_report_type'>
+export type Role = Enums<'role'>

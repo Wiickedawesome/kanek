@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useCallback, useRef } from 'react';
+import { Platform, AppState, type AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -55,6 +55,20 @@ export function useNotifications() {
   // Register token on mount
   useEffect(() => {
     registerPushToken();
+  }, [registerPushToken]);
+
+  // H-10: Re-register push token when app returns to foreground
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        registerPushToken();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
   }, [registerPushToken]);
 
   // Show in-app toast when a push arrives while foregrounded (native only)

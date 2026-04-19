@@ -47,14 +47,16 @@ Deno.serve(async (req) => {
       return errorResponse('Forbidden: caller is not a party to this transaction', 403);
     }
 
-    if (txn.status !== 'approved') {
-      return errorResponse('Can only refund approved transactions');
+    if (txn.status !== 'approved' && txn.status !== 'partially_refunded') {
+      return errorResponse('Can only refund approved or partially refunded transactions');
     }
     if (!txn.transaction_id) {
       return errorResponse('No transaction ID for refund');
     }
-    if (amountCents > txn.amount_cents) {
-      return errorResponse('Refund amount exceeds original');
+    // H-4: Track cumulative refunds to prevent over-refunding
+    const alreadyRefunded = txn.refunded_amount_cents ?? 0;
+    if (amountCents + alreadyRefunded > txn.amount_cents) {
+      return errorResponse('Refund amount exceeds remaining refundable balance');
     }
 
     // Authorize
@@ -97,11 +99,14 @@ Deno.serve(async (req) => {
 
     if (!refundRes.ok) return errorResponse('Refund failed', 502);
 
-    // Update our record
+    // Update our record — distinguish partial vs full refund
+    const newRefundedTotal = alreadyRefunded + amountCents;
+    const isFullRefund = newRefundedTotal >= txn.amount_cents;
     await supabase
       .from('ekyash_transactions')
       .update({
-        status: 'refunded',
+        status: isFullRefund ? 'refunded' : 'partially_refunded',
+        refunded_amount_cents: newRefundedTotal,
         updated_at: new Date().toISOString(),
       })
       .eq('order_id', orderId);

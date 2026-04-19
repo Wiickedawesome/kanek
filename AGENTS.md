@@ -56,7 +56,7 @@ Types auto-generated: `supabase gen types typescript --project-id tlggdherqjvybp
 
 ## Edge Functions
 
-14 Deno functions in `supabase/functions/`. Shared code in `supabase/functions/_shared/`.
+16 Deno functions in `supabase/functions/`. Shared code in `supabase/functions/_shared/`.
 Deploy: `supabase functions deploy`. Secrets set in Supabase dashboard (not in code).
 
 ## Commands

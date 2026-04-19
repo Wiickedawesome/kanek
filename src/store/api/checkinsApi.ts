@@ -19,7 +19,7 @@ export const checkinsApi = createApi({
           .eq('contract_id', contractId)
           .maybeSingle();
 
-        if (error) return { error: { message: error.message } };
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: data ?? null };
       },
       providesTags: (_res, _err, contractId) => [
@@ -45,10 +45,10 @@ export const checkinsApi = createApi({
 
         // Validate file size (max 5MB) and type
         if (blob.size > 5 * 1024 * 1024) {
-          return { error: { message: 'Selfie must be under 5MB' } };
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'Selfie must be under 5MB' } };
         }
         if (!blob.type.startsWith('image/')) {
-          return { error: { message: 'File must be an image' } };
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'File must be an image' } };
         }
 
         const ext = imageUri.split('.').pop() ?? 'jpg';
@@ -63,7 +63,7 @@ export const checkinsApi = createApi({
           });
 
         if (uploadError) {
-          return { error: { message: uploadError.message } };
+          return { error: { status: 'CUSTOM_ERROR' as const, error: uploadError.message } };
         }
 
         // Get public URL
@@ -86,7 +86,7 @@ export const checkinsApi = createApi({
           .select()
           .single();
 
-        if (error) return { error: { message: error.message } };
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data };
       },
       invalidatesTags: (_res, _err, { contractId }) => [

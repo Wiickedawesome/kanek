@@ -44,6 +44,27 @@ Deno.serve(async (req) => {
       return errorResponse('No emergency contact set', 400);
     }
 
+    // H-5: Validate emergency contact phone format
+    if (!/^\+501[0-9]{7}$/.test(user.emergency_contact)) {
+      return errorResponse('Emergency contact must be a valid Belize phone number (+501XXXXXXX)', 400);
+    }
+
+    // H-2/H-9: Server-side rate limit — one SOS per user per 30 seconds
+    const { data: recentSos } = await supabase
+      .from('notifications')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('type', 'sos_sent')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (recentSos && recentSos.length > 0) {
+      const lastSosTime = new Date(recentSos[0].created_at).getTime();
+      if (Date.now() - lastSosTime < 30_000) {
+        return errorResponse('SOS rate limit — please wait 30 seconds', 429, req);
+      }
+    }
+
     const userName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || 'A kanek user';
     const mapsUrl = latitude && longitude
       ? `https://www.google.com/maps?q=${latitude},${longitude}`
@@ -89,7 +110,7 @@ Deno.serve(async (req) => {
         data: { latitude, longitude, emergencyContact: user.emergency_contact },
       });
 
-      return jsonResponse({ sent: false, to: user.emergency_contact, error: 'SMS service not configured' });
+      return jsonResponse({ sent: false, to: user.emergency_contact, error: 'SMS service not configured' }, 503, req);
     }
 
     // Store the SOS event as a notification for audit

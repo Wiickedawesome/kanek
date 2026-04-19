@@ -29,6 +29,7 @@ import { ExternalLink } from './ExternalLink';
 import { Bell } from './Bell';
 import { Send } from './Send';
 import { MessageCircle } from './MessageCircle';
+import { Lock } from './Lock';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -63,6 +64,7 @@ export { ChevronDown } from './ChevronDown';
 export { ExternalLink } from './ExternalLink';
 export { Bell } from './Bell';
 export { Send } from './Send';
+export { Lock } from './Lock';
 
 const iconMap = {
   compass: Compass,
@@ -92,6 +94,7 @@ const iconMap = {
   'external-link': ExternalLink,
   bell: Bell,
   send: Send,
+  lock: Lock,
   'message-circle': MessageCircle,
 } as const;
 

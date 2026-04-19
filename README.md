@@ -69,8 +69,8 @@ kanek/
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 50 SQL migration files
-│   ├── functions/                # 14 Deno edge functions
+│   ├── migrations/               # 11 SQL migration files (squashed)
+│   ├── functions/                # 16 Deno edge functions
 │   └── templates/                # Email templates
 ├── docs/                         # Project documentation
 └── assets/                       # Fonts (Work Sans, Manrope), icons, splash

@@ -1,6 +1,6 @@
 # Edge Functions
 
-14 Deno edge functions in `supabase/functions/`. Deployed via `supabase functions deploy`.
+16 Deno edge functions in `supabase/functions/`. Deployed via `supabase functions deploy`.
 
 Shared utilities live in `supabase/functions/_shared/`.
 
@@ -222,6 +222,25 @@ Internal-only endpoint that creates a notification record and optionally sends a
   - Inserts a row into `notifications` table
   - If `sendPush` is true and the user has a push token, sends via Expo Push API
 - **Output:** `{ "success": true, "notificationId": "uuid" }` or `{ "success": true, "skipped": true }` if deduplicated
+
+---
+
+## Account Management Functions
+
+### delete-account
+
+Soft-deletes a user account and anonymizes profile data.
+
+- **Method:** POST
+- **Input:** `{ "userId": "uuid" }`
+- **Logic:** Anonymizes profile fields (name, phone, avatar), sets `deleted_at` timestamp. Does not destroy data immediately — allows recovery within retention period.
+
+### purge-deleted-accounts
+
+Permanently removes accounts past the retention period.
+
+- **Trigger:** Cron
+- **Logic:** Finds accounts where `deleted_at` is older than the retention threshold, permanently removes profile data and auth user.
 
 ---
 

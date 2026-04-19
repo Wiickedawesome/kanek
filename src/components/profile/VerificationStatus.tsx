@@ -13,6 +13,7 @@ const STATUS_CONFIG: Record<AccountStatus, { label: string; icon: React.Componen
   active: { label: 'Verified', icon: 'circle-dot', bg: '#e8f5e9', fg: colors.accent.green },
   restricted: { label: 'Restricted', icon: 'alert-triangle', bg: '#fff3e0', fg: colors.warning },
   suspended: { label: 'Suspended', icon: 'shield-alert', bg: '#ffebee', fg: colors.error },
+  suspended_pending_deletion: { label: 'Deleting', icon: 'shield-alert', bg: '#ffebee', fg: colors.error },
   dormant: { label: 'Dormant', icon: 'clock', bg: '#f5f5f5', fg: colors.neutral[400] },
 };
 

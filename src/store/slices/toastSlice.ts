@@ -10,11 +10,11 @@ export interface ToastItem {
 }
 
 interface ToastState {
-  current: ToastItem | null;
+  queue: ToastItem[];
 }
 
 const initialState: ToastState = {
-  current: null,
+  queue: [],
 };
 
 const toastSlice = createSlice({
@@ -22,13 +22,19 @@ const toastSlice = createSlice({
   initialState,
   reducers: {
     showToast(state, action: PayloadAction<ToastItem>) {
-      state.current = action.payload;
+      // Cap queue at 5 to prevent unbounded growth
+      if (state.queue.length < 5) {
+        state.queue.push(action.payload);
+      }
     },
     dismissToast(state) {
-      state.current = null;
+      state.queue.shift();
     },
   },
 });
 
 export const { showToast, dismissToast } = toastSlice.actions;
+/** Select the front toast (currently displayed) */
+export const selectCurrentToast = (state: { toast: ToastState }) =>
+  state.toast.queue[0] ?? null;
 export default toastSlice.reducer;

@@ -28,6 +28,14 @@ export async function buildEkyashJwt(
   return `${token}.${encodedSignature}`;
 }
 
+/** Canonical JSON: sorted keys for deterministic HMAC input */
+function canonicalJson(obj: unknown): string {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return '[' + obj.map(canonicalJson).join(',') + ']';
+  const sorted = Object.keys(obj as Record<string, unknown>).sort();
+  return '{' + sorted.map((k) => JSON.stringify(k) + ':' + canonicalJson((obj as Record<string, unknown>)[k])).join(',') + '}';
+}
+
 /** Verify HMAC-SHA256 hash from E-Kyash callback */
 export async function verifyCallbackHash(
   data: Record<string, unknown>,
@@ -45,7 +53,7 @@ export async function verifyCallbackHash(
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    encoder.encode(JSON.stringify(data)),
+    encoder.encode(canonicalJson(data)),
   );
   const computedHash = Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, '0'))
