@@ -4,12 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { safeGoBack } from '@/lib/helpers';
+import { safeGoBack, getTimeAgo } from '@/lib/helpers';
+import { showConfirm } from '@/lib/alert';
 import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
-import { useGetGasPricesQuery } from '@/store/api/reportsApi';
+import { useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { DISTRICT_CENTERS, DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
@@ -25,11 +26,12 @@ const PIN_COLORS: Record<string, string> = {
   job: colors.forest[500],
 };
 
-const GAS_PIN_COLOR = colors.forest[600];
+const GAS_PIN_COLOR = colors.error;
 
 export default function ExploreMapScreen() {
   const { data: posts } = useGetPostsQuery({});
   const { data: gasPrices } = useGetGasPricesQuery();
+  const [verifyGasPrice] = useVerifyGasPriceMutation();
 
   // User GPS from Redux
   const userLat = useSelector((s: RootState) => s.location.latitude);
@@ -144,6 +146,23 @@ export default function ExploreMapScreen() {
     router.push(`/(tabs)/explore/${id}`);
   };
 
+  const handleGasPress = async (id: string) => {
+    const g = (gasPrices ?? []).find((x) => x.id === id);
+    if (!g) return;
+    const fmt = (cents: number | null) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)} BZD/gal`);
+    const body = [
+      `Regular: ${fmt(g.regular_cents)}`,
+      `Premium: ${fmt(g.premium_cents)}`,
+      `Diesel:  ${fmt(g.diesel_cents)}`,
+      '',
+      `Reported ${getTimeAgo(g.reported_at)} • ${g.verified_count ?? 0} verified`,
+      '',
+      'Verify this price?',
+    ].join('\n');
+    const ok = await showConfirm(g.station_name, body);
+    if (ok) verifyGasPrice(g.id);
+  };
+
   const [headerHeight, setHeaderHeight] = useState(64);
 
   // ── Search state ───────────────────────────────────────────────
@@ -194,6 +213,7 @@ export default function ExploreMapScreen() {
           reports={reportPoints}
           gasStations={gasPoints}
           onPinPress={handlePinPress}
+          onGasPress={handleGasPress}
           onFlyToRef={flyToRef}
           initialCenter={initialCenter}
           initialZoom={initialZoom}

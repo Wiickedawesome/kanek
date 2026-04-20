@@ -30,6 +30,7 @@ export interface ExploreMapContentProps {
   reports: GeoPoint[];
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
+  onGasPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
   onFlyToRef?: React.MutableRefObject<((lat: number, lng: number, zoom?: number) => void) | null>;
   initialCenter?: { latitude: number; longitude: number };
@@ -44,6 +45,7 @@ export function ExploreMapContent({
   reports,
   gasStations,
   onPinPress,
+  onGasPress,
   onRecenterRef,
   onFlyToRef,
   initialCenter,
@@ -56,6 +58,8 @@ export function ExploreMapContent({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const onPinPressRef = useRef(onPinPress);
   onPinPressRef.current = onPinPress;
+  const onGasPressRef = useRef(onGasPress);
+  onGasPressRef.current = onGasPress;
 
   // Capture initial values in refs so map init effect runs only once
   const initialCenterRef = useRef(initialCenter);
@@ -271,7 +275,7 @@ export function ExploreMapContent({
         filter: ['has', 'point_count'],
         paint: {
           'circle-radius': ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-          'circle-color': '#2e7d32',
+          'circle-color': '#d32f2f',
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
         },
@@ -326,9 +330,17 @@ export function ExploreMapContent({
         if (id) onPinPressRef.current?.(id);
       });
 
+      // Click handler for individual gas pins
+      map.on('click', 'gas-prices-circles', (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (id) onGasPressRef.current?.(id);
+      });
+
       // Cursor for clickable layers
       map.on('mouseenter', 'posts-circles', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'posts-circles', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'gas-prices-circles', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'gas-prices-circles', () => { map.getCanvas().style.cursor = ''; });
     });
 
     mapRef.current = map;

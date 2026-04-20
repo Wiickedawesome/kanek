@@ -23,6 +23,7 @@ export interface ExploreMapContentProps {
   reports: GeoPoint[];
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
+  onGasPress?: (id: string) => void;
   onRecenterRef?: React.MutableRefObject<(() => void) | null>;
   /** Exposed flyTo callback — parent can call to animate camera to a location */
   onFlyToRef?: React.MutableRefObject<((lat: number, lng: number, zoom?: number) => void) | null>;
@@ -43,6 +44,7 @@ export function ExploreMapContent({
   reports,
   gasStations,
   onPinPress,
+  onGasPress,
   onRecenterRef,
   onFlyToRef,
   initialCenter,
@@ -101,6 +103,13 @@ export function ExploreMapContent({
     const feature = event?.features?.[0];
     if (feature?.properties?.id) {
       onPinPress?.(feature.properties.id);
+    }
+  };
+
+  const handleGasPinPress = (event: any) => {
+    const feature = event?.features?.[0];
+    if (feature?.properties?.id) {
+      onGasPress?.(feature.properties.id);
     }
   };
 
@@ -279,6 +288,7 @@ export function ExploreMapContent({
           <MapboxGL.ShapeSource
             id="gas-prices"
             shape={gasGeoJson}
+            onPress={handleGasPinPress}
             cluster
             clusterMaxZoomLevel={14}
             clusterRadius={50}
@@ -288,7 +298,7 @@ export function ExploreMapContent({
               filter={['has', 'point_count']}
               style={{
                 circleRadius: ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-                circleColor: '#2e7d32',
+                circleColor: '#d32f2f',
                 circleStrokeWidth: 2,
                 circleStrokeColor: '#ffffff',
               }}
