@@ -9,7 +9,7 @@ import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
-import { useGetRoadReportsQuery, useGetGasPricesQuery } from '@/store/api/reportsApi';
+import { useGetGasPricesQuery } from '@/store/api/reportsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { DISTRICT_CENTERS, DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
@@ -25,12 +25,10 @@ const PIN_COLORS: Record<string, string> = {
   job: colors.forest[500],
 };
 
-const REPORT_PIN_COLOR = colors.error;
 const GAS_PIN_COLOR = colors.forest[600];
 
 export default function ExploreMapScreen() {
   const { data: posts } = useGetPostsQuery({});
-  const { data: roadReports } = useGetRoadReportsQuery();
   const { data: gasPrices } = useGetGasPricesQuery();
 
   // User GPS from Redux
@@ -128,17 +126,7 @@ export default function ExploreMapScreen() {
     [posts],
   );
 
-  const reportPoints = useMemo(
-    () =>
-      (roadReports ?? []).map((r) => ({
-        id: r.id,
-        lng: r.lng,
-        lat: r.lat,
-        color: REPORT_PIN_COLOR,
-        label: r.type,
-      })),
-    [roadReports],
-  );
+  const reportPoints = useMemo<typeof postPoints>(() => [], []);
 
   const gasPoints = useMemo(
     () =>
@@ -278,7 +266,6 @@ export default function ExploreMapScreen() {
           <LegendRow color={colors.warning} label="Errand" />
           <LegendRow color="#9c27b0" label="Package" />
           <LegendRow color={colors.forest[500]} label="Job" />
-          <LegendRow color={REPORT_PIN_COLOR} label="Road Report" />
           <LegendRow color={GAS_PIN_COLOR} label="Gas Station" />
         </View>
       </View>

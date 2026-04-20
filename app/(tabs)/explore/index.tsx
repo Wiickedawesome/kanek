@@ -16,17 +16,16 @@ import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { FilterChip, EmptyState, TopographicBg, ScreenHeader, FeedListSkeleton } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, RoadReportCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
+import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { useGetRoadReportsQuery, useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
+import { useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
 import type { Database } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
 import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
 
-type RoadReportRow = Database['public']['Tables']['road_reports']['Row'];
 type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
@@ -71,33 +70,31 @@ export default function ExploreScreen() {
     search: search.length >= 2 ? search : undefined,
   });
 
-  const { data: roadReports, isLoading: reportsLoading, refetch: refetchReports } = useGetRoadReportsQuery();
   const { data: gasPrices, isLoading: gasLoading, refetch: refetchGas } = useGetGasPricesQuery();
   const [verifyGasPrice] = useVerifyGasPriceMutation();
 
-  const { subscribeToRoadReports } = useRealtime();
+  const { subscribeToGasPrices } = useRealtime();
 
   useEffect(() => {
-    const unsubscribe = subscribeToRoadReports();
+    const unsubscribe = subscribeToGasPrices();
     return () => {
       unsubscribe?.();
     };
-  }, [subscribeToRoadReports]);
+  }, [subscribeToGasPrices]);
 
   const feedItems = selectFeedItems({
-    posts, roadReports, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict,
+    posts, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict,
   });
 
-  const isLoading = postsLoading || reportsLoading || gasLoading;
+  const isLoading = postsLoading || gasLoading;
   const isFetching = postsFetching;
 
   const topRoutes = selectTopRoutes({ posts, typeFilter, userDistrict });
 
   const onRefresh = useCallback(() => {
     refetchPosts();
-    refetchReports();
     refetchGas();
-  }, [refetchPosts, refetchReports, refetchGas]);
+  }, [refetchPosts, refetchGas]);
 
   const openPost = useCallback((id: string) => {
     router.push(`/(tabs)/explore/${id}`);
@@ -107,14 +104,6 @@ export default function ExploreScreen() {
     let content: React.ReactNode;
 
     switch (item.kind) {
-      case 'road_report':
-        content = (
-          <RoadReportCard
-            report={item.data}
-            onPress={() => router.push({ pathname: '/modals/report-detail', params: { id: item.data.id } })}
-          />
-        );
-        break;
       case 'gas_price':
         content = (
           <GasPriceCard
@@ -272,16 +261,10 @@ export default function ExploreScreen() {
       {/* Report FABs */}
       <View style={styles.fabContainer}>
         <Pressable
-          style={[styles.fab, styles.fabSecondary]}
+          style={styles.fab}
           onPress={() => router.push('/modals/report-gas')}
         >
           <Icon name="fuel" size={20} color={colors.neutral[0]} />
-        </Pressable>
-        <Pressable
-          style={styles.fab}
-          onPress={() => router.push('/modals/report-road')}
-        >
-          <Icon name="alert-triangle" size={20} color={colors.neutral[0]} />
         </Pressable>
       </View>
     </SafeAreaView>

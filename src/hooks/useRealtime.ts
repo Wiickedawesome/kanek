@@ -170,21 +170,10 @@ export function useRealtime() {
     [],
   );
 
-  /** Subscribe to new road reports — invalidates RTK Query cache on INSERT */
-  const subscribeToRoadReports = useCallback(() => {
+  /** Subscribe to new gas prices — invalidates RTK Query cache on INSERT */
+  const subscribeToGasPrices = useCallback(() => {
     const channel = supabase
-      .channel('road-reports')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'road_reports',
-        },
-        () => {
-          dispatch(reportsApi.util.invalidateTags([{ type: 'RoadReport', id: 'LIST' }]));
-        },
-      )
+      .channel('gas-prices')
       .on(
         'postgres_changes',
         {
@@ -275,7 +264,7 @@ export function useRealtime() {
     subscribeToTracking,
     broadcastLocation,
     subscribeToPost,
-    subscribeToRoadReports,
+    subscribeToGasPrices,
     subscribeToBookings,
     subscribeToMessages,
   };

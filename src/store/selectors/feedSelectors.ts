@@ -4,14 +4,12 @@ import type { Database, BelizeDistrict, PostType } from '@/types/database';
 import { getDistanceKm } from '@/lib/helpers';
 import { GAS_PRICES_LIMIT, TOP_ROUTES_LIMIT } from '@/lib/constants';
 
-type RoadReportRow = Database['public']['Tables']['road_reports']['Row'];
 type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 
 export type FeedFilter = PostType | 'reports' | null;
 
 export type FeedItem =
   | { kind: 'post'; data: PostWithAuthor }
-  | { kind: 'road_report'; data: RoadReportRow }
   | { kind: 'gas_price'; data: GasPriceRow };
 
 /** Map enum values to keywords that may appear in origin_address */
@@ -38,9 +36,6 @@ function getPostCoord(item: FeedItem): { lat: number; lng: number } | null {
     }
     return null;
   }
-  if (item.kind === 'road_report') {
-    return { lat: item.data.lat, lng: item.data.lng };
-  }
   if (item.kind === 'gas_price') {
     return { lat: item.data.station_lat, lng: item.data.station_lng };
   }
@@ -51,7 +46,6 @@ function getPostCoord(item: FeedItem): { lat: number; lng: number } | null {
 
 interface FeedSelectorInput {
   posts: PostWithAuthor[] | undefined;
-  roadReports: RoadReportRow[] | undefined;
   gasPrices: GasPriceRow[] | undefined;
   typeFilter: FeedFilter;
   distanceFilter: number | null;
@@ -63,7 +57,6 @@ interface FeedSelectorInput {
 export const selectFeedItems = createSelector(
   [
     (input: FeedSelectorInput) => input.posts,
-    (input: FeedSelectorInput) => input.roadReports,
     (input: FeedSelectorInput) => input.gasPrices,
     (input: FeedSelectorInput) => input.typeFilter,
     (input: FeedSelectorInput) => input.distanceFilter,
@@ -71,13 +64,12 @@ export const selectFeedItems = createSelector(
     (input: FeedSelectorInput) => input.userLng,
     (input: FeedSelectorInput) => input.userDistrict,
   ],
-  (posts, roadReports, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict) => {
+  (posts, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict) => {
     const isReportsFilter = typeFilter === 'reports';
     const hasGPS = userLat != null && userLng != null;
 
     if (isReportsFilter) {
       const items: FeedItem[] = [];
-      (roadReports ?? []).forEach((r) => items.push({ kind: 'road_report', data: r }));
       (gasPrices ?? []).forEach((g) => items.push({ kind: 'gas_price', data: g }));
       return items;
     }
@@ -98,7 +90,6 @@ export const selectFeedItems = createSelector(
     filteredPosts.forEach((p) => items.push({ kind: 'post', data: p }));
 
     if (typeFilter === null) {
-      (roadReports ?? []).forEach((r) => items.push({ kind: 'road_report', data: r }));
       (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g) => items.push({ kind: 'gas_price', data: g }));
     }
 
