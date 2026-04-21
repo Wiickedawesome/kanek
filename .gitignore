@@ -51,7 +51,7 @@ play-store-service-account.json
 data/belize-pois/*.osm.pbf
 data/belize-pois/*.geojson
 data/belize-pois/*.gz
-data/belize-pois/belize-pois-pretty.json
+data/belize-pois/*.json
 
 # Dev artifacts
 PLAN.md

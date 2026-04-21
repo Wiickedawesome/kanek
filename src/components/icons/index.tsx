@@ -65,6 +65,7 @@ export { ExternalLink } from './ExternalLink';
 export { Bell } from './Bell';
 export { Send } from './Send';
 export { Lock } from './Lock';
+export { MessageCircle } from './MessageCircle';
 
 const iconMap = {
   compass: Compass,

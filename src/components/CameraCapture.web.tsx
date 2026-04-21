@@ -77,7 +77,7 @@ export function CameraCapture({ visible, facing, onCapture, onCancel }: CameraCa
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.backdrop}>
         <View style={styles.frame}>
-          {/* @ts-expect-error web-only element in RN tree */}
+          {/* web-only <video> element in RN tree; React Native Web passes it through to the DOM */}
           <video ref={videoRef} style={webVideoStyle} playsInline muted autoPlay />
           {!ready && (
             <View style={styles.loadingOverlay}>

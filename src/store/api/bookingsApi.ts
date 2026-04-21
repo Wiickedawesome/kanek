@@ -622,12 +622,17 @@ export const bookingsApi = createApi({
       { applicantId: string; at: string; durationMin: number }
     >({
       queryFn: async ({ applicantId, at, durationMin }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.rpc as any)('check_user_availability', {
-          p_user_id: applicantId,
-          p_at: at,
-          p_duration_min: durationMin,
-        });
+        const { data, error } = await (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: unknown; error: { message: string } | null }>)(
+          'check_user_availability',
+          {
+            p_user_id: applicantId,
+            p_at: at,
+            p_duration_min: durationMin,
+          },
+        );
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         type Row = {
           contract_id: string;
