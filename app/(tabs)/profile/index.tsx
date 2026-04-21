@@ -300,8 +300,8 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(tabs)/profile/wallet')}
           />
           <MenuItem
-            icon="construction"
-            label="My Road Reports"
+            icon="fuel"
+            label="My Fuel Reports"
             onPress={() => router.push('/(tabs)/profile/reports')}
           />
           <MenuItem

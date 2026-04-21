@@ -77,7 +77,7 @@ export default function ReportsScreen() {
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
-        <Text style={styles.headerTitle}>My Reports</Text>
+        <Text style={styles.headerTitle}>My Fuel Reports</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
