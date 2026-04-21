@@ -21,9 +21,20 @@ interface GasPriceCardProps {
   onPress?: () => void;
 }
 
-function formatPrice(cents: number | null): string {
-  if (cents == null) return '—';
-  return `$${(cents / 100).toFixed(2)} BZD/gal`;
+function formatPrice(cents: number | null): { value: string; unit: string } {
+  if (cents == null) return { value: '—', unit: '' };
+  return { value: `$${(cents / 100).toFixed(2)}`, unit: 'BZD/gal' };
+}
+
+function PriceCol({ label, cents }: { label: string; cents: number | null }) {
+  const { value, unit } = formatPrice(cents);
+  return (
+    <View style={styles.priceCol}>
+      <Text style={styles.priceLabel}>{label}</Text>
+      <Text style={styles.priceValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{value}</Text>
+      {unit ? <Text style={styles.priceUnit}>{unit}</Text> : null}
+    </View>
+  );
 }
 
 
@@ -64,20 +75,11 @@ export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress
       ) : null}
 
       <View style={styles.pricesRow}>
-        <View style={styles.priceCol}>
-          <Text style={styles.priceLabel}>Regular</Text>
-          <Text style={styles.priceValue}>{formatPrice(gasPrice.regular_cents)}</Text>
-        </View>
+        <PriceCol label="Regular" cents={gasPrice.regular_cents} />
         <View style={styles.priceDivider} />
-        <View style={styles.priceCol}>
-          <Text style={styles.priceLabel}>Premium</Text>
-          <Text style={styles.priceValue}>{formatPrice(gasPrice.premium_cents)}</Text>
-        </View>
+        <PriceCol label="Premium" cents={gasPrice.premium_cents} />
         <View style={styles.priceDivider} />
-        <View style={styles.priceCol}>
-          <Text style={styles.priceLabel}>Diesel</Text>
-          <Text style={styles.priceValue}>{formatPrice(gasPrice.diesel_cents)}</Text>
-        </View>
+        <PriceCol label="Diesel" cents={gasPrice.diesel_cents} />
       </View>
 
       <Text style={styles.verified}>
@@ -120,24 +122,38 @@ const styles = StyleSheet.create({
   },
   pricesRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    backgroundColor: colors.neutral[50],
+    borderRadius: 12,
   },
   priceCol: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
     gap: 2,
   },
   priceLabel: {
     ...typography.caption,
     color: colors.neutral[500],
+    textAlign: 'center',
   },
   priceValue: {
     ...typography.body1Bold,
     color: colors.forest[900],
+    textAlign: 'center',
+  },
+  priceUnit: {
+    ...typography.caption,
+    color: colors.neutral[500],
+    fontSize: 10,
+    textAlign: 'center',
   },
   priceDivider: {
     width: 1,
-    height: 28,
+    alignSelf: 'stretch',
     backgroundColor: colors.neutral[200],
   },
   verified: {
