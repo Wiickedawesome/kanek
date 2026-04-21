@@ -125,8 +125,10 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: 'rgba(246, 246, 244, 0.55)',
     borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(219, 218, 210, 0.6)',
   },
   priceCol: {
     flex: 1,
