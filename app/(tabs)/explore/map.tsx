@@ -171,22 +171,29 @@ export default function ExploreMapScreen() {
 
     const isOwner = g.reporter_id === userId;
     const goEdit = () => router.push(`/modals/report-gas?id=${g.id}`);
-    const doVerify = () => { verifyGasPrice(g.id); };
+    const goNew = () => router.push('/modals/report-gas');
+    const doVerify = () => {
+      verifyGasPrice(g.id);
+      // After verify, offer to add a fresh report
+      goNew();
+    };
 
     if (Platform.OS === 'web') {
       // Web: sequential confirm dialogs
       if (isOwner) {
         const editFirst = window.confirm(`${g.station_name}\n\n${body}\n\nEdit this report? (Cancel = Verify instead)`);
-        if (editFirst) goEdit();
-        else if (window.confirm('Verify this price?')) doVerify();
+        if (editFirst) { goEdit(); return; }
+        if (window.confirm('Verify this price?')) { doVerify(); return; }
+        goNew();
       } else {
-        if (window.confirm(`${g.station_name}\n\n${body}\n\nVerify this price?`)) doVerify();
+        if (window.confirm(`${g.station_name}\n\n${body}\n\nVerify this price?`)) { doVerify(); return; }
+        goNew();
       }
       return;
     }
 
     const buttons: Parameters<typeof Alert.alert>[2] = [
-      { text: 'Cancel', style: 'cancel' },
+      { text: 'Add New Report', onPress: goNew },
       { text: 'Verify', onPress: doVerify },
     ];
     if (isOwner) {
