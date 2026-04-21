@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,20 +11,35 @@ import {
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
+import { reverseGeocode } from '@/lib/mapbox';
 import { Button, TextInput, ScreenHeader, TopographicBg } from '@/components/ui';
 import { MapPicker } from '@/components/map/MapPicker';
 import { colors, typography, spacing, borderRadius } from '@/theme';
-import { useCreateGasPriceMutation } from '@/store/api/reportsApi';
+import {
+  useCreateGasPriceMutation,
+  useUpdateGasPriceMutation,
+  useGetGasPricesQuery,
+} from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 
 const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 
 export default function ReportGasModal() {
+  const { id: editId } = useLocalSearchParams<{ id?: string }>();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const location = useSelector((state: RootState) => state.location);
   const [createGasPrice] = useCreateGasPriceMutation();
+  const [updateGasPrice] = useUpdateGasPriceMutation();
+  const { data: gasPrices } = useGetGasPricesQuery();
+
+  const existing = useMemo(
+    () => (editId ? (gasPrices ?? []).find((g) => g.id === editId) : undefined),
+    [editId, gasPrices],
+  );
+  const isEdit = !!existing;
 
   const [stationName, setStationName] = useState('');
   const [regular, setRegular] = useState('');
@@ -34,6 +49,20 @@ export default function ReportGasModal() {
   const [mapVisible, setMapVisible] = useState(false);
   const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pinLabel, setPinLabel] = useState<string | null>(null);
+
+  // Prefill when editing
+  useEffect(() => {
+    if (!existing) return;
+    setStationName(existing.station_name);
+    setRegular(existing.regular_cents != null ? (existing.regular_cents / 100).toFixed(2) : '');
+    setPremium(existing.premium_cents != null ? (existing.premium_cents / 100).toFixed(2) : '');
+    setDiesel(existing.diesel_cents != null ? (existing.diesel_cents / 100).toFixed(2) : '');
+    setPinCoords({ latitude: existing.station_lat, longitude: existing.station_lng });
+    // Reverse-geocode to show the registered address
+    reverseGeocode(existing.station_lat, existing.station_lng)
+      .then((name) => setPinLabel(name))
+      .catch(() => { /* ignore */ });
+  }, [existing]);
 
   const parseCents = (val: string): number | null => {
     const n = parseFloat(val);
@@ -62,20 +91,32 @@ export default function ReportGasModal() {
 
     setSubmitting(true);
     try {
-      await createGasPrice({
-        reporterId: userId,
-        stationName: stationName.trim(),
-        stationLat: pinCoords?.latitude ?? location.latitude ?? 17.189,
-        stationLng: pinCoords?.longitude ?? location.longitude ?? -88.497,
-        regularCents: regularCents ?? undefined,
-        premiumCents: premiumCents ?? undefined,
-        dieselCents: dieselCents ?? undefined,
-      }).unwrap();
-
-      showAlert('Price Reported', 'Thank you for updating fuel prices!');
+      if (isEdit && existing) {
+        await updateGasPrice({
+          id: existing.id,
+          stationName: stationName.trim(),
+          stationLat: pinCoords?.latitude ?? existing.station_lat,
+          stationLng: pinCoords?.longitude ?? existing.station_lng,
+          regularCents: regularCents ?? null,
+          premiumCents: premiumCents ?? null,
+          dieselCents: dieselCents ?? null,
+        }).unwrap();
+        showAlert('Updated', 'Gas prices updated.');
+      } else {
+        await createGasPrice({
+          reporterId: userId,
+          stationName: stationName.trim(),
+          stationLat: pinCoords?.latitude ?? location.latitude ?? 17.189,
+          stationLng: pinCoords?.longitude ?? location.longitude ?? -88.497,
+          regularCents: regularCents ?? undefined,
+          premiumCents: premiumCents ?? undefined,
+          dieselCents: dieselCents ?? undefined,
+        }).unwrap();
+        showAlert('Price Reported', 'Thank you for updating fuel prices!');
+      }
       safeBack();
     } catch (err) {
-      console.error('Gas price insert error:', err);
+      console.error('Gas price submit error:', err);
       showAlert('Error', 'Could not submit price. Please try again.');
     } finally {
       setSubmitting(false);
@@ -89,7 +130,7 @@ export default function ReportGasModal() {
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
         </Pressable>
-        <Text style={styles.headerTitle}>Gas Prices</Text>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit Gas Prices' : 'Gas Prices'}</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
@@ -137,29 +178,42 @@ export default function ReportGasModal() {
 
           <Pressable style={styles.locationRow} onPress={() => setMapVisible(true)}>
             <Icon name="map-pin" size={18} color={colors.accent.green} />
-            <Text style={styles.locationLabel} numberOfLines={1}>
-              {pinLabel
-                ? pinLabel
-                : location.latitude
-                  ? 'Current location'
-                  : 'Default location'}
-            </Text>
-            <Text style={styles.locationAction}>Change</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.locationLabel} numberOfLines={2}>
+                {pinLabel
+                  ? pinLabel
+                  : pinCoords
+                    ? `${pinCoords.latitude.toFixed(5)}, ${pinCoords.longitude.toFixed(5)}`
+                    : location.latitude
+                      ? 'Current location'
+                      : 'Default location'}
+              </Text>
+              {pinLabel && stationName.trim() && pinLabel.toLowerCase() !== stationName.trim().toLowerCase() ? (
+                <Text style={styles.locationSub} numberOfLines={1}>Mapbox address</Text>
+              ) : null}
+            </View>
+            <Text style={styles.locationAction}>{pinCoords ? 'Change' : 'Pick'}</Text>
           </Pressable>
 
           <MapPicker
             visible={mapVisible}
             onClose={() => setMapVisible(false)}
+            initialCoords={pinCoords ?? undefined}
             onConfirm={(coords, name) => {
               setPinCoords(coords);
               setPinLabel(name);
+              // Auto-suggest station name from first segment of reverse-geocode
+              if (!stationName.trim() && name) {
+                const firstPart = name.split(',')[0]?.trim();
+                if (firstPart) setStationName(firstPart);
+              }
               setMapVisible(false);
             }}
             title="Station Location"
           />
 
           <Button
-            title="Submit Prices"
+            title={isEdit ? 'Save Changes' : 'Submit Prices'}
             onPress={handleSubmit}
             loading={submitting}
             disabled={!stationName.trim()}
@@ -215,6 +269,11 @@ const styles = StyleSheet.create({
     ...typography.body2,
     color: colors.forest[900],
     flex: 1,
+  },
+  locationSub: {
+    ...typography.caption,
+    color: colors.neutral[500],
+    marginTop: 2,
   },
   locationAction: {
     ...typography.body2Bold,

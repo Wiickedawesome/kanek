@@ -74,12 +74,19 @@ export function ExploreMapContent({
 
   const geoJson: GeoJSON.FeatureCollection = useMemo(() => ({
     type: 'FeatureCollection',
-    features: posts.map((p) => ({
-      type: 'Feature' as const,
-      geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
-      properties: { id: p.id, color: p.color, label: p.label ?? '' },
-    })),
-  }), [posts]);
+    features: [
+      ...posts.map((p) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
+        properties: { id: p.id, color: p.color, label: p.label ?? '', kind: 'post' },
+      })),
+      ...gasStations.map((g) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [g.lng, g.lat] },
+        properties: { id: g.id, color: g.color, label: g.label ?? '', kind: 'gas' },
+      })),
+    ],
+  }), [posts, gasStations]);
 
   const reportsGeoJson: GeoJSON.FeatureCollection = useMemo(() => ({
     type: 'FeatureCollection',
@@ -90,26 +97,14 @@ export function ExploreMapContent({
     })),
   }), [reports]);
 
-  const gasGeoJson: GeoJSON.FeatureCollection = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: gasStations.map((g) => ({
-      type: 'Feature' as const,
-      geometry: { type: 'Point' as const, coordinates: [g.lng, g.lat] },
-      properties: { id: g.id, color: g.color, label: g.label ?? '' },
-    })),
-  }), [gasStations]);
-
   const handlePinPress = (event: any) => {
     const feature = event?.features?.[0];
-    if (feature?.properties?.id) {
-      onPinPress?.(feature.properties.id);
-    }
-  };
-
-  const handleGasPinPress = (event: any) => {
-    const feature = event?.features?.[0];
-    if (feature?.properties?.id) {
-      onGasPress?.(feature.properties.id);
+    const id = feature?.properties?.id;
+    if (!id) return;
+    if (feature?.properties?.kind === 'gas') {
+      onGasPress?.(id);
+    } else {
+      onPinPress?.(id);
     }
   };
 
@@ -273,47 +268,6 @@ export function ExploreMapContent({
             />
             <MapboxGL.CircleLayer
               id="road-reports-circles"
-              filter={['!', ['has', 'point_count']]}
-              style={{
-                circleRadius: 7,
-                circleColor: ['get', 'color'],
-                circleStrokeWidth: 2,
-                circleStrokeColor: '#ffffff',
-              }}
-            />
-          </MapboxGL.ShapeSource>
-        )}
-
-        {gasGeoJson.features.length > 0 && (
-          <MapboxGL.ShapeSource
-            id="gas-prices"
-            shape={gasGeoJson}
-            onPress={handleGasPinPress}
-            cluster
-            clusterMaxZoomLevel={14}
-            clusterRadius={50}
-          >
-            <MapboxGL.CircleLayer
-              id="gas-prices-clusters"
-              filter={['has', 'point_count']}
-              style={{
-                circleRadius: ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-                circleColor: '#d32f2f',
-                circleStrokeWidth: 2,
-                circleStrokeColor: '#ffffff',
-              }}
-            />
-            <MapboxGL.SymbolLayer
-              id="gas-prices-cluster-count"
-              filter={['has', 'point_count']}
-              style={{
-                textField: ['get', 'point_count_abbreviated'],
-                textSize: 12,
-                textColor: '#ffffff',
-              }}
-            />
-            <MapboxGL.CircleLayer
-              id="gas-prices-circles"
               filter={['!', ['has', 'point_count']]}
               style={{
                 circleRadius: 7,

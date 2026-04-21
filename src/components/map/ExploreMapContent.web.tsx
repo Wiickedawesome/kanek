@@ -65,9 +65,11 @@ export function ExploreMapContent({
   const initialCenterRef = useRef(initialCenter);
   const initialZoomRef = useRef(initialZoom);
 
-  const postsGeoJson = useMemo(() => toFeatureCollection(posts), [posts]);
+  const postsGeoJson = useMemo(() => toFeatureCollection([
+    ...posts.map((p) => ({ ...p, kind: 'post' as const })),
+    ...gasStations.map((g) => ({ ...g, kind: 'gas' as const })),
+  ]), [posts, gasStations]);
   const reportsGeoJson = useMemo(() => toFeatureCollection(reports), [reports]);
-  const gasGeoJson = useMemo(() => toFeatureCollection(gasStations), [gasStations]);
 
   const districtGeoJSON = useMemo(() => getDistrictBoundariesGeoJSON(highlightDistrict), [highlightDistrict]);
 
@@ -260,52 +262,8 @@ export function ExploreMapContent({
         },
       });
 
-      // Gas stations layer (clustered)
-      map.addSource('gas-prices', {
-        type: 'geojson',
-        data: gasGeoJson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-      map.addLayer({
-        id: 'gas-prices-clusters',
-        type: 'circle',
-        source: 'gas-prices',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-radius': ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-          'circle-color': '#d32f2f',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-      map.addLayer({
-        id: 'gas-prices-cluster-count',
-        type: 'symbol',
-        source: 'gas-prices',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': '{point_count_abbreviated}',
-          'text-size': 12,
-        },
-        paint: { 'text-color': '#ffffff' },
-      });
-      map.addLayer({
-        id: 'gas-prices-circles',
-        type: 'circle',
-        source: 'gas-prices',
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': ['get', 'color'],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-
       // Click cluster to zoom in
-      for (const layerId of ['posts-clusters', 'road-reports-clusters', 'gas-prices-clusters']) {
+      for (const layerId of ['posts-clusters', 'road-reports-clusters']) {
         map.on('click', layerId, (e) => {
           const feature = e.features?.[0];
           if (!feature) return;
@@ -324,23 +282,18 @@ export function ExploreMapContent({
         map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
       }
 
-      // Click handler for individual post pins
+      // Click handler for individual pins — dispatch by kind
       map.on('click', 'posts-circles', (e) => {
-        const id = e.features?.[0]?.properties?.id;
-        if (id) onPinPressRef.current?.(id);
-      });
-
-      // Click handler for individual gas pins
-      map.on('click', 'gas-prices-circles', (e) => {
-        const id = e.features?.[0]?.properties?.id;
-        if (id) onGasPressRef.current?.(id);
+        const props = e.features?.[0]?.properties;
+        const id = props?.id;
+        if (!id) return;
+        if (props?.kind === 'gas') onGasPressRef.current?.(id);
+        else onPinPressRef.current?.(id);
       });
 
       // Cursor for clickable layers
       map.on('mouseenter', 'posts-circles', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'posts-circles', () => { map.getCanvas().style.cursor = ''; });
-      map.on('mouseenter', 'gas-prices-circles', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'gas-prices-circles', () => { map.getCanvas().style.cursor = ''; });
     });
 
     mapRef.current = map;
@@ -359,11 +312,6 @@ export function ExploreMapContent({
     if (src) src.setData(reportsGeoJson);
   }, [reportsGeoJson]);
 
-  useEffect(() => {
-    const src = mapRef.current?.getSource('gas-prices') as mapboxgl.GeoJSONSource | undefined;
-    if (src) src.setData(gasGeoJson);
-  }, [gasGeoJson]);
-
   return (
     <div
       ref={containerRef}
@@ -372,13 +320,13 @@ export function ExploreMapContent({
   );
 }
 
-function toFeatureCollection(points: GeoPoint[]): GeoJSON.FeatureCollection {
+function toFeatureCollection(points: Array<GeoPoint & { kind?: string }>): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: points.map((p) => ({
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
-      properties: { id: p.id, color: p.color, label: p.label ?? '' },
+      properties: { id: p.id, color: p.color, label: p.label ?? '', kind: p.kind ?? 'post' },
     })),
   };
 }

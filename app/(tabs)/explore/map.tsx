@@ -1,11 +1,11 @@
 import React, { useMemo, useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, FlatList, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, FlatList, Keyboard, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack, getTimeAgo } from '@/lib/helpers';
-import { showConfirm } from '@/lib/alert';
+import { reverseGeocode } from '@/lib/mapbox';
 import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
@@ -150,17 +150,49 @@ export default function ExploreMapScreen() {
     const g = (gasPrices ?? []).find((x) => x.id === id);
     if (!g) return;
     const fmt = (cents: number | null) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)} BZD/gal`);
+
+    // Fetch registered address via reverse-geocode
+    let address = '';
+    try {
+      address = await reverseGeocode(g.station_lat, g.station_lng);
+    } catch {
+      // ignore
+    }
+
     const body = [
+      address ? address : `${g.station_lat.toFixed(5)}, ${g.station_lng.toFixed(5)}`,
+      '',
       `Regular: ${fmt(g.regular_cents)}`,
       `Premium: ${fmt(g.premium_cents)}`,
       `Diesel:  ${fmt(g.diesel_cents)}`,
       '',
       `Reported ${getTimeAgo(g.reported_at)} • ${g.verified_count ?? 0} verified`,
-      '',
-      'Verify this price?',
     ].join('\n');
-    const ok = await showConfirm(g.station_name, body);
-    if (ok) verifyGasPrice(g.id);
+
+    const isOwner = g.reporter_id === userId;
+    const goEdit = () => router.push(`/modals/report-gas?id=${g.id}`);
+    const doVerify = () => { verifyGasPrice(g.id); };
+
+    if (Platform.OS === 'web') {
+      // Web: sequential confirm dialogs
+      if (isOwner) {
+        const editFirst = window.confirm(`${g.station_name}\n\n${body}\n\nEdit this report? (Cancel = Verify instead)`);
+        if (editFirst) goEdit();
+        else if (window.confirm('Verify this price?')) doVerify();
+      } else {
+        if (window.confirm(`${g.station_name}\n\n${body}\n\nVerify this price?`)) doVerify();
+      }
+      return;
+    }
+
+    const buttons: Parameters<typeof Alert.alert>[2] = [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Verify', onPress: doVerify },
+    ];
+    if (isOwner) {
+      buttons.splice(1, 0, { text: 'Edit', onPress: goEdit });
+    }
+    Alert.alert(g.station_name, body, buttons);
   };
 
   const [headerHeight, setHeaderHeight] = useState(64);
