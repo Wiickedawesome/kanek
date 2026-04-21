@@ -18,12 +18,13 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
-import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation } from '@/store/api/bookingsApi';
+import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
+import type { PostType } from '@/types/database';
 
 const MAP_HEIGHT = 200;
 const MAP_PIXEL_WIDTH = 800; // retina
@@ -63,6 +64,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
   });
   const [deletePost] = useDeletePostMutation();
   const [createBooking] = useCreateBookingMutation();
+  const [fetchConflicts] = useLazyGetMyConflictingContractsQuery();
+  const [fetchApplicantConflicts] = useLazyGetApplicantConflictsQuery();
   const { data: existingBooking } = useGetBookingForPostQuery(
     { postId: postId ?? '', userId: userId ?? '' },
     { skip: !postId || !userId },
@@ -184,6 +187,41 @@ export default function PostDetailScreen({ backFallback }: Props) {
               size="sm"
               disabled={actionBookingId !== null}
               onPress={async () => {
+                // Warn if the applicant already has an active contract that
+                // overlaps this post's time window. Owner-side mirror of the
+                // booker-side check. Skips jobs (open-ended, unreliable
+                // duration). Best-effort — any RPC error falls through.
+                const CHECKED: PostType[] = [
+                  'route_offer',
+                  'route_request',
+                  'errand',
+                  'package',
+                ];
+                if (post.departure_at && CHECKED.includes(post.type)) {
+                  const defaultDuration =
+                    post.type === 'errand' || post.type === 'package' ? 90 : 60;
+                  try {
+                    const conflicts = await fetchApplicantConflicts({
+                      applicantId: b.user_id,
+                      at: post.departure_at,
+                      durationMin: post.route_duration_min ?? defaultDuration,
+                    }).unwrap();
+                    if (conflicts.length > 0) {
+                      const first = conflicts[0];
+                      const extra =
+                        conflicts.length > 1
+                          ? ` (and ${conflicts.length - 1} other)`
+                          : '';
+                      const proceed = await showConfirm(
+                        'Applicant has a conflict',
+                        `${name} already committed to "${first.postTitle}" at ${formatDeparture(first.departureAt)}${extra}. Accept anyway?`,
+                      );
+                      if (!proceed) return;
+                    }
+                  } catch {
+                    // Non-fatal — continue to the normal confirm.
+                  }
+                }
                 const ok = await showConfirm('Accept Applicant', getAcceptConfirmMessage(post.type, name));
                 if (!ok) return;
                 setActionBookingId(b.id);
@@ -239,7 +277,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             </View>
             {b.contract?.[0]?.id && (
               <Pressable
-                onPress={() => router.push(`/(tabs)/activity/${b.contract![0]!.id}`)}
+                onPress={() => router.push(`/(tabs)/activity/messages/${b.contract![0]!.id}`)}
                 hitSlop={8}
               >
                 <Icon name="message-circle" size={20} color={colors.forest[600]} />
@@ -254,8 +292,17 @@ export default function PostDetailScreen({ backFallback }: Props) {
   let bottomAction: React.ReactNode;
 
   if (showOwnerDeleteBar) {
+    const showManageTripOnOpen = isRouteOffer && confirmedCount > 0;
     bottomAction = (
       <View style={styles.bottomBar}>
+        {showManageTripOnOpen && (
+          <Button
+            title="Manage Trip"
+            onPress={() => router.push(`/(tabs)/activity/trip/${post.id}`)}
+            size="lg"
+            style={styles.actionButton}
+          />
+        )}
         <Button
           title="Delete Post"
           variant="outline"
@@ -276,7 +323,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             }
           }}
           size="lg"
-          style={styles.actionButton}
+          style={showManageTripOnOpen ? styles.actionButtonBelow : styles.actionButton}
         />
       </View>
     );
@@ -348,6 +395,45 @@ export default function PostDetailScreen({ backFallback }: Props) {
               return;
             }
 
+            // Scheduling conflict check — warn (don't hard-block) when the
+            // booker already has an active contract that overlaps this one.
+            // Applies to time-sensitive post types only. Jobs are skipped
+            // because they're often open-ended and have no reliable duration.
+            const CONFLICT_CHECKED_TYPES: PostType[] = [
+              'route_offer',
+              'route_request',
+              'errand',
+              'package',
+            ];
+            if (
+              post.departure_at &&
+              CONFLICT_CHECKED_TYPES.includes(post.type)
+            ) {
+              const defaultDuration =
+                post.type === 'errand' || post.type === 'package' ? 90 : 60;
+              try {
+                const conflicts = await fetchConflicts({
+                  userId,
+                  at: post.departure_at,
+                  durationMin: post.route_duration_min ?? defaultDuration,
+                }).unwrap();
+                if (conflicts.length > 0) {
+                  const first = conflicts[0];
+                  const extra =
+                    conflicts.length > 1
+                      ? ` (and ${conflicts.length - 1} other)`
+                      : '';
+                  const proceed = await showConfirm(
+                    'Schedule conflict',
+                    `You already committed to "${first.postTitle}" at ${formatDeparture(first.departureAt)}${extra}. That may overlap with this one. Continue anyway?`,
+                  );
+                  if (!proceed) return;
+                }
+              } catch {
+                // Non-fatal — fall through and let the booking attempt proceed.
+              }
+            }
+
             const confirmed = await showConfirm(
               getActionLabel(post.type),
               getConfirmMessage(post.type),
@@ -383,8 +469,14 @@ export default function PostDetailScreen({ backFallback }: Props) {
     bottomAction = (
       <View style={styles.bottomBar}>
         <Button
-          title="View Active Contract"
-          onPress={() => router.push(`/(tabs)/activity/${ownerContractId}`)}
+          title={isRouteOffer ? 'Manage Trip' : 'View Active Contract'}
+          onPress={() => {
+            if (isRouteOffer) {
+              router.push(`/(tabs)/activity/trip/${post.id}`);
+            } else {
+              router.push(`/(tabs)/activity/${ownerContractId}`);
+            }
+          }}
           size="lg"
           style={styles.actionButton}
         />
@@ -816,7 +908,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.xl,
-    paddingBottom: 120,
+    paddingBottom: 220,
     gap: spacing.lg,
   },
   badgeRow: {
@@ -991,6 +1083,10 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  actionButtonBelow: {
+    width: '100%',
+    marginTop: spacing.sm,
   },
   bottomStatusText: {
     ...typography.body1,

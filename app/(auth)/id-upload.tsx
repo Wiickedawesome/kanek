@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { Text, Image, StyleSheet, Pressable, ScrollView, Platform } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { uploadProfileAvatar } from '@/lib/avatar';
+import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import type { AppDispatch, RootState } from '@/store';
 
@@ -17,11 +17,13 @@ export default function IdUploadScreen() {
   const [idUri, setIdUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [webCamera, setWebCamera] = useState<{ facing: CameraFacing; target: 'id' | 'selfie' } | null>(null);
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const { data: profile } = useGetMyProfileQuery(user?.id ?? '', { skip: !user?.id });
 
   const requestCamera = async (): Promise<boolean> => {
+    if (Platform.OS === 'web') return true; // Permission is requested inline by getUserMedia
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       showAlert('Permission needed', 'Camera access is required');
@@ -32,9 +34,14 @@ export default function IdUploadScreen() {
 
   const takeIdPhoto = async () => {
     if (!(await requestCamera())) return;
+    if (Platform.OS === 'web') {
+      setWebCamera({ facing: 'back', target: 'id' });
+      return;
+    }
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.8,
       allowsEditing: true,
+      mediaTypes: ['images'],
     });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
@@ -48,10 +55,15 @@ export default function IdUploadScreen() {
 
   const takeSelfie = async () => {
     if (!(await requestCamera())) return;
+    if (Platform.OS === 'web') {
+      setWebCamera({ facing: 'front', target: 'selfie' });
+      return;
+    }
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.8,
       allowsEditing: true,
       cameraType: ImagePicker.CameraType.front,
+      mediaTypes: ['images'],
     });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
@@ -61,6 +73,13 @@ export default function IdUploadScreen() {
       }
       setSelfieUri(asset.uri);
     }
+  };
+
+  const handleWebCapture = (dataUrl: string) => {
+    if (!webCamera) return;
+    if (webCamera.target === 'id') setIdUri(dataUrl);
+    else setSelfieUri(dataUrl);
+    setWebCamera(null);
   };
 
   const uploadImage = async (uri: string, path: string): Promise<boolean> => {
@@ -96,7 +115,9 @@ export default function IdUploadScreen() {
       return;
     }
 
-    // Store ID document record
+    // Store ID document record. Selfie lives in the private documents bucket
+    // at selfiePath for admin verification; it intentionally does NOT become
+    // the profile avatar — users can upload that separately from their profile.
     const { error: docError } = await supabase.from('rider_documents').insert({
       user_id: user.id,
       document_url: idPath,
@@ -107,14 +128,6 @@ export default function IdUploadScreen() {
       setIsUploading(false);
       return;
     }
-
-    // Save selfie as avatar in the public avatars bucket
-    const avatarUrl = await uploadProfileAvatar({
-      userId: user.id,
-      uri: selfieUri,
-      mimeType: 'image/jpeg',
-    });
-    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id);
 
     dispatch(profilesApi.util.invalidateTags([
       { type: 'Profile', id: user.id },
@@ -182,6 +195,13 @@ export default function IdUploadScreen() {
           Your documents have been submitted for review. You can keep using kanek while we verify them.
         </Text>
       </ScrollView>
+
+      <CameraCapture
+        visible={!!webCamera}
+        facing={webCamera?.facing ?? 'back'}
+        onCapture={handleWebCapture}
+        onCancel={() => setWebCamera(null)}
+      />
     </SafeAreaView>
   );
 }

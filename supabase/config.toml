@@ -179,7 +179,7 @@ password_requirements = "letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 60
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -216,16 +216,18 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# Office 365 SMTP blocked from Supabase cloud — using built-in email for now
+# Production SMTP via Resend (Office 365 is blocked by Supabase cloud).
+# SMTP_PASS env var must hold the Resend API key (re_...).
+# Sender domain belizechain.org must be verified in Resend (SPF/DKIM).
+# support@belizechain.org is a mail alias forwarding to dev@belizechain.org.
 [auth.email.smtp]
-enabled = false
-host = "smtp.office365.com"
-port = 587
-user = "dev@belizechain.org"
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
 pass = "env(SMTP_PASS)"
-admin_email = "dev@belizechain.org"
-sender_name = "Kanek"
+admin_email = "support@belizechain.org"
+sender_name = "Kanek App"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
@@ -404,3 +406,34 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./declarative"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# ---------------------------------------------------------------------------
+# Edge Functions — disable gateway JWT verification.
+#
+# The platform gateway only accepts HS256-signed JWTs. Projects using the new
+# asymmetric signing keys (ES256) cannot pass a user session token through the
+# gateway. Each function below verifies auth itself via `/auth/v1/user`, which
+# supports ES256 natively.
+# ---------------------------------------------------------------------------
+[functions.delete-account]
+verify_jwt = false
+[functions.notify-user]
+verify_jwt = false
+[functions.send-push]
+verify_jwt = false
+[functions.send-sms-sos]
+verify_jwt = false
+[functions.send-email-receipt]
+verify_jwt = false
+[functions.ekyash-authorize]
+verify_jwt = false
+[functions.ekyash-create-invoice]
+verify_jwt = false
+[functions.ekyash-cancel-invoice]
+verify_jwt = false
+[functions.ekyash-invoice-info]
+verify_jwt = false
+[functions.ekyash-refund]
+verify_jwt = false
+[functions.check-route-activation]
+verify_jwt = false

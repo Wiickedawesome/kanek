@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import type { CreatePaymentResponse, PaymentStatusResponse } from '@/types/ekyash';
 import type { Database } from '@/types/database';
 
@@ -26,7 +27,7 @@ export const ekyashApi = createApi({
   endpoints: (builder) => ({
     createPayment: builder.mutation<CreatePaymentResponse, CreatePaymentArgs>({
       queryFn: async (args) => {
-        const { data, error } = await supabase.functions.invoke('ekyash-create-invoice', {
+        const { data, error } = await invokeFunction<CreatePaymentResponse>('ekyash-create-invoice', {
           body: args,
         });
 
@@ -58,7 +59,7 @@ export const ekyashApi = createApi({
 
     cancelPayment: builder.mutation<{ success: boolean }, CancelPaymentArgs>({
       queryFn: async ({ orderId }) => {
-        const { data, error } = await supabase.functions.invoke('ekyash-cancel-invoice', {
+        const { data, error } = await invokeFunction<{ success: boolean }>('ekyash-cancel-invoice', {
           body: { orderId },
         });
 

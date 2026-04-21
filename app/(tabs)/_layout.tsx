@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { Redirect, Tabs, usePathname } from 'expo-router';
+import { Tabs, usePathname, router } from 'expo-router';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
@@ -12,9 +12,23 @@ export default function TabLayout() {
   const pathname = normalizeAppPath(usePathname());
   const nextPath = nextAuthRoute ? normalizeAppPath(nextAuthRoute) : null;
 
+  // Use an effect instead of <Redirect> so replaces fire exactly once per
+  // state transition. Rendering <Redirect> every render while pathname is
+  // still catching up causes "Maximum update depth exceeded" loops.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!session && pathname !== '/welcome') {
+      router.replace('/(auth)/welcome');
+      return;
+    }
+    if (!isComplete && nextAuthRoute && pathname !== nextPath) {
+      router.replace(nextAuthRoute as any);
+    }
+  }, [isLoading, session, pathname, isComplete, nextAuthRoute, nextPath]);
+
   if (isLoading) return null;
-  if (!session && pathname !== '/welcome') return <Redirect href="/(auth)/welcome" />;
-  if (!isComplete && nextAuthRoute && pathname !== nextPath) return <Redirect href={nextAuthRoute as any} />;
+  if (!session && pathname !== '/welcome') return null;
+  if (!isComplete && nextAuthRoute && pathname !== nextPath) return null;
 
   const userId = session?.user?.id;
 

@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import { captureError } from '@/lib/sentry';
 import type { Database } from '@/types/database';
 
@@ -68,7 +69,7 @@ export const messagesApi = createApi({
             const recipientId = contract.parties.find((id: string) => id !== senderId);
             if (recipientId) {
               const senderName = sender?.first_name || 'Someone';
-              const { error: pushError } = await supabase.functions.invoke('send-push', {
+              const { error: pushError } = await invokeFunction('send-push', {
                 body: {
                   userId: recipientId,
                   title: `${senderName} sent you a message`,

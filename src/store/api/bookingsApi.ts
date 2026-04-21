@@ -107,6 +107,23 @@ interface GetContractsArgs {
   offset?: number;
 }
 
+/** A single scheduling conflict surfaced to the booker */
+export interface ConflictContract {
+  contractId: string;
+  postId: string;
+  postTitle: string;
+  postType: PostType;
+  departureAt: string;
+}
+
+interface GetConflictsArgs {
+  userId: string;
+  /** ISO timestamp of the new post's scheduled time */
+  at: string;
+  /** Estimated duration of the new post in minutes */
+  durationMin: number;
+}
+
 interface AuthorJoinNotification {
   type: string;
   title: string;
@@ -518,6 +535,120 @@ export const bookingsApi = createApi({
       providesTags: (_r, _e, id) => [{ type: 'Contract', id }],
     }),
 
+    /**
+     * Return the user's active contracts whose time window overlaps the
+     * proposed `at`/`durationMin` range. Used to warn a booker before they
+     * commit to a second trip that could double-book them.
+     *
+     * Buffer: 15 min either side.
+     * Conflict window = [at − buffer, at + durationMin + buffer] compared
+     * against each other contract's [dep, dep + that post's duration + buffer].
+     */
+    getMyConflictingContracts: builder.query<ConflictContract[], GetConflictsArgs>({
+      queryFn: async ({ userId, at, durationMin }) => {
+        const BUFFER_MIN = 15;
+        const proposedStart = new Date(at).getTime() - BUFFER_MIN * 60_000;
+        const proposedEnd = new Date(at).getTime() + (durationMin + BUFFER_MIN) * 60_000;
+        if (Number.isNaN(proposedStart)) return { data: [] };
+
+        const { data, error } = await supabase
+          .from('contracts')
+          .select(`
+            id,
+            departure_at,
+            status,
+            post:posts (
+              id, title, type, route_duration_min, departure_at
+            )
+          `)
+          .contains('parties', [userId])
+          .eq('status', 'active')
+          .not('departure_at', 'is', null);
+
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+
+        type Row = {
+          id: string;
+          departure_at: string | null;
+          post: {
+            id: string;
+            title: string | null;
+            type: PostType;
+            route_duration_min: number | null;
+            departure_at: string | null;
+          } | null;
+        };
+
+        // Default window when a post has no explicit duration.
+        const defaultDurationFor = (t: PostType): number => {
+          if (t === 'route_offer' || t === 'route_request') return 60;
+          if (t === 'errand' || t === 'package') return 90;
+          return 60;
+        };
+
+        const conflicts: ConflictContract[] = [];
+        for (const r of (data as unknown as Row[]) ?? []) {
+          const depIso = r.departure_at ?? r.post?.departure_at ?? null;
+          if (!depIso || !r.post) continue;
+          const otherStartMs = new Date(depIso).getTime() - BUFFER_MIN * 60_000;
+          const otherDurationMin =
+            r.post.route_duration_min ?? defaultDurationFor(r.post.type);
+          const otherEndMs =
+            new Date(depIso).getTime() + (otherDurationMin + BUFFER_MIN) * 60_000;
+          // Interval overlap: start_a < end_b && start_b < end_a
+          if (proposedStart < otherEndMs && otherStartMs < proposedEnd) {
+            conflicts.push({
+              contractId: r.id,
+              postId: r.post.id,
+              postTitle: r.post.title ?? 'Another trip',
+              postType: r.post.type,
+              departureAt: depIso,
+            });
+          }
+        }
+        return { data: conflicts };
+      },
+    }),
+
+    /**
+     * Post-owner variant of the conflict check. Calls the
+     * `check_user_availability` SECURITY DEFINER RPC because RLS forbids
+     * owners from reading an applicant's other contracts directly.
+     * The RPC validates that the caller is the author of a post the
+     * applicant has a pending booking on before returning anything.
+     */
+    getApplicantConflicts: builder.query<
+      ConflictContract[],
+      { applicantId: string; at: string; durationMin: number }
+    >({
+      queryFn: async ({ applicantId, at, durationMin }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase.rpc as any)('check_user_availability', {
+          p_user_id: applicantId,
+          p_at: at,
+          p_duration_min: durationMin,
+        });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        type Row = {
+          contract_id: string;
+          post_id: string;
+          post_title: string;
+          post_type: PostType;
+          departure_at: string;
+        };
+        const rows = (data as unknown as Row[]) ?? [];
+        return {
+          data: rows.map((r) => ({
+            contractId: r.contract_id,
+            postId: r.post_id,
+            postTitle: r.post_title,
+            postType: r.post_type,
+            departureAt: r.departure_at,
+          })),
+        };
+      },
+    }),
+
   }),
 });
 
@@ -532,4 +663,6 @@ export const {
   useCompleteBookingMutation,
   useGetMyContractsQuery,
   useGetContractByIdQuery,
+  useLazyGetMyConflictingContractsQuery,
+  useLazyGetApplicantConflictsQuery,
 } = bookingsApi;

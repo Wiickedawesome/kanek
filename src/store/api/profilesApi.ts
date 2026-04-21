@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import type { Database } from '@/types/database';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -251,7 +252,7 @@ export const profilesApi = createApi({
     /** Delete account via edge function — soft-delete with 90-day recovery */
     deleteAccount: builder.mutation<{ success: boolean }, void>({
       queryFn: async () => {
-        const { data, error } = await supabase.functions.invoke('delete-account', {
+        const { data, error } = await invokeFunction<{ success: boolean }>('delete-account', {
           body: {},
         });
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };

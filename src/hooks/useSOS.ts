@@ -4,6 +4,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import * as Location from 'expo-location';
 import { useSelector } from 'react-redux';
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import type { RootState } from '@/store';
 
 interface SOSState {
@@ -54,7 +55,7 @@ export function useSOS() {
 
     try {
       // Call edge function to send emergency SMS (userId derived from auth JWT server-side)
-      const { data, error } = await supabase.functions.invoke('send-sms-sos', {
+      const { data, error } = await invokeFunction<{ sent: boolean; to?: string }>('send-sms-sos', {
         body: {
           latitude: coords?.latitude ?? null,
           longitude: coords?.longitude ?? null,

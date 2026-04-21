@@ -424,7 +424,7 @@ export default function ActivityScreen() {
 
       for (const post of filtered) {
         const item: SectionItem = { kind: 'post', data: post };
-        if (post.status === 'filled') {
+        if (post.status === 'filled' || post.status === 'in_progress') {
           active.push(item);
         } else {
           regular.push(item);

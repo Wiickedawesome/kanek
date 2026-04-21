@@ -53,6 +53,11 @@ type AuthFailure = { userId?: never; error: Response };
 /**
  * Verify the incoming request carries a valid Supabase user JWT.
  * Returns the authenticated user's UUID on success, or an error Response on failure.
+ *
+ * We hit `/auth/v1/user` directly rather than using `supabase.auth.getUser(token)`
+ * because older supabase-js versions do local JWT parsing that doesn't understand
+ * ES256-signed tokens (the new asymmetric signing keys). The auth endpoint itself
+ * handles ES256 natively.
  */
 export async function verifyAuth(req: Request): Promise<AuthSuccess | AuthFailure> {
   const authHeader = req.headers.get('Authorization');
@@ -60,12 +65,28 @@ export async function verifyAuth(req: Request): Promise<AuthSuccess | AuthFailur
     return { error: errorResponse('Missing authorization header', 401) };
   }
   const token = authHeader.slice(7);
-  const supabase = createServiceClient();
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) {
+  const user = await fetchAuthUser(token);
+  if (!user) {
     return { error: errorResponse('Invalid or expired token', 401) };
   }
   return { userId: user.id };
+}
+
+/** Resolve a user from an access token by calling the auth server directly. */
+async function fetchAuthUser(token: string): Promise<{ id: string } | null> {
+  try {
+    const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { id?: string };
+    return body.id ? { id: body.id } : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -89,9 +110,8 @@ export async function verifyAuthOrInternal(
   if (tokenBytes.length === keyBytes.length && timingSafeEqual(tokenBytes, keyBytes)) {
     return { userId: null };
   }
-  const supabase = createServiceClient();
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) {
+  const user = await fetchAuthUser(token);
+  if (!user) {
     return { error: errorResponse('Invalid or expired token', 401) };
   }
   return { userId: user.id };

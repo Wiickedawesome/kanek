@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import { captureError } from '@/lib/sentry';
 
 export interface NotifyUserPayload {
@@ -40,9 +41,7 @@ export async function getCurrentNotificationActor(): Promise<NotificationActor |
 }
 
 export async function notifyUser(payload: NotifyUserPayload) {
-  const { error } = await supabase.functions.invoke('notify-user', {
-    body: payload,
-  });
+  const { error } = await invokeFunction('notify-user', { body: payload });
 
   if (error) {
     throw error;
@@ -59,9 +58,7 @@ export interface SendPushOnlyPayload {
 /** Send a push notification only — no in-app notification row created.
  *  Use when the DB trigger already handles the in-app notification. */
 export async function sendPushOnly(payload: SendPushOnlyPayload) {
-  const { error } = await supabase.functions.invoke('send-push', {
-    body: payload,
-  });
+  const { error } = await invokeFunction('send-push', { body: payload });
 
   if (error) {
     captureError(error, { context: 'sendPushOnly', payload });
