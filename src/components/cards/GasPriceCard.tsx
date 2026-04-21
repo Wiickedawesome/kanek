@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, typography, spacing } from '@/theme';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui/Card';
 import { getTimeAgo } from '@/lib/helpers';
+import { reverseGeocode } from '@/lib/mapbox';
 
 interface GasPriceCardProps {
   gasPrice: {
     id: string;
     station_name: string;
+    station_lat?: number | null;
+    station_lng?: number | null;
     regular_cents: number | null;
     premium_cents: number | null;
     diesel_cents: number | null;
@@ -26,6 +29,22 @@ function formatPrice(cents: number | null): string {
 
 export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
   const age = getTimeAgo(gasPrice.reported_at);
+  const [address, setAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const lat = gasPrice.station_lat;
+    const lng = gasPrice.station_lng;
+    if (lat == null || lng == null) return;
+    reverseGeocode(lat, lng)
+      .then((name) => { if (!cancelled) setAddress(name); })
+      .catch(() => { /* ignore */ });
+    return () => { cancelled = true; };
+  }, [gasPrice.station_lat, gasPrice.station_lng]);
+
+  const showAddress =
+    address &&
+    address.trim().toLowerCase() !== gasPrice.station_name.trim().toLowerCase();
 
   return (
     <Card onPress={onPress} style={styles.card}>
@@ -36,6 +55,13 @@ export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress
         </Text>
         <Text style={styles.age}>{age}</Text>
       </View>
+
+      {showAddress ? (
+        <View style={styles.addressRow}>
+          <Icon name="map-pin" size={14} color={colors.neutral[500]} />
+          <Text style={styles.address} numberOfLines={2}>{address}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.pricesRow}>
         <View style={styles.priceCol}>
@@ -79,6 +105,18 @@ const styles = StyleSheet.create({
   age: {
     ...typography.caption,
     color: colors.neutral[400],
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingLeft: 26,
+  },
+  address: {
+    ...typography.caption,
+    color: colors.neutral[500],
+    flex: 1,
+    lineHeight: 16,
   },
   pricesRow: {
     flexDirection: 'row',
