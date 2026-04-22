@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useSelector , useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/icons';
 import { Button, Card, ScreenHeader } from '@/components/ui';
@@ -30,11 +30,9 @@ import {
   areAllDriverDocsApproved,
   areAllDriverDocsUploaded,
 } from '@/store/api/driverDocumentsApi';
-import type { RootState } from '@/store';
+import type { RootState , AppDispatch } from '@/store';
 import type { ReviewStatus } from '@/types/database';
 import { showAlert } from '@/lib/alert';
-import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '@/store';
 
 function getGovIdStatusLabel(status: ReviewStatus | 'not_uploaded'): string {
   switch (status) {

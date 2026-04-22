@@ -17,16 +17,13 @@ import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { FilterChip, EmptyState, TopographicBg, ScreenHeader, FeedListSkeleton } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
-import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
+import { useGetPostsQuery } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
-import type { Database } from '@/types/database';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
 import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
-
-type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'All', value: null },

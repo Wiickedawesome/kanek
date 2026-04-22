@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing } from '@/theme';
 import { Icon, type IconName } from '@/components/icons';
 
 interface EmptyStateProps {

@@ -13,7 +13,7 @@ import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { navigateToNotification } from '@/lib/helpers';
 import { hapticLight } from '@/lib/haptics';
-import type { RootState, AppDispatch } from '@/store';
+import type { AppDispatch } from '@/store';
 import { dismissToast, selectCurrentToast } from '@/store/slices/toastSlice';
 import type { IconName } from '@/components/icons';
 

@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+import { timingSafeEqual } from 'https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts';
+
 /** Create a Supabase admin client with service_role key */
 export function createServiceClient() {
   return createClient(
@@ -7,8 +9,6 @@ export function createServiceClient() {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 }
-
-import { timingSafeEqual } from 'https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts';
 
 /** Allowed CORS origins */
 const ALLOWED_ORIGINS = [

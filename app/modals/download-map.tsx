@@ -9,8 +9,7 @@ import {
 import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader } from '@/components/ui';
-import { TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader , TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { safeGoBack } from '@/lib/helpers';
 import {

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetDriverDetailsQuery, useGetLatestRiderDocumentQuery, useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { useReactivateAccountMutation } from '@/store/api/profilesApi';
+import { useGetDriverDetailsQuery, useGetLatestRiderDocumentQuery, useGetMyProfileQuery , useReactivateAccountMutation } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 
 export function useOnboardingStatus() {

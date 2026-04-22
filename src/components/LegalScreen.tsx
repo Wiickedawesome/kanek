@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
 import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, typography, spacing } from '@/theme';
 import { safeGoBack } from '@/lib/helpers';
 
 interface LegalScreenProps {

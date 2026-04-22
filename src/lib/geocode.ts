@@ -5,7 +5,7 @@
 
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import { BELIZE_BBOX } from '@/lib/constants';
-import { searchLocalPois, type PoiResult } from '@/lib/belizePois';
+import { searchLocalPois } from '@/lib/belizePois';
 
 export interface GeocodeSuggestion {
   id: string;

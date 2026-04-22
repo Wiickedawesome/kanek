@@ -103,6 +103,7 @@ export function ExploreMapContent({
       zoom: initialZoom ?? DEFAULT_NEARBY_ZOOM,
       duration: 600,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- narrow deps to coords to avoid re-flying on new object refs
   }, [initialCenter?.latitude, initialCenter?.longitude, initialZoom]);
 
   // Push NavigationControl below the header overlay
@@ -320,7 +321,7 @@ export function ExploreMapContent({
   );
 }
 
-function toFeatureCollection(points: Array<GeoPoint & { kind?: string }>): GeoJSON.FeatureCollection {
+function toFeatureCollection(points: (GeoPoint & { kind?: string })[]): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: points.map((p) => ({

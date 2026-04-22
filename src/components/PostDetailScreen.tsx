@@ -139,11 +139,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const showOpenBookingBar = isPostOpen && !isOwner && !existingBooking;
   const hasOwnerBookings = (postBookings?.length ?? 0) > 0;
   const showOwnerResponsesSection = isOwner && hasOwnerBookings;
-  const pendingCount = (postBookings ?? []).filter((b) => b.status === 'pending').length;
   const confirmedCount = (postBookings ?? []).filter((b) => b.status === 'confirmed').length;
-  const confirmedSeats = (postBookings ?? [])
-    .filter((b) => b.status === 'confirmed')
-    .reduce((sum, b) => sum + (b.seats_booked ?? 1), 0);
   const bookerRows = (postBookings ?? []).map((b) => {
     const name = b.user
       ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
@@ -852,10 +848,6 @@ function getSuccessMessage(type: string): string {
     case 'job': return 'Application sent! Check Activity for updates.';
     default: return 'Response sent! Check Activity for updates.';
   }
-}
-
-function shouldOpenPaymentAfterBooking(type: string, paymentMethod: string | null | undefined): boolean {
-  return paymentMethod === 'ekyash' && type === 'route_offer';
 }
 
 function getUnavailablePostText(status: string): string {

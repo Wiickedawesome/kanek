@@ -219,7 +219,7 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
   const routeCoordinates = ((): [number, number][] | undefined => {
     const geom = post.route_geometry as unknown;
     if (!geom || typeof geom !== 'object') return undefined;
-    const directions = (geom as { routes?: Array<{ geometry?: { coordinates?: [number, number][] } }> }).routes?.[0]?.geometry?.coordinates;
+    const directions = (geom as { routes?: { geometry?: { coordinates?: [number, number][] } }[] }).routes?.[0]?.geometry?.coordinates;
     if (directions) return directions;
     const flat = (geom as { coordinates?: [number, number][] }).coordinates;
     return flat ?? undefined;

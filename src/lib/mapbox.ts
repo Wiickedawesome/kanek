@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 import { BELIZE_BBOX } from './constants';
 
+// ── Reverse Geocoding ────────────────────────────────────────────────
+
+import { findNearestPoi } from './belizePois';
+
 export const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
 /** @deprecated Use BELIZE_BBOX from '@/lib/constants' directly. Re-exported for backward compat. */
@@ -176,10 +180,6 @@ export function formatDuration(minutes: number): string {
   const mins = minutes % 60;
   return mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`;
 }
-
-// ── Reverse Geocoding ────────────────────────────────────────────────
-
-import { findNearestPoi } from './belizePois';
 
 /**
  * Reverse-geocode coordinates to a place name.

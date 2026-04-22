@@ -11,8 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader } from '@/components/ui';
-import { TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader , TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';

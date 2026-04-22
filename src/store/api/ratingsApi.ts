@@ -65,7 +65,7 @@ export const ratingsApi = createApi({
         if (error)
           return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         // Map flat rater columns into nested object for backward compat
-        const mapped = ((data as unknown as Array<Record<string, unknown>>) ?? []).map((row) => ({
+        const mapped = ((data as unknown as Record<string, unknown>[]) ?? []).map((row) => ({
           id: row.id as string,
           contract_id: row.contract_id as string,
           rated_id: row.rated_id as string,

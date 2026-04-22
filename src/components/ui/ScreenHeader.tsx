@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { colors, spacing, borderRadius, shadows } from '@/theme';
+import { colors, spacing, shadows } from '@/theme';
 
 interface ScreenHeaderProps {
   children: React.ReactNode;

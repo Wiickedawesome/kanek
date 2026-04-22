@@ -7,7 +7,6 @@ import {
   Pressable,
   Image,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon, type IconName } from '@/components/icons';
@@ -16,9 +15,8 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { showAlert } from '@/lib/alert';
-import type { DriverDocumentType, ReviewStatus } from '@/types/database';
-import type { Database } from '@/types/database';
-import { DRIVER_DOC_LABELS, DRIVER_DOC_ICONS } from '@/store/api/driverDocumentsApi';
+import type { DriverDocumentType, ReviewStatus , Database } from '@/types/database';
+import { DRIVER_DOC_LABELS } from '@/store/api/driverDocumentsApi';
 
 type DriverDocumentRow = Database['public']['Tables']['driver_documents']['Row'];
 
@@ -98,7 +96,6 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
   const [uploading, setUploading] = useState(false);
 
   const label = DRIVER_DOC_LABELS[documentType];
-  const iconName = DRIVER_DOC_ICONS[documentType];
 
   const pickImage = useCallback(async (useCamera: boolean) => {
     // On web, browser handles permissions natively — skip expo permission check

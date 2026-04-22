@@ -3,7 +3,6 @@ import { Linking } from 'react-native';
 import { showAlert, showConfirm } from '@/lib/alert';
 import * as Location from 'expo-location';
 import { useSelector } from 'react-redux';
-import { supabase } from '@/lib/supabase';
 import { invokeFunction } from '@/lib/invokeFunction';
 import type { RootState } from '@/store';
 

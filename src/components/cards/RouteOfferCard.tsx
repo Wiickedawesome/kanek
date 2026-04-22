@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, typography, spacing, borderRadius } from '@/theme';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui/Card';
 import { PostTypeBadge } from '@/components/ui/Badge';
