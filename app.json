@@ -51,6 +51,9 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -88,7 +91,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Kanek needs photo library access for ID verification uploads.",
-          "cameraPermission": "Kanek needs camera access for ID verification photos."
+          "cameraPermission": "Kanek needs camera access for ID verification photos.",
+          "microphonePermission": false
         }
       ],
       [

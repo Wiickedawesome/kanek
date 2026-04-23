@@ -8,8 +8,8 @@ export default function PrivacyPolicyScreen() {
       backFallback="/(tabs)/profile/"
       title="Privacy Policy"
       sections={PRIVACY_POLICY_SECTIONS}
-      lastUpdated="April 5, 2026"
-      contactEmail="privacy@kanek.bz"
+      lastUpdated="April 23, 2026"
+      contactEmail="support@belizechain.org"
     />
   );
 }

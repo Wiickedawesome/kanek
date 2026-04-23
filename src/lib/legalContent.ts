@@ -1,35 +1,35 @@
 export const PRIVACY_POLICY_SECTIONS = [
   {
     heading: 'Overview',
-    body: 'Kanek ("we", "us", "our") operates the Kanek mobile application. This Privacy Policy describes how we collect, use, and share your personal information when you use our app.',
+    body: 'Kanek ("we", "us", "our") operates a community mobility board for Belize through the Kanek mobile app and related web pages. This Privacy Policy explains what information we collect, how we use it, when we share it, and what choices you have.',
   },
   {
     heading: '1. Information We Collect',
-    body: 'We collect the following categories of information:\n\n• Account information: phone number, name, email address, profile photo, district, and role (rider or driver).\n• Identity verification: government-issued ID photos and selfies for driver verification.\n• Driver documents: driver\'s license, insurance, and vehicle details (make, model, year, color, plate number).\n• Location data: GPS coordinates when you use the app to browse posts, create rides, or share your position during active trips.\n• Transaction data: payment amounts, E-Kyash transaction IDs, and payment status for completed transactions.\n• Usage data: posts created, bookings made, ratings given, messages sent within contracts, and interaction with the feed.\n• Device information: push notification tokens, device type, and operating system version.\n• Emergency contact: an optional phone number you provide for the SOS feature.',
+    body: 'We collect the following categories of information:\n\n• Account and profile information: phone number, first and last name, email address, profile photo, district, role, and account preferences.\n• Verification information: government ID images, driver\'s license details, insurance details, vehicle information, and selfie check-ins with GPS when required for driver or trip verification.\n• Mobility activity: posts, bookings, contracts, messages between contract parties, ratings, reports, flags, and other actions you take in the app.\n• Payment information: selected payment method, E-Kyash invoice and transaction references, receipt records, platform fees, refunds, and donation amounts when digital payments are used.\n• Location information: approximate or precise location when you browse the map, create location-based posts, participate in live trip tracking, or submit a trip check-in.\n• Device and service data: push notification tokens, device and app information, log or diagnostics data, and bot-protection results used during sign-in.\n• Emergency contact information: the optional contact details you add for the SOS feature.',
   },
   {
     heading: '2. How We Use Your Information',
-    body: 'We use your information to:\n\n• Provide and operate the Kanek service, including displaying your posts to other users and facilitating bookings.\n• Verify your identity for driver accounts.\n• Process payments through E-Kyash and track transaction history.\n• Send push notifications about bookings, messages, and important account updates.\n• Enable the SOS emergency feature, which sends your GPS location to your emergency contact.\n• Calculate and display ratings and trust indicators.\n• Enforce community guidelines through the flagging and strike system.\n• Improve the app and develop new features.',
+    body: 'We use your information to:\n\n• Create and secure your account, including phone-based sign-in and bot-protection checks.\n• Publish posts, match users, manage bookings and contracts, and enable contract messaging.\n• Verify riders and drivers, review reports, and enforce trust and safety rules including flags, strikes, and account restrictions.\n• Process E-Kyash payments, receipts, refunds, and donation tracking where applicable.\n• Deliver maps, geocoding, live tracking, selfie check-ins, push notifications, email receipts, and SOS alerts.\n• Provide support, troubleshoot problems, monitor reliability, and improve the product.',
   },
   {
     heading: '3. Information Sharing',
-    body: 'We share your information only as follows:\n\n• With other Kanek users: your name, profile photo, role, rating, district, and posts you create are visible to other users. Your phone number is shared only with users you have an active booking or contract with.\n• With E-Kyash: payment details necessary to process transactions.\n• With service providers: push notification delivery (Expo/FCM/APNs), email delivery (Resend), and map services (Mapbox).\n• For legal compliance: when required by Belizean law, court order, or government request.\n• For safety: when we believe disclosure is necessary to protect the safety of our users or the public.\n\nWe do not sell your personal information to third parties.',
+    body: 'We share information only in the following situations:\n\n• With other Kanek users when needed to operate the board: your profile details, ratings, posts, booking details, contract messages, check-ins, and live trip information are visible to the users involved in the relevant interaction. Phone numbers are shared only where the product flow requires active trip or contract coordination.\n• With service providers that help us run the platform, including Supabase (backend, storage, auth, realtime), Mapbox (maps and geocoding), Expo/FCM/APNs (push notifications), Resend (email receipts), hCaptcha (bot protection), Sentry (error monitoring), Twilio if SOS SMS is enabled, and E-Kyash (digital payments).\n• With administrators, regulators, law enforcement, or emergency contacts when needed for fraud prevention, legal compliance, account enforcement, or urgent safety issues.\n\nWe do not sell your personal information.',
   },
   {
-    heading: '4. Data Storage & Security',
-    body: 'Your data is stored securely in Supabase cloud infrastructure with row-level security policies. Identity documents are stored in encrypted cloud storage buckets with restricted access. We use industry-standard security measures to protect your data, but no system is 100% secure.',
+    heading: '4. Location, Messages, and Safety Features',
+    body: 'Kanek uses location and communication data in a few specific ways:\n\n• Browsing and posting may use location to show nearby routes, errands, deliveries, jobs, and map results within Belize.\n• Active trips may use precise and, for drivers, background location to support live tracking between trip participants.\n• Driver selfie check-ins store a photo, timestamp, and GPS coordinates for the relevant contract.\n• Contract messages are stored so participants can coordinate inside the app.\n• The SOS feature can send your location to the emergency contact you provided. It is a supplemental safety feature and not a replacement for emergency services.',
   },
   {
-    heading: '5. Location Data',
-    body: 'We collect location data in two ways:\n\n• When browsing: approximate location to show nearby posts and rides within Belize.\n• During active trips: precise GPS location shared with trip participants for live tracking. Background location is used only during active driver trips and can be revoked at any time through your device settings.\n\nLocation data is not stored beyond what is necessary for the services described above.',
+    heading: '5. Data Retention and Deletion',
+    body: 'We keep data for different periods depending on the feature:\n\n• Active account information is retained while your account remains active.\n• Posts, bookings, messages, check-ins, receipts, and safety records may be retained as long as needed to operate the service, resolve disputes, enforce rules, or meet legal obligations.\n• If you delete your account, we soft-delete and anonymize core profile data, revoke sessions, and allow a recovery window of up to 90 days. Accounts marked for deletion may be permanently purged after that recovery window, and full cleanup can extend up to one year where retention is required for system integrity, fraud prevention, or legal compliance.',
   },
   {
     heading: '6. Your Rights',
-    body: 'You have the right to:\n\n• Access and review your personal data through the app settings.\n• Update your profile information, including name, email, district, and emergency contact.\n• Request deletion of your account and associated data by contacting us.\n• Revoke location permissions through your device settings.\n• Opt out of non-essential push notifications through the app notification settings.',
+    body: 'You can:\n\n• Review and update profile information inside the app.\n• Change device permissions such as location, camera, photo library, and notifications through your device settings.\n• Request account deletion through the app flow or by contacting support.\n• Contact us to ask questions about your data, report a problem, or request clarification about how information is handled.',
   },
   {
-    heading: '7. Data Retention',
-    body: 'We retain your personal information for as long as your account is active. Posts expire automatically based on their type. Transaction records are retained for the period required by Belizean financial regulations. If you request account deletion, we will remove your personal data within 30 days, except where retention is required by law.',
+    heading: '7. Security',
+    body: 'We use access controls, storage protections, encrypted transport, and row-level security policies to protect the data we hold. Driver documents and check-in selfies are stored in restricted storage buckets. Even with these measures, no service can guarantee absolute security.',
   },
   {
     heading: '8. Children\'s Privacy',
@@ -37,70 +37,66 @@ export const PRIVACY_POLICY_SECTIONS = [
   },
   {
     heading: '9. Changes to This Policy',
-    body: 'We may update this Privacy Policy from time to time. We will notify you of significant changes through the app. Your continued use of Kanek after changes constitutes acceptance of the updated policy.',
+    body: 'We may update this Privacy Policy from time to time. When changes are material, we may update the in-app or web notice and revise the last-updated date. Your continued use of Kanek after the updated policy takes effect means the new version applies.',
   },
 ];
 
 export const TERMS_OF_SERVICE_SECTIONS = [
   {
     heading: 'Overview',
-    body: 'These Terms of Service ("Terms") govern your use of the Kanek mobile application operated by Kanek ("we", "us", "our"). By using Kanek, you agree to these Terms.',
+    body: 'These Terms of Service ("Terms") govern your use of the Kanek app, related web pages, and connected services. By creating an account, browsing listings, posting, booking, messaging, or paying through Kanek, you agree to these Terms.',
   },
   {
     heading: '1. What Kanek Is',
-    body: 'Kanek is a community mobility board for Belize. It is a platform where users can post and discover rides, errands, deliveries, and jobs. Kanek is NOT a dispatch service. Kanek is NOT a ride-hailing app. We do not employ drivers, assign rides, set prices, or guarantee availability. All arrangements are made directly between users.',
+    body: 'Kanek is a community mobility board for Belize. Users can post and discover rides, routes, errands, deliveries, and jobs. Kanek is a platform, not a carrier, employer, dispatch service, broker, or ride-hailing company. We do not assign drivers, guarantee availability, guarantee outcomes, or control the real-world conduct of users. Arrangements are made between the people using the board.',
   },
   {
     heading: '2. Eligibility',
-    body: 'You must be at least 18 years old and reside in Belize to use Kanek. By creating an account, you represent that you meet these requirements. Driver accounts require identity verification, a valid driver\'s license, insurance, and vehicle registration.',
+    body: 'You must be at least 18 years old and legally able to enter into binding agreements to use Kanek. By creating an account, you represent that the information you provide is accurate and current. Driver-facing features may require identity verification, a valid driver\'s license, insurance, vehicle details, and any other information reasonably required for trust and safety review.',
   },
   {
     heading: '3. Account Responsibilities',
-    body: 'You are responsible for:\n\n• Maintaining the accuracy of your profile information.\n• Keeping your phone number current — this is your primary means of authentication.\n• All activity that occurs under your account.\n• Not sharing your account or allowing others to use it.\n\nWe reserve the right to suspend or terminate accounts that violate these Terms.',
+    body: 'You are responsible for:\n\n• Maintaining accurate profile, payment, and contact information.\n• Keeping your phone number current because it is part of account access and verification.\n• Protecting your device and account credentials.\n• All activity that occurs under your account.\n• Not sharing your account or letting someone else use it.\n\nWe may suspend, restrict, or terminate accounts that violate these Terms or create safety, fraud, or compliance risk.',
   },
   {
-    heading: '4. User Conduct',
-    body: 'When using Kanek, you agree NOT to:\n\n• Post misleading, false, or fraudulent content.\n• Harass, threaten, or discriminate against other users.\n• Use the platform for illegal activities.\n• Circumvent the platform to avoid fees on transactions initiated through Kanek.\n• Create multiple accounts.\n• Scrape, copy, or redistribute content from the platform.\n• Interfere with the operation of the service.',
+    heading: '4. Posts, Bookings, and Community Conduct',
+    body: 'When using Kanek, you agree to keep listings, pricing, routing, and availability information accurate. You also agree not to:\n\n• Post false, misleading, illegal, or fraudulent content.\n• Harass, threaten, exploit, or discriminate against other users.\n• Use Kanek for unlawful conduct or unsafe activity.\n• Circumvent Kanek to avoid platform fees on transactions initiated through Kanek\'s digital payment flow.\n• Create duplicate or fake accounts, scrape the platform, or interfere with the service.\n• Misuse messaging, ratings, flags, check-ins, or safety tools.',
   },
   {
-    heading: '5. Posts & Content',
-    body: 'Users may create posts for rides, errands, package deliveries, and jobs. All posts must:\n\n• Be accurate and truthful.\n• Include valid locations within Belize.\n• Set prices in Belizean Dollars (BZD) at fair market rates.\n• Not contain inappropriate, illegal, or harmful content.\n\nPosts expire automatically. We reserve the right to remove any post that violates these Terms.',
+    heading: '5. Payments and Fees',
+    body: 'Kanek supports cash transactions and, where offered, E-Kyash digital payments in Belizean Dollars (BZD). If you use E-Kyash through Kanek:\n\n• A 3% platform fee applies to the transaction.\n• An optional community donation may also be added.\n• Receipt, refund, and transaction status records may be created and stored.\n• Payment processing depends on third-party services, and availability or settlement timing may be outside our direct control.\n\nCash arrangements remain the responsibility of the users involved.',
   },
   {
-    heading: '6. Payments',
-    body: 'Kanek supports cash payments (default) and E-Kyash digital payments in BZD.\n\n• A platform fee of 3% applies to E-Kyash transactions.\n• Users may optionally contribute a community donation with each transaction.\n• Payment disputes between users should be resolved directly between the parties.\n• Refunds for E-Kyash payments are processed through the app when applicable.\n\nKanek is not responsible for cash transactions between users.',
+    heading: '6. Safety, Tracking, and SOS',
+    body: 'Kanek includes live tracking, selfie check-ins, ratings, reporting tools, and an SOS feature to support safer coordination. These features are provided to assist users, but they do not guarantee safety, identity, performance, or emergency response. You remain responsible for using judgment, meeting safely, verifying details, and contacting local emergency services when necessary.',
   },
   {
-    heading: '7. Ratings & Trust',
-    body: 'After completing a booking, users can rate each other. Ratings contribute to trust scores displayed on profiles. You agree to provide honest and fair ratings. Abuse of the rating system (e.g., retaliatory ratings, coordinated rating manipulation) is a violation of these Terms.',
+    heading: '7. Ratings, Flags, and Strikes',
+    body: 'Kanek may allow users to rate one another, report content, and flag misconduct. We may investigate reports and apply warnings, soft strikes, hard strikes, restrictions, suspensions, or removals. Abuse of the rating or flagging system is itself a violation of these Terms.',
   },
   {
-    heading: '8. Flagging & Strikes',
-    body: 'Users can flag content or other users for violating community guidelines. Verified violations result in strikes:\n\n• Soft strikes: warnings for minor infractions.\n• Hard strikes: for serious violations, may result in temporary restriction or permanent suspension.\n\nStrike penalties are processed automatically and reviewed by administrators.',
+    heading: '8. Content and Intellectual Property',
+    body: 'You keep ownership of content you submit, but you grant Kanek a non-exclusive license to host, display, store, moderate, and distribute that content inside the product and related service surfaces. Kanek and its branding, software, and original materials remain our property or the property of our licensors.',
   },
   {
-    heading: '9. Safety & SOS',
-    body: 'Kanek provides an SOS feature that sends your GPS location to your emergency contact via SMS. This feature is provided as-is and does not replace emergency services. In an emergency, always contact local authorities directly.\n\nKanek is not responsible for the safety of in-person meetings or transactions between users. Use your own judgment and take appropriate precautions.',
+    heading: '9. Limitation of Liability',
+    body: 'Kanek is provided on an "as is" and "as available" basis. To the maximum extent permitted by law, we disclaim warranties and are not liable for user conduct, off-platform agreements, failed or delayed payments, inaccurate listings, lost opportunities, service interruptions, or any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform. Where the law allows limits on direct liability, our total liability will not exceed the amount of platform fees you paid to Kanek in the 12 months before the claim.',
   },
   {
-    heading: '10. Limitation of Liability',
-    body: 'Kanek is provided "as is" without warranties of any kind. We are not liable for:\n\n• Actions, omissions, or conduct of any user.\n• The quality, safety, or legality of posts or services offered.\n• Any loss, injury, or damage arising from your use of the platform or interactions with other users.\n• Interruptions, errors, or data loss in the service.\n\nTo the maximum extent permitted by Belizean law, our total liability to you shall not exceed the amount of platform fees you have paid in the 12 months preceding the claim.',
+    heading: '10. Termination and Account Deletion',
+    body: 'You may stop using Kanek at any time and may request account deletion through the tools we provide. We may suspend, limit, or terminate access where we believe it is necessary for safety, fraud prevention, legal compliance, or Terms enforcement. Some data may remain in backup, audit, payment, or safety systems for the retention periods described in our Privacy Policy.',
   },
   {
-    heading: '11. Intellectual Property',
-    body: 'Kanek and its original content, features, and functionality are owned by Kanek and protected by applicable intellectual property laws. You retain ownership of content you post, but grant us a non-exclusive, worldwide license to display and distribute it within the platform.',
+    heading: '11. Governing Law',
+    body: 'These Terms are governed by the laws of Belize. Any dispute arising from these Terms or your use of Kanek will be handled in the courts of Belize unless applicable law requires otherwise.',
   },
   {
-    heading: '12. Termination',
-    body: 'You may delete your account at any time through the app or by contacting us. We may suspend or terminate your account at any time for violation of these Terms, with or without notice. Upon termination, your right to use the platform ceases immediately.',
+    heading: '12. Changes to These Terms',
+    body: 'We may update these Terms from time to time. When we do, we may revise the last-updated date and provide notice in the app or on the site when appropriate. Continued use of Kanek after the updated Terms take effect means you accept the revised Terms.',
   },
   {
-    heading: '13. Governing Law',
-    body: 'These Terms are governed by and construed in accordance with the laws of Belize. Any disputes arising from these Terms or your use of Kanek shall be subject to the exclusive jurisdiction of the courts of Belize.',
-  },
-  {
-    heading: '14. Changes to These Terms',
-    body: 'We may update these Terms from time to time. We will notify you of significant changes through the app. Your continued use of Kanek after changes constitutes acceptance of the updated Terms.',
+    heading: '13. Contact',
+    body: 'Questions about these Terms or the platform can be sent to support@belizechain.org.',
   },
 ];
 
