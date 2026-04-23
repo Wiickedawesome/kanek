@@ -21,7 +21,7 @@
 | Email | Supabase Edge Functions + Resend | |
 | Admin | Supabase Studio (SQL views + functions) | |
 | Edge Functions | Deno (Supabase Edge Functions) | |
-| Node | v22 LTS | |
+| Node | v24 LTS | |
 
 ---
 

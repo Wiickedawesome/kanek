@@ -36,7 +36,7 @@ kanek is not a dispatch system. It is not Uber. It is a board where Belizeans or
 | Email | Supabase Edge Functions + Resend | |
 | Admin | Next.js (App Router, Tailwind CSS 4, Supabase SSR) | 15.2.4 |
 | Edge Functions | Deno (Supabase) | |
-| Node | v22 LTS | |
+| Node | v24 LTS | |
 
 ## Project Structure
 
@@ -128,11 +128,13 @@ Typography: **Work Sans** (headings, bold 700), **Manrope** (body, regular 400 /
 
 ### Prerequisites
 
-- Node.js 22 LTS
-- Expo CLI (`npm install -g expo-cli`)
-- Supabase CLI (`npm install -g supabase`)
+- Node.js 24 LTS
+- npm (bundled with Node)
+- Supabase CLI via `npx supabase ...` or a local dev dependency (`npm i -D supabase`)
 - Mapbox access token
 - Supabase project credentials
+
+Global `npm install -g supabase` is no longer supported by the Supabase CLI.
 
 ### Setup
 
@@ -151,13 +153,15 @@ cp .env.local.example .env.local
 #   EXPO_PUBLIC_SUPABASE_ANON_KEY
 #   EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN
 #   EXPO_PUBLIC_HCAPTCHA_SITE_KEY
+#   EXPO_PUBLIC_SENTRY_DSN        # optional
+#   MAPBOX_DOWNLOAD_TOKEN         # required for EAS/native builds
 
 # Link and push database
-supabase link --project-ref tlggdherqjvybpddsqjj
-supabase db push
+npx supabase link --project-ref tlggdherqjvybpddsqjj
+npx supabase db push
 
 # Deploy edge functions
-supabase functions deploy
+npx supabase functions deploy
 
 # Start development server
 npm start

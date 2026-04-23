@@ -4,12 +4,14 @@
 
 ## Prerequisites
 
-- **Node.js** v22 LTS
+- **Node.js** v24 LTS
 - **npm** (bundled with Node)
-- **Expo CLI**: `npm install -g expo-cli`
-- **Supabase CLI**: `npm install -g supabase`
+- **Supabase CLI**: use `npx supabase ...` or install it locally with `npm i -D supabase`
 - **Mapbox account** with access token
 - **Supabase project** (existing: `tlggdherqjvybpddsqjj`)
+
+Use the package-local Expo CLI via `npm start`, `npm run web`, or `npx expo ...`; a global `expo-cli` install is not required.
+Global `npm install -g supabase` is no longer supported by the Supabase CLI.
 
 ---
 
@@ -28,13 +30,13 @@ cp .env.local.example .env.local
 # Edit .env.local with your credentials
 
 # Link Supabase project
-supabase link --project-ref tlggdherqjvybpddsqjj
+npx supabase link --project-ref tlggdherqjvybpddsqjj
 
 # Push database migrations
-supabase db push
+npx supabase db push
 
 # Deploy edge functions
-supabase functions deploy
+npx supabase functions deploy
 
 # Start development server
 npm start
@@ -56,6 +58,12 @@ EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=your-mapbox-token
 
 # hCaptcha (from Supabase dashboard > Auth > Bot Protection)
 EXPO_PUBLIC_HCAPTCHA_SITE_KEY=your-hcaptcha-site-key
+
+# Sentry (optional, from sentry.io > Project Settings > Client Keys)
+EXPO_PUBLIC_SENTRY_DSN=your-sentry-dsn
+
+# Mapbox download token (required for EAS/native builds)
+MAPBOX_DOWNLOAD_TOKEN=your-mapbox-download-token
 ```
 
 **Important:** Each variable must be on its own line with no trailing spaces. Missing newlines between variables will cause silent failures (learned the hard way).
@@ -69,7 +77,14 @@ Set in Supabase dashboard → Settings → Edge Functions → Secrets:
 | `EKYASH_SID` | E-Kyash merchant SID |
 | `EKYASH_PIN_HASH` | E-Kyash hashed PIN |
 | `EKYASH_API_KEY` | E-Kyash API key |
+| `EKYASH_API_URL` | Optional E-Kyash API base URL override |
 | `RESEND_API_KEY` | Resend email delivery API key |
+| `RESEND_FROM_EMAIL` | Optional sender override for receipts |
+| `TWILIO_ACCOUNT_SID` | Required if SOS SMS is enabled |
+| `TWILIO_AUTH_TOKEN` | Required if SOS SMS is enabled |
+| `TWILIO_FROM_NUMBER` | Required if SOS SMS is enabled |
+
+Hosted Supabase Edge Functions already provide `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`; you do not need to add those manually in the dashboard.
 
 ---
 
@@ -90,23 +105,23 @@ npm run lint           # ESLint
 
 ```bash
 # Link project (one-time)
-supabase link --project-ref tlggdherqjvybpddsqjj
+npx supabase link --project-ref tlggdherqjvybpddsqjj
 
 # Apply migrations
-supabase db push
+npx supabase db push
 
 # Deploy all edge functions
-supabase functions deploy
+npx supabase functions deploy
 
 # Deploy single function
-supabase functions deploy ekyash-create-invoice
+npx supabase functions deploy ekyash-create-invoice
 
 # Generate TypeScript types from DB
-supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts
+npx supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts
 
 # Local development (optional)
-supabase start         # Start local Supabase (Docker required)
-supabase functions serve ekyash-create-invoice --env-file supabase/.env
+npx supabase start         # Start local Supabase (Docker required)
+npx supabase functions serve ekyash-create-invoice --env-file supabase/.env
 ```
 
 ---
@@ -178,5 +193,5 @@ supabase functions serve ekyash-create-invoice --env-file supabase/.env
 - Phone OTP requires Supabase Auth > Phone Provider enabled
 
 ### TypeScript errors after migration changes
-- Regenerate types: `supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts`
+- Regenerate types: `npx supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts`
 - Run `npm run typecheck` to verify

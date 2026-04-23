@@ -63,7 +63,7 @@ Admin operations are handled via **Supabase Studio** using SQL views and functio
 | Push | Expo Notifications | ~55.0.14 | FCM/APNs push |
 | Email | Resend | — | Transaction receipts |
 | Edge Functions | Deno | — | Serverless functions |
-| Node | Node.js | v22 LTS | Runtime |
+| Node | Node.js | v24 LTS | Runtime |
 
 ---
 
