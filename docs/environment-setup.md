@@ -79,7 +79,7 @@ Set in Supabase dashboard → Settings → Edge Functions → Secrets:
 | `EKYASH_API_KEY` | E-Kyash API key |
 | `EKYASH_API_URL` | Optional E-Kyash API base URL override |
 | `RESEND_API_KEY` | Resend email delivery API key |
-| `RESEND_FROM_EMAIL` | Optional sender override for receipts |
+| `RESEND_FROM_EMAIL` | Receipt sender address, set to `support@belizechain.org` |
 | `TWILIO_ACCOUNT_SID` | Required if SOS SMS is enabled |
 | `TWILIO_AUTH_TOKEN` | Required if SOS SMS is enabled |
 | `TWILIO_FROM_NUMBER` | Required if SOS SMS is enabled |

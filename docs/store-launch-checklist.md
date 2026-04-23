@@ -83,6 +83,7 @@
 - [ ] **Set production secrets** in Supabase dashboard:
   - `EKYASH_SID`, `EKYASH_PIN_HASH`, `EKYASH_API_KEY`, `EKYASH_API_URL`
   - `RESEND_API_KEY`
+  - `RESEND_FROM_EMAIL=support@belizechain.org`
 - [ ] **Enable hCaptcha** in Supabase Auth settings for production
 - [ ] **Verify RLS policies** are active on all tables
 - [ ] **Build production binaries**:
