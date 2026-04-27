@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
+import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
+import { consumeAuthRedirectUrl, getOAuthRedirectUrl } from '@/lib/authRedirect';
 import { setSession } from '@/store/slices/authSlice';
 import { clearNotifications } from '@/store/slices/notificationsSlice';
 import { dismissToast } from '@/store/slices/toastSlice';
@@ -19,6 +22,12 @@ import { contractEventsApi } from '@/store/api/contractEventsApi';
 import { driverDocumentsApi } from '@/store/api/driverDocumentsApi';
 import type { AppDispatch } from '@/store';
 
+type AppAuthResult = {
+  error: { message: string } | null;
+};
+
+export type SocialAuthProvider = 'google' | 'apple';
+
 /**
  * Call ONCE at the root layout to bootstrap the session and listen for changes.
  */
@@ -26,15 +35,34 @@ export function useAuthListener() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
+    let isMounted = true;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      dispatch(setSession(session));
+      if (isMounted) {
+        dispatch(setSession(session));
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       dispatch(setSession(session));
     });
 
-    return () => subscription.unsubscribe();
+    Linking.getInitialURL()
+      .then(async (url) => {
+        if (!url) return;
+        await consumeAuthRedirectUrl(url);
+      })
+      .catch(() => undefined);
+
+    const linkSubscription = Linking.addEventListener('url', ({ url }) => {
+      consumeAuthRedirectUrl(url).catch(() => undefined);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      linkSubscription.remove();
+    };
   }, [dispatch]);
 }
 
@@ -44,30 +72,48 @@ export function useAuthListener() {
 export function useAuth() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const signInWithPhone = async (phone: string, captchaToken?: string, shouldCreateUser = true) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      phone,
-      options: { ...(captchaToken ? { captchaToken } : {}), shouldCreateUser },
-    });
-    return { error };
-  };
-
-  const verifyOtp = async (phone: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
-    return { error };
-  };
-
-  const signInWithEmail = async (email: string, captchaToken?: string, shouldCreateUser = true) => {
+  const signInWithEmail = async (
+    email: string,
+    captchaToken?: string,
+    shouldCreateUser = true,
+  ): Promise<AppAuthResult> => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { ...(captchaToken ? { captchaToken } : {}), shouldCreateUser },
     });
-    return { error };
+    return { error: error ? { message: error.message } : null };
   };
 
-  const verifyEmailOtp = async (email: string, token: string) => {
+  const verifyEmailOtp = async (email: string, token: string): Promise<AppAuthResult> => {
     const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
-    return { error };
+    return { error: error ? { message: error.message } : null };
+  };
+
+  const signInWithProvider = async (provider: SocialAuthProvider): Promise<AppAuthResult> => {
+    const redirectTo = getOAuthRedirectUrl();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error) {
+      return { error: { message: error.message } };
+    }
+
+    if (!data?.url) {
+      return { error: { message: 'The sign-in provider did not return an authorization URL.' } };
+    }
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (result.type !== 'success') {
+      return { error: { message: 'Sign-in was cancelled before completion.' } };
+    }
+
+    const authResult = await consumeAuthRedirectUrl(result.url);
+    return { error: authResult.error };
   };
 
   const signOut = async () => {
@@ -99,5 +145,5 @@ export function useAuth() {
     }
   };
 
-  return { signInWithPhone, verifyOtp, signInWithEmail, verifyEmailOtp, signOut };
+  return { signInWithEmail, verifyEmailOtp, signInWithProvider, signOut };
 }

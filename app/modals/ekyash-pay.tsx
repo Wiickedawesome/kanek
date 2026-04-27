@@ -15,6 +15,7 @@ import { Button, ScreenHeader , TopographicBg } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
+import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 import {
   useCreatePaymentMutation,
   useGetPaymentStatusQuery,
@@ -49,13 +50,14 @@ export default function EkyashPayModal() {
   const { data: statusData } = useGetPaymentStatusQuery(
     payment?.orderId ?? '',
     {
-      skip: !payment?.orderId || pollingTimedOut,
+      skip: !ENABLE_EKYASH || !payment?.orderId || pollingTimedOut,
       pollingInterval: 5000,
     },
   );
 
   // M-11: 10-minute polling timeout
   useEffect(() => {
+    if (!ENABLE_EKYASH) return;
     if (payment?.orderId && !pollingTimedOut) {
       timeoutRef.current = setTimeout(() => {
         setPollingTimedOut(true);
@@ -68,6 +70,7 @@ export default function EkyashPayModal() {
 
   // Create invoice on mount
   useEffect(() => {
+    if (!ENABLE_EKYASH) return;
     if (contractId && payerId && payeeId && amount > 0) {
       createPayment({
         contractId,
@@ -82,6 +85,7 @@ export default function EkyashPayModal() {
 
   // Handle status changes
   useEffect(() => {
+    if (!ENABLE_EKYASH) return;
     if (statusData?.status === 'approved') {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       showAlert('Payment Successful', 'Your E-Kyash payment has been confirmed!');
@@ -95,6 +99,7 @@ export default function EkyashPayModal() {
 
   // Handle polling timeout
   useEffect(() => {
+    if (!ENABLE_EKYASH) return;
     if (pollingTimedOut) {
       showAlert(
         'Payment Not Confirmed',
@@ -104,6 +109,10 @@ export default function EkyashPayModal() {
   }, [pollingTimedOut]);
 
   const handleOpenEkyash = async () => {
+    if (!ENABLE_EKYASH) {
+      showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+      return;
+    }
     if (!payment?.paymentLink) return;
     const canOpen = await Linking.canOpenURL(payment.paymentLink);
     if (canOpen) {
@@ -117,6 +126,17 @@ export default function EkyashPayModal() {
   };
 
   const renderContent = () => {
+    if (!ENABLE_EKYASH) {
+      return (
+        <View style={styles.centered}>
+          <Icon name="receipt" size={48} color={colors.neutral[400]} />
+          <Text style={styles.loadingText}>E-Kyash is coming soon.</Text>
+          <Text style={styles.errorText}>{EKYASH_COMING_SOON_MESSAGE}</Text>
+          <Button title="Go Back" onPress={() => safeGoBack('/(tabs)/activity/')} variant="outline" />
+        </View>
+      );
+    }
+
     if (isLoading) {
       return (
         <View style={styles.centered}>

@@ -21,9 +21,6 @@ export function useSOS() {
   const [state, setState] = useState<SOSState>({ isSending: false, lastSentAt: null });
   const cooldownRef = useRef(false);
   const userId = useSelector((s: RootState) => s.auth.user?.id);
-  const emergencyContact = useSelector(
-    (s: RootState) => s.auth.user?.user_metadata?.emergency_contact as string | undefined,
-  );
 
   const triggerSOS = useCallback(async () => {
     if (!userId) {
@@ -53,28 +50,27 @@ export function useSOS() {
     cooldownRef.current = true;
 
     try {
-      // Call edge function to send emergency SMS (userId derived from auth JWT server-side)
+      // Call edge function to send emergency email (userId derived from auth JWT server-side)
       const { data, error } = await invokeFunction<{ sent: boolean; to?: string }>('send-sms-sos', {
         body: {
           latitude: coords?.latitude ?? null,
           longitude: coords?.longitude ?? null,
-          emergencyContact: emergencyContact ?? null,
         },
       });
 
       if (error) {
-        showAlert('SOS Error', 'Could not send SOS message. Try calling emergency services directly.');
+        showAlert('SOS Error', 'Could not send SOS email. Try calling emergency services directly.');
       } else if (data && !data.sent) {
         setState({ isSending: false, lastSentAt: Date.now() });
         showAlert(
           'SOS Alert Recorded',
-          'Your emergency alert was logged but SMS could not be sent. Please call emergency services directly.',
+          'Your emergency alert was logged but email could not be sent. Please call emergency services directly.',
         );
       } else {
         setState({ isSending: false, lastSentAt: Date.now() });
         showAlert(
           'SOS Sent',
-          'Your emergency contact has been notified with your location.',
+          'Your emergency contact has been notified by email with your location.',
         );
         const callNow = await showConfirm('Call 911?', 'Would you like to call emergency services now?');
         if (callNow) {
@@ -90,7 +86,7 @@ export function useSOS() {
         cooldownRef.current = false;
       }, SOS_COOLDOWN_MS);
     }
-  }, [userId, emergencyContact]);
+  }, [userId]);
 
   return {
     triggerSOS,

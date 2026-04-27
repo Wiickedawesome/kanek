@@ -23,6 +23,14 @@ export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_NAME_LENGTH = 50;
 export const MAX_TITLE_LENGTH = 100;
 
+/** Launch flag: E-Kyash is deferred until the later payments rollout. */
+export const ENABLE_EKYASH = false;
+export const EKYASH_COMING_SOON_MESSAGE = 'E-Kyash is coming soon and is not part of this launch yet.';
+export const ENABLE_EMAIL_AUTH = process.env.EXPO_PUBLIC_ENABLE_EMAIL_AUTH !== 'false';
+export const ENABLE_GOOGLE_AUTH = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_AUTH === 'true';
+export const ENABLE_APPLE_AUTH = process.env.EXPO_PUBLIC_ENABLE_APPLE_AUTH === 'true';
+export const SOS_DELIVERY_METHOD = 'email' as const;
+
 /** Number of top routes to show on explore feed */
 export const TOP_ROUTES_LIMIT = 10;
 

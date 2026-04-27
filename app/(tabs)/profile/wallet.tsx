@@ -14,6 +14,7 @@ import { Card, EmptyState, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPaymentHistoryQuery } from '@/store/api/ekyashApi';
 import { formatBZD, formatDate, safeGoBack } from '@/lib/helpers';
+import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
 
@@ -23,7 +24,7 @@ export default function WalletScreen() {
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: transactions, isLoading, refetch, isFetching } = useGetPaymentHistoryQuery(
     userId ?? '',
-    { skip: !userId },
+    { skip: !userId || !ENABLE_EKYASH },
   );
 
   const renderTransaction = useCallback(
@@ -90,7 +91,15 @@ export default function WalletScreen() {
         </View>
       </View>
 
-      {isLoading ? (
+      {!ENABLE_EKYASH ? (
+        <View style={styles.list}>
+          <EmptyState
+            icon="receipt"
+            title="E-Kyash is coming soon"
+            message={EKYASH_COMING_SOON_MESSAGE}
+          />
+        </View>
+      ) : isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.accent.green} />
         </View>

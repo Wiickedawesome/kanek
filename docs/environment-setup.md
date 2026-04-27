@@ -52,6 +52,9 @@ npm start
 # Supabase
 EXPO_PUBLIC_SUPABASE_URL=https://tlggdherqjvybpddsqjj.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_ENABLE_EMAIL_AUTH=true
+EXPO_PUBLIC_ENABLE_GOOGLE_AUTH=false
+EXPO_PUBLIC_ENABLE_APPLE_AUTH=false
 
 # Mapbox
 EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=your-mapbox-token
@@ -78,13 +81,28 @@ Set in Supabase dashboard → Settings → Edge Functions → Secrets:
 | `EKYASH_PIN_HASH` | E-Kyash hashed PIN |
 | `EKYASH_API_KEY` | E-Kyash API key |
 | `EKYASH_API_URL` | Optional E-Kyash API base URL override |
-| `RESEND_API_KEY` | Resend email delivery API key |
-| `RESEND_FROM_EMAIL` | Receipt sender address, set to `support@belizechain.org` |
-| `TWILIO_ACCOUNT_SID` | Required if SOS SMS is enabled |
-| `TWILIO_AUTH_TOKEN` | Required if SOS SMS is enabled |
-| `TWILIO_FROM_NUMBER` | Required if SOS SMS is enabled |
+| `RESEND_API_KEY` | Required for account emails, SOS emails, and any receipt delivery |
+| `RESEND_FROM_EMAIL` | Sender address, set to `support@belizechain.org` |
 
 Hosted Supabase Edge Functions already provide `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`; you do not need to add those manually in the dashboard.
+
+### Social Auth Setup
+
+Kanek now uses Supabase OAuth for Google and Apple sign-in. The buttons stay hidden until the matching public flag is set to `true`.
+
+- Set `EXPO_PUBLIC_ENABLE_EMAIL_AUTH=false` when you need store builds to hide the email OTP flow and force testers onto social login only.
+
+1. Add `kanek://auth/callback` to Supabase dashboard → Authentication → URL Configuration → Redirect URLs.
+2. Google sign-in:
+	- Enable Google in Supabase dashboard → Authentication → Providers.
+	- Create a Google OAuth client in Google Cloud Console and paste the client ID / secret into the Supabase provider settings.
+	- After the provider is configured, set `EXPO_PUBLIC_ENABLE_GOOGLE_AUTH=true` locally and in the EAS production environment.
+3. Apple sign-in:
+	- Enable Apple in Supabase dashboard → Authentication → Providers.
+	- Create the Apple Service ID / secret in Apple Developer and paste them into the Supabase provider settings.
+	- After the provider is configured, set `EXPO_PUBLIC_ENABLE_APPLE_AUTH=true` locally and in the EAS production environment.
+
+If you skip these flags, the login screen falls back to email-only sign-in.
 
 ---
 

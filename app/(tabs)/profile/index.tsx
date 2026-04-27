@@ -22,7 +22,7 @@ import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/prof
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useSOS } from '@/hooks/useSOS';
-import { MAX_UPLOAD_SIZE } from '@/lib/constants';
+import { EKYASH_COMING_SOON_MESSAGE, ENABLE_EKYASH, MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { formatShortDate } from '@/lib/helpers';
 import { uploadProfileAvatar } from '@/lib/avatar';
 import type { RootState } from '@/store';
@@ -295,7 +295,13 @@ export default function ProfileScreen() {
             icon="receipt"
             label="E-Kyash Wallet"
             badge="Coming Soon"
-            onPress={() => router.push('/(tabs)/profile/wallet')}
+            onPress={() => {
+              if (!ENABLE_EKYASH) {
+                showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+                return;
+              }
+              router.push('/(tabs)/profile/wallet');
+            }}
           />
           <MenuItem
             icon="fuel"
@@ -309,7 +315,7 @@ export default function ProfileScreen() {
           />
           <MenuItem
             icon="phone"
-            label="Emergency Contact"
+            label="Emergency Contact Email"
             subtitle={profile?.emergency_contact ?? 'Not set'}
             onPress={async () => {
               if (!profile?.emergency_contact) {
@@ -318,7 +324,7 @@ export default function ProfileScreen() {
               }
               const confirmed = await showConfirm(
                 'Emergency SOS',
-                'This will send your GPS location to your emergency contact via SMS. Continue?',
+                'This will send your GPS location to your emergency contact by email. Continue?',
               );
               if (confirmed) triggerSOS();
             }}

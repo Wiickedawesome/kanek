@@ -35,7 +35,7 @@ export default function SOSModal() {
         <Text style={styles.title}>Emergency SOS</Text>
         <Text style={styles.description}>
           This will send your current GPS location to your emergency contact
-          via SMS and alert kanek support.
+          by email.
         </Text>
 
         <Button

@@ -259,7 +259,7 @@ Manages driver document uploads and review status (license, insurance, registrat
 
 | Hook | File | Purpose |
 |------|------|---------|
-| `useAuth` | `src/hooks/useAuth.ts` | `signInWithPhone()`, `verifyOtp()`, sign out |
+| `useAuth` | `src/hooks/useAuth.ts` | `signInWithEmail()`, `verifyEmailOtp()`, `signInWithProvider()`, sign out |
 | `useLocation` | `src/hooks/useLocation.ts` | Get current position, start/stop tracking |
 | `useNotifications` | `src/hooks/useNotifications.ts` | Listen for push notifications, register token |
 | `useRealtime` | `src/hooks/useRealtime.ts` | Subscribe to Supabase realtime channels |

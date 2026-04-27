@@ -1,85 +1,77 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Platform } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { isValidPhone } from '@/lib/helpers';
+import { Button } from '@/components/ui';
+import { ENABLE_APPLE_AUTH, ENABLE_EMAIL_AUTH, ENABLE_GOOGLE_AUTH } from '@/lib/constants';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
-
-type AuthMode = 'phone' | 'email';
 
 export default function LoginScreen() {
   const { signup } = useLocalSearchParams<{ signup?: string }>();
   const isSignUp = signup === '1';
-  const { signInWithPhone, verifyOtp, signInWithEmail, verifyEmailOtp } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('email');
-  const [phone, setPhone] = useState('+501');
+  const { signInWithEmail, verifyEmailOtp, signInWithProvider } = useAuth();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'input' | 'otp'>('input');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'email' | 'google' | 'apple' | null>(null);
   const otpRef = useRef<TextInput>(null);
   const captchaRef = useRef<HCaptchaHandle>(null);
+  const isSubmitting = pendingAction !== null;
+  const hasSocialAuth = Platform.OS !== 'web' && (ENABLE_GOOGLE_AUTH || ENABLE_APPLE_AUTH);
+  const showEmailAuth = ENABLE_EMAIL_AUTH;
+  const showSocialAuth = hasSocialAuth;
 
   const handleSendOtp = async () => {
-    if (mode === 'phone') {
-      if (!isValidPhone(phone)) {
-        showAlert('Invalid Phone', 'Enter a valid Belize phone number (+501 + 7 digits)');
-        return;
-      }
-    } else {
-      const trimmed = email.trim().toLowerCase();
-      if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        showAlert('Invalid Email', 'Enter a valid email address');
-        return;
-      }
+    if (!showEmailAuth) {
+      showAlert('Email Unavailable', 'Email sign-in is temporarily unavailable. Use one of the social sign-in options instead.');
+      return;
+    }
+
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      showAlert('Invalid Email', 'Enter a valid email address');
+      return;
     }
 
     const captchaToken = captchaRef.current?.getToken() || undefined;
 
-    setIsSubmitting(true);
+    setPendingAction('email');
     try {
-      if (mode === 'phone') {
-        const { error } = await signInWithPhone(phone, captchaToken, isSignUp);
-        if (error) {
-          captchaRef.current?.resetCaptcha();
-          showAlert('Error', error.message === 'Signups not allowed for otp'
-            ? 'No account found. Please sign up first.'
-            : error.message);
-          return;
-        }
-      } else {
-        const { error } = await signInWithEmail(email.trim().toLowerCase(), captchaToken, isSignUp);
-        if (error) {
-          captchaRef.current?.resetCaptcha();
-          showAlert('Error', error.message === 'Signups not allowed for otp'
-            ? 'No account found. Please sign up first.'
-            : error.message);
-          return;
-        }
+      const { error } = await signInWithEmail(trimmed, captchaToken, isSignUp);
+      if (error) {
+        captchaRef.current?.resetCaptcha();
+        showAlert('Error', error.message === 'Signups not allowed for otp'
+          ? 'No account found. Please sign up first.'
+          : error.message);
+        return;
       }
+
       setStep('otp');
       setTimeout(() => otpRef.current?.focus(), 100);
     } catch (err) {
       captchaRef.current?.resetCaptcha();
       showAlert('Error', err instanceof Error ? err.message : 'Something went wrong');
     } finally {
-      setIsSubmitting(false);
+      setPendingAction(null);
     }
   };
 
   const handleVerifyOtp = async () => {
+    if (!showEmailAuth) {
+      showAlert('Email Unavailable', 'Email sign-in is temporarily unavailable. Use one of the social sign-in options instead.');
+      return;
+    }
+
     if (otp.length !== 6) {
       showAlert('Invalid Code', 'Enter the 6-digit code');
       return;
     }
-    setIsSubmitting(true);
-    const { error } = mode === 'phone'
-      ? await verifyOtp(phone, otp)
-      : await verifyEmailOtp(email.trim().toLowerCase(), otp);
-    setIsSubmitting(false);
+    setPendingAction('email');
+    const { error } = await verifyEmailOtp(email.trim().toLowerCase(), otp);
+    setPendingAction(null);
 
     if (error) {
       showAlert('Error', error.message);
@@ -88,15 +80,19 @@ export default function LoginScreen() {
     // Navigation is handled by the (auth) layout guard via useOnboardingStatus()
   };
 
-  const handleSwitchMode = () => {
-    setMode(mode === 'phone' ? 'email' : 'phone');
-    setStep('input');
-    setOtp('');
+  const handleSocialSignIn = async (provider: 'google' | 'apple') => {
+    setPendingAction(provider);
+    const { error } = await signInWithProvider(provider);
+    setPendingAction(null);
+
+    if (error) {
+      showAlert('Sign-In Error', error.message);
+    }
   };
 
   const isInputStep = step === 'input';
   const isOtpStep = step === 'otp';
-  const identifier = mode === 'phone' ? phone : email;
+  const identifier = email.trim().toLowerCase();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,48 +100,69 @@ export default function LoginScreen() {
         <Text style={styles.title}>
           {isInputStep
             ? isSignUp
-              ? mode === 'phone' ? 'Create your account' : 'Create your account'
-              : mode === 'phone' ? 'Welcome back' : 'Welcome back'
-            : 'Verify your account'}
+              ? 'Create your account'
+              : 'Welcome back'
+            : 'Verify your email'}
         </Text>
         <Text style={styles.subtitle}>
           {isInputStep
-            ? isSignUp
-              ? mode === 'phone'
-                ? 'Enter your phone number to get started'
-                : 'Enter your email to get started'
-              : mode === 'phone'
-                ? 'Enter your phone number to sign in'
-                : 'Enter your email to sign in'
+            ? showEmailAuth
+              ? isSignUp
+                ? 'Use email or a connected account to get started'
+                : 'Use email or a connected account to sign in'
+              : showSocialAuth
+                ? 'Use a connected account to sign in'
+                : 'Sign-in is temporarily unavailable right now'
             : `Code sent to ${identifier}`}
         </Text>
 
-        {isInputStep ? (
-          mode === 'phone' ? (
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholder="+5016001234"
-              placeholderTextColor={colors.neutral[400]}
-              maxLength={12}
-              autoFocus
-            />
-          ) : (
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.neutral[400]}
-              autoFocus
-            />
-          )
-        ) : (
+        {isInputStep && showSocialAuth && (
+          <View style={styles.socialSection}>
+            {ENABLE_GOOGLE_AUTH && (
+              <Button
+                title="Continue with Google"
+                variant="secondary"
+                onPress={() => handleSocialSignIn('google')}
+                loading={pendingAction === 'google'}
+                disabled={isSubmitting}
+                style={styles.socialButton}
+              />
+            )}
+
+            {ENABLE_APPLE_AUTH && (
+              <Button
+                title="Continue with Apple"
+                variant="outline"
+                onPress={() => handleSocialSignIn('apple')}
+                loading={pendingAction === 'apple'}
+                disabled={isSubmitting}
+                style={styles.socialButton}
+              />
+            )}
+
+            {showEmailAuth && (
+              <View style={styles.dividerRow}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>or use email</Text>
+                <View style={styles.divider} />
+              </View>
+            )}
+          </View>
+        )}
+
+        {showEmailAuth && isInputStep ? (
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="you@example.com"
+            placeholderTextColor={colors.neutral[400]}
+            autoFocus
+          />
+        ) : showEmailAuth && isOtpStep ? (
           <TextInput
             ref={otpRef}
             style={styles.input}
@@ -156,34 +173,32 @@ export default function LoginScreen() {
             placeholderTextColor={colors.neutral[400]}
             maxLength={6}
           />
+        ) : null}
+
+        {isInputStep && !showEmailAuth && !showSocialAuth && (
+          <Text style={styles.unavailableText}>
+            Sign-in is temporarily unavailable. Try again after the login providers are configured.
+          </Text>
         )}
 
         {/* Visible hCaptcha checkbox (web only) */}
-        {isInputStep && <HCaptcha ref={captchaRef} />}
+        {showEmailAuth && isInputStep && <HCaptcha ref={captchaRef} />}
 
-        <Pressable
-          style={[styles.button, isSubmitting && styles.buttonDisabled]}
-          onPress={isInputStep ? handleSendOtp : handleVerifyOtp}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Please wait...' : isInputStep ? 'Send Code' : 'Verify'}
-          </Text>
-        </Pressable>
-
-        {isOtpStep && (
-          <Pressable onPress={() => { setStep('input'); setOtp(''); }} style={styles.backLink}>
-            <Text style={styles.backText}>
-              {mode === 'phone' ? 'Use a different number' : 'Use a different email'}
+        {showEmailAuth && (
+          <Pressable
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            onPress={isInputStep ? handleSendOtp : handleVerifyOtp}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.buttonText}>
+              {isSubmitting ? 'Please wait...' : isInputStep ? 'Send Code' : 'Verify'}
             </Text>
           </Pressable>
         )}
 
-        {isInputStep && (
-          <Pressable onPress={handleSwitchMode} style={styles.backLink}>
-            <Text style={styles.backText}>
-              {mode === 'phone' ? 'Use email instead' : 'Use phone number instead'}
-            </Text>
+        {showEmailAuth && isOtpStep && (
+          <Pressable onPress={() => { setStep('input'); setOtp(''); }} style={styles.backLink}>
+            <Text style={styles.backText}>Use a different email</Text>
           </Pressable>
         )}
       </View>
@@ -209,6 +224,32 @@ const styles = StyleSheet.create({
     ...typography.body1,
     color: colors.neutral[500],
     marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  socialSection: {
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  socialButton: {
+    width: '100%',
+  },
+  dividerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  divider: {
+    backgroundColor: colors.neutral[200],
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    ...typography.body2,
+    color: colors.neutral[500],
+  },
+  unavailableText: {
+    ...typography.body2,
+    color: colors.neutral[500],
     marginBottom: spacing.xl,
   },
   input: {

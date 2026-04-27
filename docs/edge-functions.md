@@ -135,19 +135,18 @@ Sends a transaction receipt email via the Resend API.
 
 ### send-sms-sos
 
-Sends an SOS SMS with GPS location to the user's emergency contact.
+Sends an SOS email with GPS location to the user's emergency contact.
 
 - **Method:** POST
 - **Input:**
   ```json
   {
-    "userId": "uuid",
     "lat": 17.5,
     "lng": -88.5,
     "tripType": "route | errand | job"
   }
   ```
-- **Logic:** Reads `emergency_contact` from profiles, sends SMS with Google Maps link.
+- **Logic:** Reads `emergency_contact` from profiles, validates it as an email address, and sends an SOS email with a Google Maps link via Resend.
 
 ---
 

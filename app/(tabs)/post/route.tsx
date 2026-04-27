@@ -21,7 +21,7 @@ import { useCreatePostMutation } from '@/store/api/postsApi';
 import { useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
-import { MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
+import { EKYASH_COMING_SOON_MESSAGE, ENABLE_EKYASH, MAX_SEATS, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, sanitizeInteger, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import { showAlert } from '@/lib/alert';
@@ -38,6 +38,10 @@ export default function RouteFormScreen() {
   const isOffer = postType === 'route_offer';
 
   const dispatch = useDispatch();
+
+  const handleSelectEkyash = useCallback(() => {
+    showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+  }, []);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
   const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', { skip: !userId || !isOffer });
@@ -359,9 +363,9 @@ export default function RouteFormScreen() {
                 </Pressable>
                 <Pressable
                   style={[styles.pickupOption, paymentMethod === 'ekyash' && styles.pickupSelected]}
-                  onPress={() => setPaymentMethod('ekyash')}
+                  onPress={handleSelectEkyash}
                 >
-                  <Text style={[styles.pickupText, paymentMethod === 'ekyash' && styles.pickupTextSelected]}>E-Kyash</Text>
+                  <Text style={[styles.pickupText, paymentMethod === 'ekyash' && styles.pickupTextSelected]}>{ENABLE_EKYASH ? 'E-Kyash' : 'E-Kyash Soon'}</Text>
                 </Pressable>
               </View>
             </View>

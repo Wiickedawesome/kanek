@@ -11,6 +11,8 @@ import { Icon } from '@/components/icons';
 import { TopographicBg, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
+import { showAlert } from '@/lib/alert';
+import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 
 /**
  * Payment method selection: Cash vs E-Kyash.
@@ -35,6 +37,10 @@ export default function PaymentSelectModal() {
   };
 
   const handleEkyash = () => {
+    if (!ENABLE_EKYASH) {
+      showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+      return;
+    }
     router.push({
       pathname: '/modals/ekyash-pay',
       params: { contractId, payerId, payeeId, amountCents, description, payerPhone },
@@ -79,7 +85,7 @@ export default function PaymentSelectModal() {
             <View style={styles.optionText}>
               <Text style={styles.optionTitle}>E-Kyash</Text>
               <Text style={styles.optionDesc}>
-                Pay instantly via QR code or deep link.
+                {ENABLE_EKYASH ? 'Pay instantly via QR code or deep link.' : 'Coming soon for a later launch.'}
               </Text>
             </View>
             <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
@@ -87,7 +93,7 @@ export default function PaymentSelectModal() {
         </View>
 
         <Text style={styles.note}>
-          Cash is always accepted. E-Kyash is optional.
+          {ENABLE_EKYASH ? 'Cash is always accepted. E-Kyash is optional.' : 'Cash is available now. E-Kyash is coming soon.'}
         </Text>
       </View>
     </SafeAreaView>

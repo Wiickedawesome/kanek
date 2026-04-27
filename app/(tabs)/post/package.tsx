@@ -19,7 +19,7 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { calculateRoute } from '@/lib/mapbox';
 import type { RouteInfo } from '@/lib/mapbox';
-import { MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
+import { EKYASH_COMING_SOON_MESSAGE, ENABLE_EKYASH, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, safeGoBack } from '@/lib/helpers';
 import type { RootState } from '@/store';
 import type { PaymentMethod } from '@/types/database';
@@ -32,6 +32,10 @@ export default function PackageFormScreen() {
   const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
+
+  const handleSelectEkyash = useCallback(() => {
+    showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+  }, []);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -249,9 +253,9 @@ export default function PackageFormScreen() {
               </Pressable>
               <Pressable
                 style={[styles.chip, paymentMethod === 'ekyash' && styles.chipSelected]}
-                onPress={() => setPaymentMethod('ekyash')}
+                onPress={handleSelectEkyash}
               >
-                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>E-Kyash</Text>
+                <Text style={[styles.chipText, paymentMethod === 'ekyash' && styles.chipTextSelected]}>{ENABLE_EKYASH ? 'E-Kyash' : 'E-Kyash Soon'}</Text>
               </Pressable>
             </View>
           </View>

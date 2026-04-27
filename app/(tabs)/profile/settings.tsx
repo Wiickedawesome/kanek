@@ -37,6 +37,8 @@ import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
 import { showAlert } from '@/lib/alert';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
   { value: 'belize', label: 'Belize' },
   { value: 'cayo', label: 'Cayo' },
@@ -93,15 +95,17 @@ export default function SettingsScreen() {
   const handleSave = useCallback(async () => {
     if (!userId) return;
 
-    const normalized = normalizePhone(emergencyContact);
-    if (normalized && !isValidPhone(normalized)) {
+    const normalizedEmergencyContact = emergencyContact.trim().toLowerCase();
+    if (normalizedEmergencyContact && !EMAIL_REGEX.test(normalizedEmergencyContact)) {
       showAlert(
         'Invalid Emergency Contact',
-        'Emergency contact must be a valid Belize phone number (+501 followed by 7 digits). The contact will not be saved, but your other changes will be.',
+        'Emergency contact must be a valid email address. The contact will not be saved, but your other changes will be.',
       );
     }
 
-    const validContact = normalized && isValidPhone(normalized) ? normalized : null;
+    const validContact = normalizedEmergencyContact && EMAIL_REGEX.test(normalizedEmergencyContact)
+      ? normalizedEmergencyContact
+      : null;
 
     if (!firstName.trim() || !lastName.trim()) {
       showAlert('Name Required', 'First name and last name are both required.');
@@ -200,15 +204,16 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Emergency Contact</Text>
+          <Text style={styles.label}>Emergency Contact Email</Text>
           <TextInput
             style={styles.input}
             value={emergencyContact}
             onChangeText={setEmergencyContact}
-            placeholder="+501 000 0000"
+            placeholder="family@example.com"
             placeholderTextColor={colors.neutral[400]}
-            keyboardType="phone-pad"
-            maxLength={20}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            maxLength={254}
           />
         </View>
 

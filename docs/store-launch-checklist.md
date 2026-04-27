@@ -22,6 +22,14 @@
 - [x] Make version string dynamic in Profile screen using `expo-constants`
 - [x] Add `google-services.json` and `play-store-service-account.json` to `.gitignore`
 - [x] Web platform guard for push notifications (`useNotifications.ts`)
+- [x] Register Android Firebase app `bz.kanek.app` in project `kanek-bz`
+- [x] Download `google-services.json` into the project root for Android push/FCM
+- [x] Add `android.googleServicesFile` to `app.json`
+- [x] Add `.easignore` so remote EAS builds include `google-services.json` but still exclude `play-store-service-account.json`
+- [x] Validate the Android EAS archive contains `google-services.json`
+- [x] Finish Android production build after Firebase wiring (`96258325-53a0-429c-8146-a8870cefe455`)
+- [x] Verify all 16 production Edge Functions are active in Supabase project `tlggdherqjvybpddsqjj`
+- [x] Add `npm run launch:check` to surface non-Google launch blockers from the repo
 
 ---
 
@@ -49,18 +57,16 @@
 
 ### Google Play Store (Android)
 
-- [ ] **Google Play Console** — Create developer account ($25 one-time fee) if not already
+- [x] **Google Play Console** — Developer account exists
+- [ ] **Google Play approval** — Account is still pending approval before the first app deployment can complete
 - [ ] **Create App** in Google Play Console:
   - App name: Kanek
   - Default language: English
   - App type: App
   - Category: Maps & Navigation
-- [ ] **Firebase project** — Create at https://console.firebase.google.com
-  - Register `bz.kanek.app` as an Android app
-  - Download `google-services.json` → place in project root
-  - Add to `app.json`: `"android": { "googleServicesFile": "./google-services.json" }`
-- [ ] **Play Store service account** — Create service account with Play Console access:
-  - Download JSON key → save as `play-store-service-account.json` in project root
+- [x] **Firebase project** — `kanek-bz` is in place and `bz.kanek.app` is registered
+- [x] **Play Store service account** — Local JSON key is available and now matches `./play-store-service-account.json`
+- [ ] **Android Publisher API** — Enable `androidpublisher.googleapis.com` for Google Cloud project `193141846291` after Play approval is complete
 - [ ] **Data Safety form** — Complete in Play Console:
   - Location data: collected for routes/posts/live tracking
   - Personal info: name, phone, email
@@ -75,16 +81,19 @@
 
 ### Both Platforms
 
-- [ ] **Set `MAPBOX_DOWNLOAD_TOKEN`** as EAS secret: `eas secret:create --name MAPBOX_DOWNLOAD_TOKEN --value <your-token>`
-- [ ] **Host Privacy Policy** — Deploy privacy policy to `https://kanek.bz/privacy` (or similar public URL)
-- [ ] **Host Terms of Service** — Deploy terms to `https://kanek.bz/terms`
-- [ ] **Deploy edge functions** — `supabase functions deploy`
-- [ ] **Apply all migrations** — `supabase db push`
+- [x] **Set `MAPBOX_DOWNLOAD_TOKEN`** in EAS production
+- [x] **Host Privacy Policy** — `https://kanek.bz/privacy`
+- [x] **Host Terms of Service** — `https://kanek.bz/terms`
+- [ ] **Run `npm run launch:check`** until it reports no blocker-level items
+- [x] **Verify current migrations** — remote database already matches local migrations `00001` through `00014`
+- [ ] **Apply future migrations** — `supabase db push` still requires the remote Postgres password from CLI
 - [ ] **Set production secrets** in Supabase dashboard:
-  - `EKYASH_SID`, `EKYASH_PIN_HASH`, `EKYASH_API_KEY`, `EKYASH_API_URL`
-  - `RESEND_API_KEY`
-  - `RESEND_FROM_EMAIL=support@belizechain.org`
-- [ ] **Enable hCaptcha** in Supabase Auth settings for production
+  - Launch blocker now narrowed to runtime observability and email delivery, not deferred payments
+  - Required for email auth and SOS delivery: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+  - Deferred for later E-Kyash rollout: `EKYASH_SID`, `EKYASH_PIN_HASH`, `EKYASH_API_KEY`, `EKYASH_API_URL`
+  - Already present: `RESEND_FROM_EMAIL=support@belizechain.org`
+- [ ] **Set `EXPO_PUBLIC_SENTRY_DSN`** in EAS production if runtime Sentry reporting should be enabled (the current `SENTRY_AUTH_TOKEN` received `403` from the Sentry keys API, so fetch the DSN from Sentry UI or a broader-scope token)
+- [ ] **Enable hCaptcha** in Supabase Auth settings for production if bot protection is required at launch
 - [ ] **Verify RLS policies** are active on all tables
 - [ ] **Build production binaries**:
   ```bash
@@ -93,10 +102,12 @@
 - [ ] **Test on real devices**:
   - Push notifications
   - Location permissions & map rendering
-  - E-Kyash payment flow
   - Camera / photo picker (ID upload)
   - Deep links (`kanek://`)
   - SOS feature
+  - E-Kyash flow later, when `ENABLE_EKYASH` is turned back on
+- [ ] **Android Play submission automation** — Add `play-store-service-account.json` if you want `eas submit --platform android --profile production`
+- [ ] **Retry Android submit** — Last attempt reached EAS submission `252dcd31-4164-450f-9596-df92812d0030` and failed because the Android Publisher API is disabled / inaccessible while Google approval is still pending
 - [ ] **Submit**:
   ```bash
   eas submit --platform all --profile production

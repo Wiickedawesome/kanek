@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["APPLE_TEAM_ID.bz.kanek.app"],
+        "appIDs": ["6VR44TAYT7.bz.kanek.app"],
         "paths": ["/post/*", "/profile/*", "/invite/*"]
       }
     ]

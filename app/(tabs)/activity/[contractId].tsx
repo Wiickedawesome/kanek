@@ -32,6 +32,7 @@ import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useSOS } from '@/hooks/useSOS';
 import { formatBZD, formatDeparture, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
+import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
@@ -189,6 +190,10 @@ export default function ContractDetailScreen() {
 
   const handlePayment = useCallback(() => {
     if (!contract || !payerId || !payeeId) return;
+    if (!ENABLE_EKYASH) {
+      showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
+      return;
+    }
     router.push({
       pathname: '/modals/ekyash-pay',
       params: {
@@ -234,7 +239,7 @@ export default function ContractDetailScreen() {
   const isActive = contract.status === 'active';
   const isParty = contract.parties.includes(userId ?? '');
   const statusColor = STATUS_COLORS[contract.status];
-  const showPaymentAction = contract.booking?.payment_method === 'ekyash' && isPayer;
+  const showPaymentAction = ENABLE_EKYASH && contract.booking?.payment_method === 'ekyash' && isPayer;
   const showRateAction = isParty && contract.status === 'completed' && !hasRated && !!otherPartyId;
   const postType = contract.post?.type;
 
@@ -260,7 +265,7 @@ export default function ContractDetailScreen() {
               onPress={async () => {
                 const confirmed = await showConfirm(
                   'Emergency SOS',
-                  'This will send your GPS location to your emergency contact via SMS. Continue?',
+                  'This will send your GPS location to your emergency contact by email. Continue?',
                 );
                 if (confirmed) triggerSOS();
               }}
