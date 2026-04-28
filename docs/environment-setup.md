@@ -6,6 +6,9 @@
 
 - **Node.js** v24 LTS
 - **npm** (bundled with Node)
+- **JDK** 17 or newer with `JAVA_HOME` set for local Android builds
+- **Android Studio / Android SDK** with `adb` on `PATH` and `ANDROID_HOME` or `ANDROID_SDK_ROOT` set for local Android builds
+- **macOS + Xcode** for local iOS builds (`npm run ios` cannot run from Linux)
 - **Supabase CLI**: use `npx supabase ...` or install it locally with `npm i -D supabase`
 - **Mapbox account** with access token
 - **Supabase project** (existing: `tlggdherqjvybpddsqjj`)
@@ -55,6 +58,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 EXPO_PUBLIC_ENABLE_EMAIL_AUTH=true
 EXPO_PUBLIC_ENABLE_GOOGLE_AUTH=false
 EXPO_PUBLIC_ENABLE_APPLE_AUTH=false
+ANDROID_FIRST_SUBMISSION_COMPLETE=false
 
 # Mapbox
 EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=your-mapbox-token
@@ -111,6 +115,7 @@ If you skip these flags, the login screen falls back to email-only sign-in.
 ### Mobile App
 
 ```bash
+npm run mobile:check   # local Android/iOS preflight
 npm start              # Expo dev server (press 'w' for web)
 npm run web            # Web directly (localhost:8081)
 npm run ios            # iOS simulator
@@ -213,3 +218,16 @@ npx supabase functions serve ekyash-create-invoice --env-file supabase/.env
 ### TypeScript errors after migration changes
 - Regenerate types: `npx supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts`
 - Run `npm run typecheck` to verify
+
+### Android local build fails immediately
+- Run `npm run mobile:check` first
+- Install JDK 17+ and set `JAVA_HOME`
+- Install Android Studio or command-line tools, then ensure `adb` is available and `ANDROID_HOME` or `ANDROID_SDK_ROOT` is set
+
+### iOS command fails on Linux
+- `npm run ios` only works on macOS with Xcode installed
+- From Linux, use EAS Build for iOS artifacts and TestFlight/App Store delivery instead of local simulator builds
+
+### Android EAS submit says the app has not been submitted yet
+- Google Play requires the first `bz.kanek.app` release to be created manually in Play Console
+- After that first manual release is accepted, set `ANDROID_FIRST_SUBMISSION_COMPLETE=true` locally so `npm run store:check` stops treating it as a blocker

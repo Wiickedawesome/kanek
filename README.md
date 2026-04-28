@@ -130,6 +130,9 @@ Typography: **Work Sans** (headings, bold 700), **Manrope** (body, regular 400 /
 
 - Node.js 24 LTS
 - npm (bundled with Node)
+- JDK 17+ with `JAVA_HOME` set for local Android builds
+- Android Studio / Android SDK with `adb` on `PATH` for local Android builds
+- macOS + Xcode for local iOS simulator builds
 - Supabase CLI via `npx supabase ...` or a local dev dependency (`npm i -D supabase`)
 - Mapbox access token
 - Supabase project credentials
@@ -155,6 +158,7 @@ cp .env.local.example .env.local
 #   EXPO_PUBLIC_HCAPTCHA_SITE_KEY
 #   EXPO_PUBLIC_SENTRY_DSN        # optional
 #   MAPBOX_DOWNLOAD_TOKEN         # required for EAS/native builds
+#   ANDROID_FIRST_SUBMISSION_COMPLETE=true   # optional, only after the first manual Play Console release
 
 # Link and push database
 npx supabase link --project-ref tlggdherqjvybpddsqjj
@@ -170,6 +174,7 @@ npm start
 ### Running
 
 ```bash
+npm run mobile:check  # local Android/iOS preflight
 npm start            # Expo dev server (press 'w' for web)
 npm run web          # Web directly (localhost:8081)
 npm run ios          # iOS simulator

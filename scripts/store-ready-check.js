@@ -23,6 +23,8 @@ const requiredResendSecrets = [
   'RESEND_FROM_EMAIL',
 ];
 
+const PLAY_FIRST_SUBMISSION_ENV = 'ANDROID_FIRST_SUBMISSION_COMPLETE';
+
 const statuses = [];
 
 function addStatus(level, title, detail) {
@@ -124,6 +126,7 @@ const localEnv = {
   ...parseEnvFile(path.join(repoRoot, '.env.local')),
   ...process.env,
 };
+const hasCompletedFirstPlaySubmission = (localEnv[PLAY_FIRST_SUBMISSION_ENV] || '').trim().toLowerCase() === 'true';
 
 const appConfig = readJson('app.json').expo;
 if (appConfig?.ios?.bundleIdentifier === 'bz.kanek.app' && appConfig?.android?.package === 'bz.kanek.app') {
@@ -185,6 +188,12 @@ if (fs.existsSync(path.join(repoRoot, 'play-store-service-account.json'))) {
   addStatus('ok', 'Play service account', 'play-store-service-account.json is present for EAS submit automation.');
 } else {
   addStatus('warn', 'Play service account', 'play-store-service-account.json is missing. Android store builds can still be uploaded manually, but eas submit automation will fail until the file is restored.');
+}
+
+if (hasCompletedFirstPlaySubmission) {
+  addStatus('ok', 'Android first Play release', `The first manual Google Play submission has been acknowledged via ${PLAY_FIRST_SUBMISSION_ENV}=true.`);
+} else {
+  addStatus('block', 'Android first Play release', 'Google Play requires the first bz.kanek.app release to be created manually in Play Console before EAS submit can publish internal-track builds. After that first manual release is accepted, set ANDROID_FIRST_SUBMISSION_COMPLETE=true in your shell or .env.local to clear this blocker.');
 }
 
 const aasaPath = path.join(repoRoot, 'public', '.well-known', 'apple-app-site-association');
