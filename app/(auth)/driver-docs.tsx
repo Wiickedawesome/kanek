@@ -7,13 +7,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { showAlert } from '@/lib/alert';
+import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
 import { profilesApi } from '@/store/api/profilesApi';
+import { Icon } from '@/components/icons';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
+import { ScreenHeader } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
 import {
   useGetDriverDocumentsQuery,
   useUpsertDriverDocumentMutation,
@@ -35,6 +38,7 @@ interface VehicleInfo {
 export default function DriverDocsScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
+  const { signOut } = useAuth();
   const { data: driverDocs = [] } = useGetDriverDocumentsQuery(
     user?.id ?? '',
     { skip: !user?.id },
@@ -55,6 +59,20 @@ export default function DriverDocsScreen() {
     vehicle.year.trim() &&
     vehicle.color.trim() &&
     vehicle.plate.trim();
+
+  const handleExit = async () => {
+    if (isSubmitting) return;
+
+    const confirmed = await showConfirm(
+      'Go back to sign in?',
+      'This will sign you out so you can retry with a different account.',
+    );
+
+    if (!confirmed) return;
+
+    await signOut();
+    router.replace('/(auth)/login');
+  };
 
   const handleSubmit = async () => {
     if (!isFormValid || !user) return;
@@ -100,11 +118,23 @@ export default function DriverDocsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ScreenHeader style={styles.header}>
+        <Pressable onPress={() => { void handleExit(); }} hitSlop={12}>
+          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Driver Documents</Text>
+        <View style={styles.headerSpacer} />
+      </ScreenHeader>
+
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Driver documents</Text>
         <Text style={styles.subtitle}>
           Upload your license and insurance, and tell us about your vehicle. You can upload remaining documents later from My Documents.
         </Text>
+
+        <Pressable onPress={() => { void handleExit(); }} style={styles.changeAccount}>
+          <Text style={styles.changeAccountText}>Use a different account</Text>
+        </Pressable>
 
         {/* Document uploads via DocumentUploadCard */}
         {user && ONBOARDING_DOCS.map((docType) => {
@@ -198,9 +228,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.neutral[50],
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.neutral[0],
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 24,
+  },
   scroll: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxxl,
+    paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
   },
   title: {
@@ -211,7 +257,14 @@ const styles = StyleSheet.create({
     ...typography.body1,
     color: colors.neutral[500],
     marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  changeAccount: {
     marginBottom: spacing.xl,
+  },
+  changeAccountText: {
+    ...typography.body2,
+    color: colors.accent.blue,
   },
   sectionLabel: {
     ...typography.body1Bold,
