@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui';
+import { Icon } from '@/components/icons';
+import { safeGoBack } from '@/lib/helpers';
 import { ENABLE_APPLE_AUTH, ENABLE_EMAIL_AUTH, ENABLE_GOOGLE_AUTH } from '@/lib/constants';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
@@ -94,8 +96,28 @@ export default function LoginScreen() {
   const isOtpStep = step === 'otp';
   const identifier = email.trim().toLowerCase();
 
+  const handleBack = () => {
+    if (isOtpStep) {
+      setStep('input');
+      setOtp('');
+      return;
+    }
+    safeGoBack('/(auth)/welcome');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topBar}>
+        <Pressable
+          onPress={handleBack}
+          hitSlop={12}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={colors.forest[900]} />
+        </Pressable>
+      </View>
       <View style={styles.content}>
         <Text style={styles.title}>
           {isInputStep
@@ -211,10 +233,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.neutral[50],
   },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     flex: 1,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxxl,
+    paddingTop: spacing.xl,
   },
   title: {
     ...typography.h1,
