@@ -1020,15 +1020,15 @@ Splash background: `#142800` (forest-900).
       "android": {
         "serviceAccountKeyPath": "./play-store-service-account.json",
         "track": "internal",
-        "releaseStatus": "draft"
+        "releaseStatus": "completed"
       }
     }
   }
 }
 ```
 
-Note the Android submit track is `"internal"` with `"draft"` release status —
-i.e., the build lands in Play Internal Testing as a draft, not auto-promoted.
+Note the Android submit track is `"internal"` with `"completed"` release
+status — i.e., storeTest auto-submits publish directly to Play Internal testers.
 
 ---
 

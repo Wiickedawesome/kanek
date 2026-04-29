@@ -173,11 +173,11 @@ const androidSubmitProfile = submitProfiles.storeTest?.android;
 if (
   androidSubmitProfile?.serviceAccountKeyPath === './play-store-service-account.json'
   && androidSubmitProfile?.track === 'internal'
-  && androidSubmitProfile?.releaseStatus === 'draft'
+  && androidSubmitProfile?.releaseStatus === 'completed'
 ) {
-  addStatus('ok', 'Play internal submit profile', 'submit.storeTest.android targets the internal track as a draft release.');
+  addStatus('ok', 'Play internal submit profile', 'submit.storeTest.android targets the internal track and publishes finished builds directly to internal testers.');
 } else {
-  addStatus('block', 'Play internal submit profile', 'submit.storeTest.android should point at ./play-store-service-account.json and target the internal draft track.');
+  addStatus('block', 'Play internal submit profile', 'submit.storeTest.android should point at ./play-store-service-account.json, target the internal track, and use releaseStatus "completed" so internal testers receive the build automatically.');
 }
 
 const iosSubmitProfile = submitProfiles.storeTest?.ios;
