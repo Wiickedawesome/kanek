@@ -29,6 +29,8 @@ export function MapPickerContent({ initialCenter, onCenterChange }: MapPickerCon
       logoEnabled={false}
       attributionEnabled={false}
       compassEnabled
+      pitchEnabled={false}
+      rotateEnabled={false}
       onRegionDidChange={handleRegionDidChange}
     >
       <MapboxGL.Camera

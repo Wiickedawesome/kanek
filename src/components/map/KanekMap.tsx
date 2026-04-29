@@ -49,6 +49,8 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
           logoEnabled={false}
           attributionEnabled={false}
           compassEnabled
+          pitchEnabled={false}
+          rotateEnabled={false}
           onDidFinishLoadingMap={onMapReady}
         >
           <MapboxGL.Camera

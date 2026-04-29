@@ -3,12 +3,15 @@ import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, spacing, shadows } from '@/theme';
-import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
+import { MAPBOX_ACCESS_TOKEN, BELIZE_BOUNDS, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
 import { DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { getDistrictBoundariesGeoJSON } from '@/lib/belizeDistricts';
 import type { BelizeDistrict } from '@/types/database';
 
 MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+
+const BELIZE_SW: [number, number] = [BELIZE_BOUNDS.west, BELIZE_BOUNDS.south];
+const BELIZE_NE: [number, number] = [BELIZE_BOUNDS.east, BELIZE_BOUNDS.north];
 
 interface GeoPoint {
   id: string;
@@ -144,25 +147,20 @@ export function ExploreMapContent({
         logoEnabled={false}
         attributionEnabled={false}
         compassEnabled
+        pitchEnabled={false}
+        rotateEnabled={false}
         compassPosition={{ top: compassTopOffset + 20, right: 16 }}
       >
-        {showUserLocation ? (
-          <MapboxGL.Camera
-            ref={cameraRef}
-            followUserLocation
-            followZoomLevel={DEFAULT_NEARBY_ZOOM}
-            animationMode="easeTo"
-            animationDuration={600}
-          />
-        ) : (
-          <MapboxGL.Camera
-            ref={cameraRef}
-            centerCoordinate={[center.longitude, center.latitude]}
-            zoomLevel={zoom}
-            animationMode="moveTo"
-            animationDuration={0}
-          />
-        )}
+        <MapboxGL.Camera
+          ref={cameraRef}
+          centerCoordinate={[center.longitude, center.latitude]}
+          zoomLevel={showUserLocation ? DEFAULT_NEARBY_ZOOM : zoom}
+          minZoomLevel={6}
+          maxZoomLevel={18}
+          bounds={{ sw: BELIZE_SW, ne: BELIZE_NE }}
+          animationMode="moveTo"
+          animationDuration={0}
+        />
 
         {showUserLocation && <MapboxGL.UserLocation visible />}
 
