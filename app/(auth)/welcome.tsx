@@ -18,14 +18,14 @@ export default function WelcomeScreen() {
       <View style={styles.actions}>
         <Pressable
           style={styles.primaryButton}
-          onPress={() => router.push({ pathname: '/(auth)/login', params: { signup: '1' } })}
+          onPress={() => router.replace({ pathname: '/(auth)/login', params: { signup: '1' } })}
         >
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </Pressable>
 
         <Pressable
           style={styles.secondaryButton}
-          onPress={() => router.push({ pathname: '/(auth)/login', params: { signup: '0' } })}
+          onPress={() => router.replace({ pathname: '/(auth)/login', params: { signup: '0' } })}
         >
           <Text style={styles.secondaryButtonText}>I already have an account</Text>
         </Pressable>

@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { readUploadFile } from '@/lib/uploadFile';
 import type { Database } from '@/types/database';
 
 type CheckinRow = Database['public']['Tables']['driver_checkins']['Row'];
@@ -39,16 +40,13 @@ export const checkinsApi = createApi({
       }
     >({
       queryFn: async ({ driverId, contractId, imageUri, lat, lng }) => {
-        // Read image file
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
+        const { arrayBuffer, mimeType, size } = await readUploadFile(imageUri);
 
         // Validate file size (max 5MB) and type
-        if (blob.size > 5 * 1024 * 1024) {
+        if (size > 5 * 1024 * 1024) {
           return { error: { status: 'CUSTOM_ERROR' as const, error: 'Selfie must be under 5MB' } };
         }
-        if (!blob.type.startsWith('image/')) {
+        if (!mimeType.startsWith('image/')) {
           return { error: { status: 'CUSTOM_ERROR' as const, error: 'File must be an image' } };
         }
 
@@ -59,7 +57,7 @@ export const checkinsApi = createApi({
         const { error: uploadError } = await supabase.storage
           .from('checkin-selfies')
           .upload(filePath, arrayBuffer, {
-            contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}`,
+            contentType: mimeType || `image/${ext === 'png' ? 'png' : 'jpeg'}`,
             upsert: true,
           });
 

@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { ScreenHeader } from '@/components/ui';
+import { readUploadFile } from '@/lib/uploadFile';
 import { useAuth } from '@/hooks/useAuth';
 import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
@@ -101,14 +102,12 @@ export default function IdUploadScreen() {
 
   const uploadImage = async (uri: string, path: string): Promise<boolean> => {
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
+      const { arrayBuffer, mimeType } = await readUploadFile(uri, 'image/jpeg');
 
       const { error } = await supabase.storage
         .from('documents')
         .upload(path, arrayBuffer, {
-          contentType: blob.type || 'image/jpeg',
+          contentType: mimeType || 'image/jpeg',
           upsert: true,
         });
 

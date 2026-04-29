@@ -42,7 +42,7 @@ function RootLayoutInner() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor={colors.forest[900]} translucent={false} />
       <InAppToast />
       <Stack screenOptions={ROOT_STACK_OPTIONS} />
     </>

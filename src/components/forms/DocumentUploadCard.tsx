@@ -15,6 +15,7 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { showAlert } from '@/lib/alert';
+import { readUploadFile } from '@/lib/uploadFile';
 import type { DriverDocumentType, ReviewStatus , Database } from '@/types/database';
 import { DRIVER_DOC_LABELS } from '@/store/api/driverDocumentsApi';
 
@@ -162,14 +163,12 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
         const ext = imageUri.split('.').pop() ?? 'jpg';
         const filePath = `${userId}/${documentType}-${Date.now()}.${ext}`;
 
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
+        const { arrayBuffer, mimeType } = await readUploadFile(imageUri, 'image/jpeg');
 
         const { error } = await supabase.storage
           .from('documents')
           .upload(filePath, arrayBuffer, {
-            contentType: 'image/jpeg',
+            contentType: mimeType || 'image/jpeg',
             upsert: true,
           });
 

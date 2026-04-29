@@ -37,13 +37,13 @@ export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
   if (Platform.OS === 'ios') {
     return (
       <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
-        <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }, style]}>
+        <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }]}>
           <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
           <LinearGradient
             colors={['rgba(20, 45, 0, 0.45)', 'rgba(28, 37, 19, 0.35)']}
             style={StyleSheet.absoluteFill}
           />
-          {children}
+          <View style={style}>{children}</View>
           <View style={styles.accentEdge} />
         </View>
       </View>
@@ -52,12 +52,12 @@ export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
 
   return (
     <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
-      <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }, style]}>
+      <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }]}>
         <LinearGradient
           colors={[colors.forest[900], colors.forest[800]]}
           style={StyleSheet.absoluteFill}
         />
-        {children}
+        <View style={style}>{children}</View>
         <View style={styles.accentEdge} />
       </View>
     </View>

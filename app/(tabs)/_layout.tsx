@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { Tabs, usePathname, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
@@ -36,11 +37,15 @@ export default function TabLayout() {
 }
 
 function TabNavigator({ userId }: { userId?: string }) {
+  const insets = useSafeAreaInsets();
   const { data: unreadCount } = useGetUnreadCountQuery(userId ?? '', {
     skip: !userId,
     pollingInterval: 60_000,
   });
   const badge = unreadCount && unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : undefined;
+  const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
+  const tabBarHeight = 54 + Math.max(bottomInset, 10);
+  const tabBarPaddingBottom = Math.max(bottomInset, 10);
 
   return (
     <Tabs
@@ -55,7 +60,7 @@ function TabNavigator({ userId }: { userId?: string }) {
             WebkitBackdropFilter: 'blur(24px)',
             borderTopWidth: 1,
             borderTopColor: 'rgba(0, 0, 0, 0.06)',
-            height: 64,
+            height: tabBarHeight,
             paddingBottom: 10,
             paddingTop: 4,
           } as any,
@@ -64,8 +69,8 @@ function TabNavigator({ userId }: { userId?: string }) {
             borderTopWidth: 1,
             borderTopColor: 'rgba(0, 0, 0, 0.06)',
             elevation: 0,
-            height: 64,
-            paddingBottom: 10,
+            height: tabBarHeight,
+            paddingBottom: tabBarPaddingBottom,
             paddingTop: 4,
           },
         }),

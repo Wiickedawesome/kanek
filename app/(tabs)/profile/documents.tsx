@@ -18,6 +18,7 @@ import { colors, typography, spacing
 import { supabase } from '@/lib/supabase';
 import { safeGoBack } from '@/lib/helpers';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
+import { readUploadFile } from '@/lib/uploadFile';
 import {
   useGetLatestRiderDocumentQuery,
   useGetMyProfileQuery,
@@ -104,14 +105,12 @@ export default function DocumentsScreen() {
       const ext = asset.uri.split('.').pop() ?? 'jpg';
       const filePath = `${userId}/government-id-${Date.now()}.${ext}`;
 
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
+      const { arrayBuffer, mimeType } = await readUploadFile(asset.uri, asset.mimeType);
 
       const { error: uploadErr } = await supabase.storage
         .from('documents')
         .upload(filePath, arrayBuffer, {
-          contentType: asset.mimeType ?? 'image/jpeg',
+          contentType: mimeType || 'image/jpeg',
           upsert: true,
         });
       if (uploadErr) throw uploadErr;

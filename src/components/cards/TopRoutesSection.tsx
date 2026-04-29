@@ -153,10 +153,10 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backgroundColor: 'rgba(246, 246, 244, 0.94)',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: 'rgba(20, 40, 0, 0.08)',
     ...shadows.sm,
   },
   cardPressed: {
@@ -191,9 +191,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Bottom info area — white
+  // Bottom info area — same matte surface as the rest of the app cards
   infoArea: {
     padding: spacing.md,
+    backgroundColor: 'rgba(246, 246, 244, 0.94)',
   },
   title: {
     ...typography.body1Bold,

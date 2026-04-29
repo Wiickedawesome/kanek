@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
+import { readUploadFile } from '@/lib/uploadFile';
 
 interface UploadProfileAvatarArgs {
   userId: string;
@@ -8,11 +9,9 @@ interface UploadProfileAvatarArgs {
 }
 
 export async function uploadProfileAvatar({ userId, uri, mimeType }: UploadProfileAvatarArgs) {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
+  const { arrayBuffer, mimeType: resolvedMimeType, size } = await readUploadFile(uri, mimeType);
 
-  if (blob.size > MAX_UPLOAD_SIZE) {
+  if (size > MAX_UPLOAD_SIZE) {
     throw new Error('Image must be under 5 MB');
   }
 
@@ -21,7 +20,7 @@ export async function uploadProfileAvatar({ userId, uri, mimeType }: UploadProfi
   const { error } = await supabase.storage
     .from('avatars')
     .upload(filePath, arrayBuffer, {
-      contentType: mimeType ?? 'image/jpeg',
+      contentType: resolvedMimeType || 'image/jpeg',
       upsert: true,
     });
 
