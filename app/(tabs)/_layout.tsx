@@ -44,8 +44,10 @@ function TabNavigator({ userId }: { userId?: string }) {
   });
   const badge = unreadCount && unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : undefined;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
-  const tabBarHeight = 54 + Math.max(bottomInset, 10);
-  const tabBarPaddingBottom = Math.max(bottomInset, 10);
+  const minimumBottomClearance = Platform.OS === 'android' ? 20 : 10;
+  const tabBarBaseHeight = Platform.OS === 'android' ? 58 : 54;
+  const tabBarHeight = tabBarBaseHeight + Math.max(bottomInset, minimumBottomClearance);
+  const tabBarPaddingBottom = Math.max(bottomInset, minimumBottomClearance);
 
   return (
     <Tabs

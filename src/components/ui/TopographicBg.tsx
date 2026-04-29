@@ -8,6 +8,7 @@ const LINE_OPACITY = 0.06;
 export function TopographicBg() {
   return (
     <Svg
+      pointerEvents="none"
       style={StyleSheet.absoluteFill}
       viewBox="0 0 400 900"
       preserveAspectRatio="xMidYMid slice"

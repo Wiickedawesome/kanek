@@ -47,10 +47,10 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(246, 246, 244, 0.94)',
+    backgroundColor: 'rgba(246, 246, 244, 0.72)',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.08)',
+    borderColor: 'rgba(20, 40, 0, 0.06)',
     ...shadows.sm,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any : {}),
   },

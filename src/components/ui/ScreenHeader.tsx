@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Platform,
+  StatusBar,
   StyleSheet,
   View,
   type ViewStyle,
@@ -30,8 +31,11 @@ interface ScreenHeaderProps {
  */
 export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
   const insets = useSafeAreaInsets();
-  const safeAreaStyle = insets.top > 0
-    ? { marginTop: -insets.top, paddingTop: insets.top }
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight ?? 0)
+    : insets.top;
+  const safeAreaStyle = topInset > 0
+    ? { marginTop: -topInset, paddingTop: topInset }
     : null;
 
   if (Platform.OS === 'ios') {
