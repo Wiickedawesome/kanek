@@ -107,7 +107,6 @@ export const RouteRequestCard = React.memo(function RouteRequestCard({ post, onP
 const styles = StyleSheet.create({
   card: {
     padding: 0,
-    overflow: 'hidden',
   },
   content: {
     flex: 1,

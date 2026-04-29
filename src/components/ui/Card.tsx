@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, StyleProp, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { borderRadius, spacing, shadows } from '@/theme';
+import { borderRadius, colors, spacing, shadows } from '@/theme';
 import { hapticLight } from '@/lib/haptics';
 
 const SPRING_CONFIG = { damping: 15, stiffness: 300 };
@@ -47,10 +47,10 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(246, 246, 244, 0.72)',
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.06)',
+    borderColor: 'rgba(20, 40, 0, 0.08)',
     ...shadows.sm,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any : {}),
   },

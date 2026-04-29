@@ -111,7 +111,6 @@ export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardPro
 const styles = StyleSheet.create({
   card: {
     padding: 0,
-    overflow: 'hidden',
   },
   content: {
     flex: 1,

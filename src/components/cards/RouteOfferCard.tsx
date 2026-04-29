@@ -113,7 +113,6 @@ export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress
 const styles = StyleSheet.create({
   card: {
     padding: 0,
-    overflow: 'hidden',
   },
   content: {
     flex: 1,

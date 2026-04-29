@@ -97,7 +97,6 @@ export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: Erra
 const styles = StyleSheet.create({
   card: {
     padding: 0,
-    overflow: 'hidden',
   },
   content: {
     flex: 1,
