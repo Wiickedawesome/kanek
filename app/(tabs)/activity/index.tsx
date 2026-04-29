@@ -527,7 +527,7 @@ export default function ActivityScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>Activity</Text>
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   },
   feed: {
     padding: spacing.lg,
-    paddingBottom: 80,
+    paddingBottom: spacing.lg,
     flexGrow: 1,
   },
   separator: {

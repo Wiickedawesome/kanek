@@ -42,6 +42,7 @@ export const checkinsApi = createApi({
         // Read image file
         const response = await fetch(imageUri);
         const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
 
         // Validate file size (max 5MB) and type
         if (blob.size > 5 * 1024 * 1024) {
@@ -57,7 +58,7 @@ export const checkinsApi = createApi({
         // Upload to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('checkin-selfies')
-          .upload(filePath, blob, {
+          .upload(filePath, arrayBuffer, {
             contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}`,
             upsert: true,
           });

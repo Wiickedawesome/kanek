@@ -220,7 +220,7 @@ export default function ContractDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={['top']}>
         <ActivityIndicator size="large" color={colors.accent.green} />
       </SafeAreaView>
     );
@@ -228,7 +228,7 @@ export default function ContractDetailScreen() {
 
   if (!contract) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={['top']}>
         <Icon name="alert-triangle" size={48} color={colors.neutral[400]} />
         <Text style={styles.errorText}>Contract not found</Text>
         <Button title="Go Back" variant="outline" onPress={() => safeGoBack('/(tabs)/activity/')} />
@@ -250,7 +250,7 @@ export default function ContractDetailScreen() {
     : null;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => router.navigate('/(tabs)/activity/' as any)} hitSlop={12}>

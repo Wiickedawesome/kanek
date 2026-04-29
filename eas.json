@@ -4,45 +4,25 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "channel": "development",
-      "developmentClient": true,
-      "distribution": "internal",
-      "environment": "development"
-    },
-    "preview": {
-      "channel": "preview",
+    "deviceTest": {
+      "channel": "device-test",
       "distribution": "internal",
       "environment": "preview",
       "ios": {
         "simulator": false
       }
     },
-    "production": {
-      "channel": "production",
+    "storeTest": {
+      "channel": "store-test",
+      "distribution": "store",
       "autoIncrement": true,
       "environment": "production",
       "env": {
         "MAPBOX_DOWNLOAD_TOKEN": "${MAPBOX_DOWNLOAD_TOKEN}"
       }
-    },
-    "storeTest": {
-      "extends": "production",
-      "channel": "store-test"
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "ascAppId": "6764087212",
-        "appleTeamId": "6VR44TAYT7"
-      },
-      "android": {
-        "serviceAccountKeyPath": "./play-store-service-account.json",
-        "track": "internal",
-        "releaseStatus": "draft"
-      }
-    },
     "storeTest": {
       "ios": {
         "ascAppId": "6764087212",

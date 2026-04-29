@@ -108,7 +108,7 @@ export default function NotificationsScreen() {
   const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0] },
   markAllText: { ...typography.body2Bold, color: colors.accent.green },
-  list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
+  list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.sm },
   notifCard: { padding: spacing.md },
   unreadCard: { backgroundColor: '#f0fdf0' },

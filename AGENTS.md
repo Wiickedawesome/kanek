@@ -11,7 +11,7 @@ and ask**.
 
 > Why this file exists. The user has shipped builds where the agent silently
 > picked an EAS profile, silently turned off Sentry uploads with skip flags,
-> silently confused `preview` with TestFlight, and silently asserted that things
+> silently confused internal device builds with TestFlight, and silently asserted that things
 > were "fixed" without verifying. Each of those cost real time and trust. This
 > contract closes those gaps.
 
@@ -108,8 +108,8 @@ correct path is now.
 
 Examples of good recovery:
 
-> "I picked the `preview` profile assuming you wanted TestFlight. That was
-> wrong — `preview` only installs from the Expo URL. To reach TestFlight I need
+> "I picked the `deviceTest` profile assuming you wanted TestFlight. That was
+> wrong — `deviceTest` only installs directly on registered devices. To reach TestFlight I need
 > `storeTest --auto-submit`. Do you want me to kick that off?"
 
 > "I claimed the migration count was 11. The actual count is 14. I've corrected
@@ -127,13 +127,13 @@ the proposed action, the consequences, and (if there's choice) the alternatives.
 
 - Running `eas build` (any profile, any platform). State the profile, the
   platform(s), whether `--auto-submit` is on, and where the artifact will land
-  (Expo URL / TestFlight / Play Internal / Production).
+  (internal install page / TestFlight / Play Internal / Production).
 - Running `eas submit` against an existing build.
 - Changing any field in `eas.json` that affects distribution: `distribution`,
   `channel`, `track`, `releaseStatus`, `extends`, `autoIncrement`.
 - Bumping the app version in `app.json` (`version`) or any platform-specific
   build number override.
-- Registering a new device UDID with the `preview` provisioning profile.
+- Registering a new device UDID with the `deviceTest` provisioning profile.
 
 ### Code & schema
 
@@ -223,7 +223,7 @@ These are absolute. There is no scenario in which they're correct in this repo
 without an explicit user override.
 
 1. **Never invent a fact.** Versions, file paths, function names, build numbers, env-var names, schema columns, dates, build IDs — none of those get fabricated. If unknown, say so or ask.
-2. **Never claim a build went to TestFlight** because the user said "test build". `preview` does **not** go to TestFlight. Verify the profile and the auto-submit flag.
+2. **Never claim a build went to TestFlight** because the user said "test build". `deviceTest` does **not** go to TestFlight. Verify the profile and the auto-submit flag.
 3. **Never apply Sentry skip flags as a "fix"** for a missing auth token. Set `SENTRY_AUTH_TOKEN` instead. The skip flags are emergency-only.
 4. **Never modify a deployed migration.** Make a new file.
 5. **Never push validation into helpers/services.** Validate at form and edge-function boundaries only.
@@ -500,7 +500,7 @@ A task is "done" only when **all** of the following are true:
 3. Affected files lint (`npm run lint`).
 4. If tests cover the change, they pass (`npm test`).
 5. If the change touches a build artifact (env, eas.json, app.json, native
-   files, dependencies), at minimum a `--profile development` or
+  files, dependencies), at minimum a `--profile deviceTest` or
    `expo-doctor` smoke check has run, **OR** you have explicitly noted that no
    build verification was done and asked whether to run one.
 6. If the change touches the database, the migration applies cleanly against

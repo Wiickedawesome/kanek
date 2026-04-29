@@ -139,18 +139,34 @@ const easConfig = readJson('eas.json');
 const buildProfiles = easConfig.build || {};
 const submitProfiles = easConfig.submit || {};
 
-if (buildProfiles.development?.environment === 'development'
-  && buildProfiles.preview?.environment === 'preview'
-  && buildProfiles.production?.environment === 'production') {
-  addStatus('ok', 'Build environments', 'EAS build profiles now map explicitly to development, preview, and production environments.');
+const buildProfileNames = Object.keys(buildProfiles);
+if (
+  buildProfileNames.length === 2
+  && buildProfileNames.includes('deviceTest')
+  && buildProfileNames.includes('storeTest')
+) {
+  addStatus('ok', 'Build profile count', 'eas.json keeps only the two active lanes: deviceTest and storeTest.');
 } else {
-  addStatus('warn', 'Build environments', 'Set explicit EAS environments on build profiles so store builds always resolve the intended runtime env set.');
+  addStatus('block', 'Build profile count', 'Keep only build.deviceTest and build.storeTest in eas.json so internal installs and store-distributed testing cannot be confused.');
 }
 
-if (buildProfiles.storeTest?.extends === 'production') {
-  addStatus('ok', 'Store test build profile', 'build.storeTest extends production, so TestFlight and Play internal builds use store-ready settings without implying launch.');
+if (
+  buildProfiles.deviceTest?.distribution === 'internal'
+  && buildProfiles.deviceTest?.environment === 'preview'
+  && buildProfiles.deviceTest?.ios?.simulator === false
+) {
+  addStatus('ok', 'Device test build profile', 'build.deviceTest is the direct-install lane and resolves runtime vars from the preview environment.');
 } else {
-  addStatus('block', 'Store test build profile', 'Add build.storeTest in eas.json and have it extend production.');
+  addStatus('block', 'Device test build profile', 'build.deviceTest should be an internal profile with environment "preview" and ios.simulator set to false.');
+}
+
+if (
+  buildProfiles.storeTest?.distribution === 'store'
+  && buildProfiles.storeTest?.environment === 'production'
+) {
+  addStatus('ok', 'Store test build profile', 'build.storeTest is the only store-distributed lane and uses the production environment for TestFlight and Play internal builds.');
+} else {
+  addStatus('block', 'Store test build profile', 'build.storeTest should be a store-distributed profile that uses the production environment.');
 }
 
 const androidSubmitProfile = submitProfiles.storeTest?.android;
@@ -193,7 +209,7 @@ if (fs.existsSync(path.join(repoRoot, 'play-store-service-account.json'))) {
 if (hasCompletedFirstPlaySubmission) {
   addStatus('ok', 'Android first Play release', `The first manual Google Play submission has been acknowledged via ${PLAY_FIRST_SUBMISSION_ENV}=true.`);
 } else {
-  addStatus('block', 'Android first Play release', 'Google Play requires the first bz.kanek.app release to be created manually in Play Console before EAS submit can publish internal-track builds. After that first manual release is accepted, set ANDROID_FIRST_SUBMISSION_COMPLETE=true in your shell or .env.local to clear this blocker.');
+  addStatus('warn', 'Android first Play release', `Google Play rejected first-time automated submits until the app had Play Console access configured. Once Android submission is verified, set ${PLAY_FIRST_SUBMISSION_ENV}=true in your shell or .env.local to silence this warning.`);
 }
 
 const aasaPath = path.join(repoRoot, 'public', '.well-known', 'apple-app-site-association');

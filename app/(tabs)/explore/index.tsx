@@ -146,7 +146,7 @@ export default function ExploreScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.greeting}>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   feed: {
     padding: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 80,
+    paddingBottom: spacing.lg,
   },
   sectionHeading: {
     ...typography.h3,

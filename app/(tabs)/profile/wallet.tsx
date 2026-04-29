@@ -73,7 +73,7 @@ export default function WalletScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   summaryLabel: { ...typography.caption, color: colors.neutral[200] },
   summaryValue: { ...typography.h2, color: colors.neutral[0] },
 
-  list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
+  list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.md },
 
   txnCard: { padding: spacing.lg, gap: spacing.sm },

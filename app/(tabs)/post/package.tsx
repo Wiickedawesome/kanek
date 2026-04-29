@@ -161,7 +161,7 @@ export default function PackageFormScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   formContent: {
     padding: spacing.xl,
     gap: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
   },
   row: {
     flexDirection: 'row',

@@ -1,3 +1,6 @@
+import { consumeAuthRedirectUrl } from '@/lib/authRedirect';
+import { supabase } from '@/lib/supabase';
+
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
@@ -6,9 +9,6 @@ jest.mock('@/lib/supabase', () => ({
     },
   },
 }));
-
-import { consumeAuthRedirectUrl } from '@/lib/authRedirect';
-import { supabase } from '@/lib/supabase';
 
 const mockedAuth = jest.mocked(supabase.auth);
 

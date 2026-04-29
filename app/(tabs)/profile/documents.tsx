@@ -152,7 +152,7 @@ export default function DocumentsScreen() {
 
   if (!profile || riderDocLoading || driverDocsLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.accent.green} />
         </View>
@@ -161,7 +161,7 @@ export default function DocumentsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
-  scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl },
+  scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.lg },
   subtitle: { ...typography.body2, color: colors.forest[400], marginBottom: spacing.sm },
 
   govIdCard: { padding: spacing.lg, gap: spacing.md },

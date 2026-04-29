@@ -78,7 +78,7 @@ export default function PostScreen() {
   const isAccountActive = profile?.account_status === 'active';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>New Post</Text>

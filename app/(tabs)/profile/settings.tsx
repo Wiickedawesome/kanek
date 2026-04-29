@@ -144,7 +144,7 @@ export default function SettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={['top']}>
         <ActivityIndicator size="large" color={colors.accent.green} />
       </SafeAreaView>
     );
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
   const isPhoneInputStep = phoneStep === 'input';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
-  scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl },
+  scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.lg },
 
   field: { gap: spacing.xs },
   label: { ...typography.body2Bold, color: colors.forest[400] },

@@ -13,7 +13,7 @@
 - [x] Remove unused `RECORD_AUDIO` permission from Android config
 - [x] Replace hardcoded Mapbox `sk.placeholder` with env var `${MAPBOX_DOWNLOAD_TOKEN}`
 - [x] Configure `eas.json` submit profiles for iOS (ASC) and Android (Play Store)
-- [x] Add `preview` build profile with `ios.simulator: false` for TestFlight
+- [x] Separate direct device installs from TestFlight / Play Internal builds in `eas.json`
 - [x] Create Privacy Policy screen (`app/(tabs)/profile/privacy.tsx`)
 - [x] Create Terms of Service screen (`app/(tabs)/profile/terms.tsx`)
 - [x] Create shared `LegalScreen` component (`src/components/LegalScreen.tsx`)
@@ -95,10 +95,7 @@
 - [ ] **Set `EXPO_PUBLIC_SENTRY_DSN`** in EAS production if runtime Sentry reporting should be enabled (the current `SENTRY_AUTH_TOKEN` received `403` from the Sentry keys API, so fetch the DSN from Sentry UI or a broader-scope token)
 - [ ] **Enable hCaptcha** in Supabase Auth settings for production if bot protection is required at launch
 - [ ] **Verify RLS policies** are active on all tables
-- [ ] **Build production binaries**:
-  ```bash
-  eas build --platform all --profile production
-  ```
+- [ ] **Create a dedicated public-store EAS profile before launch** — the current `eas.json` intentionally keeps only `deviceTest` and `storeTest` so test builds cannot be confused with a real store release
 - [ ] **Test on real devices**:
   - Push notifications
   - Location permissions & map rendering
@@ -106,12 +103,9 @@
   - Deep links (`kanek://`)
   - SOS feature
   - E-Kyash flow later, when `ENABLE_EKYASH` is turned back on
-- [ ] **Android Play submission automation** — Add `play-store-service-account.json` if you want `eas submit --platform android --profile production`
+- [ ] **Android Play submission automation** — Add a dedicated public-store profile if you want `eas submit` automation for a real production rollout
 - [ ] **Retry Android submit** — Last attempt reached EAS submission `252dcd31-4164-450f-9596-df92812d0030` and failed because the Android Publisher API is disabled / inaccessible while Google approval is still pending
-- [ ] **Submit**:
-  ```bash
-  eas submit --platform all --profile production
-  ```
+- [ ] **Submit the real launch build** — after adding the dedicated public-store profile, submit that profile explicitly instead of reusing `storeTest`
 
 ---
 

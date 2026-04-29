@@ -105,7 +105,7 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={['top']}>
         <ActivityIndicator size="large" color={colors.accent.green} />
       </SafeAreaView>
     );
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.xl,
     gap: spacing.xl,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
   },
   profileCard: {
     flexDirection: 'row',

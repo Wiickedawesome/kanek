@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, shadows } from '@/theme';
 
 interface ScreenHeaderProps {
@@ -28,10 +29,15 @@ interface ScreenHeaderProps {
  * Do NOT set backgroundColor in the passed style — this component owns that.
  */
 export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const safeAreaStyle = insets.top > 0
+    ? { marginTop: -insets.top, paddingTop: insets.top }
+    : null;
+
   if (Platform.OS === 'ios') {
     return (
-      <View style={styles.outer} onLayout={onLayout}>
-        <View style={[styles.container, style]}>
+      <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
+        <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }, style]}>
           <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
           <LinearGradient
             colors={['rgba(20, 45, 0, 0.45)', 'rgba(28, 37, 19, 0.35)']}
@@ -45,8 +51,8 @@ export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
   }
 
   return (
-    <View style={styles.outer} onLayout={onLayout}>
-      <View style={[styles.container, style]}>
+    <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
+      <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }, style]}>
         <LinearGradient
           colors={[colors.forest[900], colors.forest[800]]}
           style={StyleSheet.absoluteFill}

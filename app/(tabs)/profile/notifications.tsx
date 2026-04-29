@@ -76,7 +76,7 @@ export default function NotificationSettingsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={['top']}>
         <ActivityIndicator size="large" color={colors.accent.green} />
       </SafeAreaView>
     );
@@ -85,7 +85,7 @@ export default function NotificationSettingsScreen() {
   const showPermissionBanner = systemPermission !== 'granted';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={8}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.xl,
     gap: spacing.xl,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
   },
   permissionBanner: {
     flexDirection: 'row',

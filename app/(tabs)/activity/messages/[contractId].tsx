@@ -97,7 +97,7 @@ export default function MessagesScreen() {
   const title = contract?.post?.title ?? 'Messages';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
         <Pressable

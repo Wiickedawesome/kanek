@@ -72,7 +72,7 @@ export default function ReportsScreen() {
   }, [refetch]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
 
-  list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
+  list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.md },
 
   sectionHeader: {

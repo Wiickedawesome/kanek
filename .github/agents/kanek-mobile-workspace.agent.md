@@ -62,7 +62,7 @@ These are high-value facts that affect routing and diagnosis:
 - Storage upload hazard: React Native uploads must use `arrayBuffer()` instead of uploading a `Blob` directly
 - Payments state: E-Kyash edge functions exist, but `ENABLE_EKYASH = false` currently gates the app UI off
 - Captcha state: hCaptcha components exist, but `EXPO_PUBLIC_HCAPTCHA_SITE_KEY` is currently unset, so the widget returns `null`
-- Distribution hazard: `preview` profile is internal install only and does **not** go to TestFlight
+- Distribution hazard: `deviceTest` is the internal install lane and does **not** go to TestFlight
 
 ## Default Task Routing
 Use this agent when the task starts from any of these anchors:
@@ -155,9 +155,9 @@ When working in this repo, keep these repo facts front-of-mind:
 - Treat the current shipped state as captcha-bypassed until the env is actually set and verified.
 
 ### Builds
-- `preview` is not TestFlight.
+- `deviceTest` is not TestFlight.
 - `storeTest --auto-submit` is the test-distribution path for TestFlight + Play Internal.
-- `production --auto-submit` is public-store distribution.
+- Public-store distribution is not defined in the current `eas.json`; add a dedicated launch profile before using EAS for public release.
 - OTA is not configured; builds are required for code changes to reach devices.
 
 ## Cross-Repo Impact Patterns
@@ -229,7 +229,7 @@ If you are choosing between multiple plausible starting points:
 ## Good Defaults For Common Requests
 - "Auth is broken" → inspect `src/hooks/useAuth.ts`, `src/lib/authRedirect.ts`, `app/auth/callback.tsx`, provider config facts in `.github/copilot-instructions.md`
 - "Back button is wrong" → inspect owning tab route, wrapper pattern, `safeGoBack`, and nearby wrappers
-- "Build for testing" → clarify distribution target before any build, then map to `preview` vs `storeTest`
+- "Build for testing" → clarify distribution target before any build, then map to `deviceTest` vs `storeTest`
 - "Admin can’t see documents" → inspect mobile storage bucket facts here, then step into sibling `admin-api`
 - "Update profile schema" → inspect migration discipline here first, then identify sibling admin exposure risk
 - "Why isn’t captcha showing?" → inspect `HCaptcha.tsx`, `.web.tsx`, login usage, and env state before assuming the widget was removed
