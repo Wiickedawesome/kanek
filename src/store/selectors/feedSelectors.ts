@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 import type { Database, BelizeDistrict, PostType } from '@/types/database';
-import { getDistanceKm } from '@/lib/helpers';
+import { getDistanceKm, isEffectivelyExpiredPost } from '@/lib/helpers';
 import { GAS_PRICES_LIMIT, TOP_ROUTES_LIMIT } from '@/lib/constants';
 
 type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
@@ -74,7 +74,9 @@ export const selectFeedItems = createSelector(
       return items;
     }
 
-    let filteredPosts = posts ?? [];
+    let filteredPosts = (posts ?? []).filter(
+      (post) => !isEffectivelyExpiredPost(post.status, post.departure_at),
+    );
 
     if (distanceFilter && hasGPS) {
       filteredPosts = filteredPosts.filter((p) => {
@@ -130,7 +132,7 @@ export const selectTopRoutes = createSelector(
   (posts, typeFilter, userDistrict) => {
     if (typeFilter !== null) return [];
     const routes = (posts ?? []).filter(
-      (p) => p.type === 'route_offer',
+      (p) => p.type === 'route_offer' && !isEffectivelyExpiredPost(p.status, p.departure_at),
     );
     if (userDistrict) {
       routes.sort((a, b) => {

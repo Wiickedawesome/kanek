@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   cardPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: colors.neutral[50],
   },
   iconContainer: {
     width: 48,

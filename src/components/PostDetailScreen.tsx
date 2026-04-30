@@ -20,8 +20,8 @@ import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { buildRouteMapUrl } from '@/lib/mapbox';
-import { formatBZD, formatDeparture, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
+import { buildPointMapUrl, buildRouteMapUrl } from '@/lib/mapbox';
+import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { PostType } from '@/types/database';
@@ -49,8 +49,36 @@ const JOB_CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function formatRepeatDays(days: number[] | null | undefined): string | null {
+  if (!days || days.length === 0) return null;
+  return days
+    .map((day) => DAY_LABELS[day] ?? null)
+    .filter((label): label is string => Boolean(label))
+    .join(', ');
+}
+
 interface Props {
   backFallback: string;
+}
+
+interface StoredPickupStop {
+  address: string;
+  lat: number | null;
+  lng: number | null;
+}
+
+function parsePickupStops(raw: string | null | undefined): StoredPickupStop[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as { stops?: StoredPickupStop[] };
+    if (!Array.isArray(parsed.stops)) return [];
+    return parsed.stops.filter((stop) => typeof stop.address === 'string' && stop.address.trim().length > 0);
+  } catch {
+    return [];
+  }
 }
 
 export default function PostDetailScreen({ backFallback }: Props) {
@@ -86,17 +114,60 @@ export default function PostDetailScreen({ backFallback }: Props) {
     post.dest_lat != null &&
     post.dest_lng != null;
 
+  const pickupStops = useMemo(() => parsePickupStops(post?.pickup_notes), [post?.pickup_notes]);
+  const showsRouteLayout = Boolean(
+    post &&
+    (post.type === 'route_offer' || post.type === 'route_request' || post.type === 'errand' || post.type === 'package') &&
+    (post.origin_address || post.origin_lat != null) &&
+    (post.dest_address || post.dest_lat != null)
+  );
+
+  const pointLocation = useMemo(() => {
+    if (!post) return null;
+
+    if (post.origin_lat != null && post.origin_lng != null) {
+      return {
+        lat: post.origin_lat,
+        lng: post.origin_lng,
+        label: post.origin_address ?? undefined,
+      };
+    }
+
+    if (post.dest_lat != null && post.dest_lng != null) {
+      return {
+        lat: post.dest_lat,
+        lng: post.dest_lng,
+        label: post.dest_address ?? undefined,
+      };
+    }
+
+    return null;
+  }, [post]);
+
   const mapUri = useMemo(() => {
-    if (!hasCoords || !post) return null;
-    const geo = post.route_geometry as { type: string; coordinates: [number, number][] } | null;
-    return buildRouteMapUrl(
-      post.origin_lat!,
-      post.origin_lng!,
-      post.dest_lat!,
-      post.dest_lng!,
-      { width: MAP_PIXEL_WIDTH, height: MAP_PIXEL_HEIGHT, routeGeometry: geo, padding: 60 },
-    );
-  }, [hasCoords, post]);
+    if (!post) return null;
+
+    if (showsRouteLayout && hasCoords) {
+      const geo = post.route_geometry as { type: string; coordinates: [number, number][] } | null;
+      return buildRouteMapUrl(
+        post.origin_lat!,
+        post.origin_lng!,
+        post.dest_lat!,
+        post.dest_lng!,
+        { width: MAP_PIXEL_WIDTH, height: MAP_PIXEL_HEIGHT, routeGeometry: geo, padding: 60 },
+      );
+    }
+
+    if (pointLocation) {
+      return buildPointMapUrl(pointLocation.lat, pointLocation.lng, {
+        width: MAP_PIXEL_WIDTH,
+        height: MAP_PIXEL_HEIGHT,
+        padding: 80,
+      });
+    }
+
+    return null;
+  }, [hasCoords, pointLocation, post, showsRouteLayout]);
 
   if (isLoading) {
     return (
@@ -120,9 +191,15 @@ export default function PostDetailScreen({ backFallback }: Props) {
     ? `${post.author.first_name ?? ''} ${post.author.last_name ?? ''}`.trim()
     : 'Unknown';
   const isOwner = userId === post.author_id;
+  const effectiveStatus = getEffectivePostStatus(
+    post.status,
+    post.departure_at,
+    post.route_duration_min,
+    post.type,
+  );
   const isRoute = post.type === 'route_offer' || post.type === 'route_request';
   const isErrand = post.type === 'errand' || post.type === 'package';
-  const isPostOpen = post.status === 'open';
+  const isPostOpen = effectiveStatus === 'open';
   const isRouteOffer = post.type === 'route_offer';
   const showSeatsInfo = isRouteOffer && post.seats_total != null;
   const showJobPrice = post.type === 'job' && post.pay_rate_cents != null;
@@ -130,11 +207,12 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const jobPayType = post.type === 'job' ? post.pay_type : null;
   const jobTimeline = post.type === 'job' ? post.job_timeline : null;
   const jobCategory = post.type === 'job' ? post.job_category : null;
+  const repeatDaysLabel = formatRepeatDays(post.repeat_days);
   const showOwnerDeleteBar = isOwner && isPostOpen;
-  const ownerContractId = isOwner && post.status === 'filled'
+  const ownerContractId = isOwner && (effectiveStatus === 'filled' || effectiveStatus === 'in_progress')
     ? (postBookings ?? []).find(b => b.status === 'confirmed' && b.contract?.[0]?.id)?.contract?.[0]?.id ?? null
     : null;
-  const showOwnerActiveBar = isOwner && post.status === 'filled' && !!ownerContractId;
+  const showOwnerActiveBar = isOwner && (effectiveStatus === 'filled' || effectiveStatus === 'in_progress') && (isRouteOffer || !!ownerContractId);
   const showExistingBookingBar = !!existingBooking;
   const showOpenBookingBar = isPostOpen && !isOwner && !existingBooking;
   const hasOwnerBookings = (postBookings?.length ?? 0) > 0;
@@ -144,7 +222,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
     const name = b.user
       ? `${b.user.first_name ?? ''} ${b.user.last_name ?? ''}`.trim() || 'Unknown'
       : 'Unknown';
-    const isOwnerPending = isOwner && post.status === 'open' && b.status === 'pending';
+    const isOwnerPending = isOwner && effectiveStatus === 'open' && b.status === 'pending';
     const isAccepted = b.status === 'confirmed';
     const isBusy = actionBookingId === b.id;
 
@@ -481,7 +559,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   } else {
     bottomAction = (
       <View style={styles.bottomBar}>
-        <Text style={styles.bottomStatusText}>{getUnavailablePostText(post.status)}</Text>
+        <Text style={styles.bottomStatusText}>{getUnavailablePostText(effectiveStatus)}</Text>
       </View>
     );
   }
@@ -507,9 +585,9 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Type badge + status */}
         <View style={styles.badgeRow}>
           <PostTypeBadge type={post.type} />
-          <View style={[styles.statusBadge, post.status === 'open' && styles.statusOpen]}>
-            <Text style={[styles.statusText, post.status === 'open' && styles.statusTextOpen]}>
-              {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+          <View style={[styles.statusBadge, effectiveStatus === 'open' && styles.statusOpen]}>
+            <Text style={[styles.statusText, effectiveStatus === 'open' && styles.statusTextOpen]}>
+              {effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
             </Text>
           </View>
         </View>
@@ -521,7 +599,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {mapUri && (
           <View style={styles.mapContainer}>
             <Image source={{ uri: mapUri }} style={styles.mapImage} resizeMode="cover" />
-            {hasCoords && (
+            {showsRouteLayout && hasCoords ? (
               <Pressable
                 style={styles.openMapsBtn}
                 hitSlop={8}
@@ -533,12 +611,21 @@ export default function PostDetailScreen({ backFallback }: Props) {
                 <Icon name="external-link" size={16} color={colors.neutral[0]} />
                 <Text style={styles.openMapsText}>Open in Maps</Text>
               </Pressable>
-            )}
+            ) : pointLocation ? (
+              <Pressable
+                style={styles.openMapsBtn}
+                hitSlop={8}
+                onPress={() => openInMaps(pointLocation)}
+              >
+                <Icon name="external-link" size={16} color={colors.neutral[0]} />
+                <Text style={styles.openMapsText}>Open in Maps</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
 
         {/* Route info */}
-        {(post.origin_address || post.dest_address) && (
+        {showsRouteLayout && (post.origin_address || post.dest_address) && (
           <View style={styles.section}>
             <View style={styles.routeRow}>
               <View style={styles.routeDot}>
@@ -561,6 +648,24 @@ export default function PostDetailScreen({ backFallback }: Props) {
                     ? { lat: post.dest_lat, lng: post.dest_lng, label: post.dest_address ?? undefined }
                     : null,
                 )}
+              >
+                <Icon name="external-link" size={14} color={colors.forest[400]} />
+                <Text style={styles.openMapsLinkText}>Open in Maps</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {!showsRouteLayout && (post.origin_address || post.dest_address) && (
+          <View style={styles.section}>
+            <View style={styles.infoRow}>
+              <Icon name="map-pin" size={18} color={colors.forest[400]} />
+              <Text style={styles.infoText}>{post.origin_address ?? post.dest_address}</Text>
+            </View>
+            {!mapUri && pointLocation && (
+              <Pressable
+                style={styles.openMapsLink}
+                onPress={() => openInMaps(pointLocation)}
               >
                 <Icon name="external-link" size={14} color={colors.forest[400]} />
                 <Text style={styles.openMapsLinkText}>Open in Maps</Text>
@@ -614,6 +719,41 @@ export default function PostDetailScreen({ backFallback }: Props) {
             <Text style={styles.infoText}>
               {post.pickup_style === 'single' ? 'Single pickup point' : 'Multi-stop pickups'}
             </Text>
+          </View>
+        )}
+
+        {post.is_round_trip && (
+          <View style={styles.infoRow}>
+            <Icon name="navigation" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>Round trip</Text>
+          </View>
+        )}
+
+        {post.return_time && (
+          <View style={styles.infoRow}>
+            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>Return: {formatDeparture(post.return_time)}</Text>
+          </View>
+        )}
+
+        {repeatDaysLabel && (
+          <View style={styles.infoRow}>
+            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Text style={styles.infoText}>Repeats: {repeatDaysLabel}</Text>
+          </View>
+        )}
+
+        {pickupStops.length > 0 && (
+          <View style={styles.descSection}>
+            <Text style={styles.sectionLabel}>Stops on the way</Text>
+            <View style={styles.stopsList}>
+              {pickupStops.map((stop, index) => (
+                <View key={`${stop.address}-${index}`} style={styles.stopRow}>
+                  <Icon name="map-pin" size={16} color={colors.forest[400]} />
+                  <Text style={styles.stopText}>{stop.address}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -994,6 +1134,19 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
+  },
+  stopsList: {
+    gap: spacing.sm,
+  },
+  stopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  stopText: {
+    ...typography.body1,
+    color: colors.forest[900],
+    flex: 1,
   },
   sectionLabel: {
     ...typography.body2Bold,

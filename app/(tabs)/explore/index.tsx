@@ -19,10 +19,11 @@ import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
-import { useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
+import { useGetGasPricesQuery } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
+import { openInMaps } from '@/lib/helpers';
 import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
@@ -68,7 +69,6 @@ export default function ExploreScreen() {
   });
 
   const { data: gasPrices, isLoading: gasLoading, refetch: refetchGas } = useGetGasPricesQuery();
-  const [verifyGasPrice] = useVerifyGasPriceMutation();
 
   const { subscribeToGasPrices } = useRealtime();
 
@@ -105,7 +105,11 @@ export default function ExploreScreen() {
         content = (
           <GasPriceCard
             gasPrice={item.data}
-            onPress={() => verifyGasPrice(item.data.id)}
+            onPress={() => openInMaps(null, {
+              lat: item.data.station_lat,
+              lng: item.data.station_lng,
+              label: item.data.station_name,
+            })}
           />
         );
         break;
@@ -139,7 +143,7 @@ export default function ExploreScreen() {
         {content}
       </Animated.View>
     );
-  }, [openPost, verifyGasPrice]);
+  }, [openPost]);
 
   const keyExtractor = useCallback((item: FeedItem) => {
     return `${item.kind}-${item.kind === 'post' ? item.data.id : item.data.id}`;
@@ -155,13 +159,13 @@ export default function ExploreScreen() {
 
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
-            <Icon name="search" size={20} color={'rgba(255,255,255,0.55)'} />
+            <Icon name="search" size={20} color={colors.neutral[0]} />
             <TextInput
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
               placeholder="Search rides, errands..."
-              placeholderTextColor={'rgba(255,255,255,0.45)'}
+              placeholderTextColor={'rgba(255,255,255,0.68)'}
               returnKeyType="search"
             />
           </View>
@@ -292,13 +296,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(20, 40, 0, 0.42)',
     borderRadius: borderRadius.pill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.32)',
   },
   searchInput: {
     flex: 1,
@@ -310,14 +314,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(20, 40, 0, 0.58)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.32)',
   },
   iconButtonPressed: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(20, 40, 0, 0.72)',
   },
   filters: {
     paddingHorizontal: spacing.lg,

@@ -875,7 +875,7 @@ the repo actually uses: direct device installs and store-distributed testing.
 3. `storeTest` reaches TestFlight / Play Internal only when `--auto-submit` is included **or** a separate `eas submit` is run after.
 4. iOS `deviceTest` builds only install on devices whose UDID is in the provisioning profile. Currently registered: `00008140-000D75241E07001C` (one iPhone). Building for any other iPhone requires `storeTest` + TestFlight, or registering the new UDID.
 5. The free Expo tier provides **1 concurrent build slot.** `--platform all` queues both; the second waits for the first. Building both = 2 slots consumed.
-6. **Expo OTA is not configured** in this repo. There is no `expo-updates` dependency. **Every** code change requires a fresh native build to reach devices.
+6. **Expo Updates is configured** in this repo (`expo-updates` dependency plus `app.json` `updates.url` / `runtimeVersion`). Do **not** run `eas update` or treat OTA as a substitute for `storeTest` unless the user explicitly asks for an OTA publish; store-distributed testing still uses `storeTest` builds.
 
 ### Build decision script
 
@@ -971,6 +971,11 @@ npx eas-cli submit --platform ios --profile storeTest --latest
     "orientation": "portrait",
     "ios": { "bundleIdentifier": "bz.kanek.app", "supportsTablet": false },
     "android": { "package": "bz.kanek.app" },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/71a76ae0-95d7-41de-9ce0-b396dc088437"
+    },
+    "runtimeVersion": { "policy": "appVersion" },
     "plugins": [
       "expo-router",
       "expo-font",
@@ -1613,7 +1618,7 @@ relevant doc before answering:
 | TestFlight | Apple's pre-release distribution channel (iOS) |
 | Play Internal | Google Play's internal testing track (Android) |
 | ASC | App Store Connect |
-| OTA | Over-the-air update (we do **not** ship these in this repo) |
+| OTA | Over-the-air update via Expo Updates; configured in app metadata but only publish with explicit user direction |
 
 ---
 

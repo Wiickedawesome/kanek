@@ -135,8 +135,13 @@ export async function calculateRoute(
   originLng: number,
   destLat: number,
   destLng: number,
+  waypoints: { lat: number; lng: number }[] = [],
 ): Promise<RouteInfo> {
-  const coords = `${originLng},${originLat};${destLng},${destLat}`;
+  const coords = [
+    `${originLng},${originLat}`,
+    ...waypoints.map((waypoint) => `${waypoint.lng},${waypoint.lat}`),
+    `${destLng},${destLat}`,
+  ].join(';');
   const url =
     `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}` +
     `?geometries=geojson&overview=full&access_token=${MAPBOX_ACCESS_TOKEN}`;
@@ -303,4 +308,33 @@ export function buildRouteMapUrl(
   }
 
   return url;
+}
+
+export function buildPointMapUrl(
+  lat: number,
+  lng: number,
+  opts: {
+    width: number;
+    height: number;
+    padding?: number;
+  },
+): string {
+  const { width, height, padding = 50 } = opts;
+  const geojson = encodeURIComponent(
+    JSON.stringify({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+          properties: { 'marker-size': 'medium', 'marker-color': '#51c152' },
+        },
+      ],
+    }),
+  );
+
+  return (
+    `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/geojson(${geojson})` +
+    `/auto/${width}x${height}?padding=${padding}&access_token=${MAPBOX_ACCESS_TOKEN}`
+  );
 }

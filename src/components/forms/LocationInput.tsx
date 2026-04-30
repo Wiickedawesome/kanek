@@ -174,10 +174,12 @@ export function LocationInput({
 const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
-    zIndex: 10,
+    zIndex: 1,
+    overflow: 'visible',
   },
   wrapperOpen: {
-    zIndex: 100,
+    zIndex: 1000,
+    elevation: 1000,
   },
   fieldContainer: {
     gap: spacing.xs,
@@ -235,7 +237,8 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[200],
     marginTop: 4,
     ...shadows.md,
-    zIndex: 200,
+    zIndex: 1001,
+    elevation: 1001,
   },
   suggestionItem: {
     flexDirection: 'row',

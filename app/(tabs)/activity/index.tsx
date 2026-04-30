@@ -16,7 +16,7 @@ import { ScreenHeader, FeedListSkeleton , TopographicBg , Card, EmptyState } fro
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
-import { formatBZD, formatDeparture, getTimeAgo } from '@/lib/helpers';
+import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useGetMyBookingsQuery, useGetMyContractsQuery, useCancelBookingMutation, type BookingWithPost, type ContractWithDetails } from '@/store/api/bookingsApi';
 import { useGetMyPostsQuery, useDeletePostMutation, type ActiveBookingPreview, type MyPostWithBookings } from '@/store/api/postsApi';
@@ -304,10 +304,19 @@ export default function ActivityScreen() {
       const joinerPreview = item.activeBookings.slice(0, 3);
       const showJoinerPreview = item.activeBookingsCount > 0;
       const contractId = getContractIdForPost(item);
-      const isActive = item.status === 'filled';
+      const effectiveStatus = getEffectivePostStatus(
+        item.status,
+        item.departure_at,
+        item.route_duration_min,
+        item.type,
+      );
+      const isActive = effectiveStatus === 'filled' || effectiveStatus === 'in_progress';
+      const isManageableRoute = item.type === 'route_offer' && isActive;
 
       const handlePress = () => {
-        if (isActive && contractId) {
+        if (isManageableRoute) {
+          router.push(`/(tabs)/activity/trip/${item.id}`);
+        } else if (isActive && contractId) {
           router.push(`/(tabs)/activity/${contractId}`);
         } else {
           router.push(`/(tabs)/activity/post/${item.id}`);
@@ -320,7 +329,7 @@ export default function ActivityScreen() {
             <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
               <PostTypeBadge type={item.type} />
-              <PostStatusBadge status={item.status} />
+              <PostStatusBadge status={effectiveStatus} />
             </View>
 
             <Text style={styles.cardTitle} numberOfLines={2}>
@@ -416,13 +425,27 @@ export default function ActivityScreen() {
     }
 
     if (myPosts) {
-      const filtered = myPosts.filter((p) => !MY_POSTS_EXCLUDED_STATUSES.includes(p.status));
+      const filtered = myPosts.filter((p) => {
+        const effectiveStatus = getEffectivePostStatus(
+          p.status,
+          p.departure_at,
+          p.route_duration_min,
+          p.type,
+        );
+        return !MY_POSTS_EXCLUDED_STATUSES.includes(effectiveStatus);
+      });
       const active: SectionItem[] = [];
       const regular: SectionItem[] = [];
 
       for (const post of filtered) {
         const item: SectionItem = { kind: 'post', data: post };
-        if (post.status === 'filled' || post.status === 'in_progress') {
+        const effectiveStatus = getEffectivePostStatus(
+          post.status,
+          post.departure_at,
+          post.route_duration_min,
+          post.type,
+        );
+        if (effectiveStatus === 'filled' || effectiveStatus === 'in_progress') {
           active.push(item);
         } else {
           regular.push(item);

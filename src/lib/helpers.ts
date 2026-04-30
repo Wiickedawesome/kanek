@@ -71,7 +71,7 @@ function buildGoogleMapsUrl(
     return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=driving`;
   }
   const loc = destination ?? origin!;
-  const q = loc.label ? encodeURIComponent(loc.label) : `${loc.lat},${loc.lng}`;
+  const q = `${loc.lat},${loc.lng}`;
   return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
@@ -83,11 +83,61 @@ function buildAppleMapsUrl(
     return `https://maps.apple.com/?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}&dirflg=d`;
   }
   const loc = destination ?? origin!;
-  return `https://maps.apple.com/?q=${loc.label ? encodeURIComponent(loc.label) : `${loc.lat},${loc.lng}`}&ll=${loc.lat},${loc.lng}`;
+  return `https://maps.apple.com/?q=${loc.lat},${loc.lng}&ll=${loc.lat},${loc.lng}`;
 }
 
 function buildWazeUrl(loc: OpenMapsLocation): string {
   return `https://waze.com/ul?ll=${loc.lat},${loc.lng}&navigate=yes`;
+}
+
+export function isEffectivelyExpiredPost(status: string, departureAt?: string | null): boolean {
+  if (status !== 'open' || !departureAt) return false;
+
+  const departureMs = new Date(departureAt).getTime();
+  if (Number.isNaN(departureMs)) return false;
+
+  return departureMs <= Date.now();
+}
+
+const DEFAULT_TRIP_DURATION_MINUTES = 120;
+const DEFAULT_ERRAND_DURATION_MINUTES = 90;
+const INACTIVITY_GRACE_MINUTES = 180;
+
+function getDefaultTimedPostDurationMinutes(type?: string | null): number {
+  if (type === 'errand' || type === 'package') {
+    return DEFAULT_ERRAND_DURATION_MINUTES;
+  }
+
+  return DEFAULT_TRIP_DURATION_MINUTES;
+}
+
+export function getEffectivePostStatus(
+  status: string,
+  departureAt?: string | null,
+  routeDurationMin?: number | null,
+  type?: string | null,
+): string {
+  if (!departureAt) return status;
+
+  const departureMs = new Date(departureAt).getTime();
+  if (Number.isNaN(departureMs)) return status;
+
+  const nowMs = Date.now();
+  if (['open', 'activated', 'filled'].includes(status) && departureMs <= nowMs) {
+    return 'expired';
+  }
+
+  if (status === 'in_progress') {
+    const defaultDuration = getDefaultTimedPostDurationMinutes(type);
+    const durationMinutes = Math.max(Number(routeDurationMin ?? defaultDuration), defaultDuration);
+    const inactiveAtMs = departureMs + (durationMinutes + INACTIVITY_GRACE_MINUTES) * 60_000;
+
+    if (inactiveAtMs <= nowMs) {
+      return 'cancelled';
+    }
+  }
+
+  return status;
 }
 
 /** Format phone for display: +5016001234 → 600-1234 */

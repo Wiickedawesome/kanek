@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(246, 246, 244, 0.94)',
+    backgroundColor: colors.neutral[0],
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(20, 40, 0, 0.08)',
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   // Bottom info area — same matte surface as the rest of the app cards
   infoArea: {
     padding: spacing.md,
-    backgroundColor: 'rgba(246, 246, 244, 0.94)',
+    backgroundColor: colors.neutral[0],
   },
   title: {
     ...typography.body1Bold,

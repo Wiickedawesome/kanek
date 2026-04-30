@@ -65,7 +65,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.row}>
+      <View style={[styles.row, styles.rowCompact]}>
         <View style={[styles.inputRow, error ? styles.errorBorder : undefined]}>
           <RNTextInput
             style={styles.timeField}
@@ -89,9 +89,9 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
             selectTextOnFocus
           />
         </View>
-        <View style={styles.toggleTrack}>
+        <View style={[styles.toggleTrack, styles.toggleTrackCompact]}>
           <Pressable
-            style={[styles.toggleSeg, period === 'AM' && styles.toggleSegActive]}
+            style={[styles.toggleSeg, styles.toggleSegCompact, period === 'AM' && styles.toggleSegActive]}
             onPress={() => togglePeriod('AM')}
           >
             <Text style={[styles.toggleText, period === 'AM' && styles.toggleTextActive]}>
@@ -99,7 +99,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.toggleSeg, period === 'PM' && styles.toggleSegActive]}
+            style={[styles.toggleSeg, styles.toggleSegCompact, period === 'PM' && styles.toggleSegActive]}
             onPress={() => togglePeriod('PM')}
           >
             <Text style={[styles.toggleText, period === 'PM' && styles.toggleTextActive]}>
@@ -138,6 +138,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
+  rowCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,12 +173,18 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
     padding: 3,
   },
+  toggleTrackCompact: {
+    width: '100%',
+  },
   toggleSeg: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  toggleSegCompact: {
+    flex: 1,
   },
   toggleSegActive: {
     backgroundColor: colors.forest[900],

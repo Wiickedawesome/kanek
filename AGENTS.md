@@ -240,7 +240,7 @@ without an explicit user override.
 16. **Never paraphrase build logs.** Quote the exact failing line. If you can't see it, run `eas-cli build:logs <id>`.
 17. **Never bypass `--legacy-peer-deps`.** It's required for `npm install` in this repo.
 18. **Never commit `.env.local`** or any file containing real secrets.
-19. **Never add `expo-updates` / OTA wiring** without an explicit ask. The repo deliberately doesn't have OTA, and adding it changes the deploy story.
+19. **Never change `expo-updates` / OTA wiring or run `eas update`** without an explicit ask. OTA is configured in app metadata, and publishing updates changes the deploy story.
 20. **Never assume the user wants the same action they asked for last time.** If a similar request comes in, restate the translation and confirm.
 
 ---

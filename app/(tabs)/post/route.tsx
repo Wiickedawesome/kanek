@@ -31,6 +31,64 @@ import type { PostType, PickupStyle, PaymentMethod } from '@/types/database';
 const safeBack = () => safeGoBack('/(tabs)/post/');
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MAX_MULTI_STOPS = 5;
+
+interface RouteStop {
+  id: string;
+  address: string;
+  coords: LocationCoords | null;
+}
+
+interface SerializedRouteStop {
+  address: string;
+  lat: number | null;
+  lng: number | null;
+}
+
+let routeStopId = 0;
+
+function createRouteStop(): RouteStop {
+  routeStopId += 1;
+  return {
+    id: `route-stop-${routeStopId}`,
+    address: '',
+    coords: null,
+  };
+}
+
+function parseRouteDateTime(date: string, time: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
+    return null;
+  }
+
+  const [hours, minutes] = time.split(':').map(Number);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+
+  const parsed = new Date(`${date}T${time}:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function serializeRouteStops(stops: RouteStop[]): string | null {
+  const normalized: SerializedRouteStop[] = stops
+    .filter((stop) => stop.address.trim().length > 0)
+    .map((stop) => ({
+      address: stop.address.trim(),
+      lat: stop.coords?.lat ?? null,
+      lng: stop.coords?.lng ?? null,
+    }));
+
+  if (normalized.length === 0) return null;
+  return JSON.stringify({ stops: normalized });
+}
 
 export default function RouteFormScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
@@ -57,10 +115,11 @@ export default function RouteFormScreen() {
   const [minRiders, setMinRiders] = useState('');
   const [pickupStyle, setPickupStyle] = useState<PickupStyle>('single');
   const [vehicleDescription, setVehicleDescription] = useState('');
-  const [pickupNotes, setPickupNotes] = useState('');
+  const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [returnDate, setReturnDate] = useState('');
   const [returnTime, setReturnTime] = useState('');
+  const [repeatEnabled, setRepeatEnabled] = useState(false);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
@@ -81,7 +140,40 @@ export default function RouteFormScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const addRouteStop = useCallback(() => {
+    setRouteStops((prev) => {
+      if (prev.length >= MAX_MULTI_STOPS) return prev;
+      return [...prev, createRouteStop()];
+    });
+  }, []);
+
+  const updateRouteStopAddress = useCallback((stopId: string, address: string) => {
+    setRouteStops((prev) =>
+      prev.map((stop) =>
+        stop.id === stopId
+          ? { ...stop, address, coords: stop.address === address ? stop.coords : null }
+          : stop
+      )
+    );
+  }, []);
+
+  const updateRouteStopCoords = useCallback((stopId: string, coords: LocationCoords) => {
+    setRouteStops((prev) =>
+      prev.map((stop) => (stop.id === stopId ? { ...stop, coords } : stop))
+    );
+  }, []);
+
+  const removeRouteStop = useCallback((stopId: string) => {
+    setRouteStops((prev) => prev.filter((stop) => stop.id !== stopId));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`routeStop:${stopId}`];
+      return next;
+    });
+  }, []);
+
   const toggleRepeatDay = useCallback((day: number) => {
+    setRepeatEnabled(true);
     setRepeatDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
     );
@@ -100,9 +192,15 @@ export default function RouteFormScreen() {
       return;
     }
 
+    const stopWaypoints = pickupStyle === 'multi_stop'
+      ? routeStops
+          .map((stop) => stop.coords)
+          .filter((coords): coords is LocationCoords => coords != null)
+      : [];
+
     let cancelled = false;
     setRouteLoading(true);
-    calculateRoute(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng)
+    calculateRoute(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng, stopWaypoints)
       .then((info) => {
         if (!cancelled) setRouteInfo(info);
       })
@@ -117,7 +215,7 @@ export default function RouteFormScreen() {
       });
 
     return () => { cancelled = true; };
-  }, [originCoords, destCoords]);
+  }, [originCoords, destCoords, pickupStyle, routeStops]);
 
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -162,6 +260,22 @@ export default function RouteFormScreen() {
       if (!vehicleDescription.trim()) {
         newErrors.vehicleDescription = 'Describe your vehicle so riders can find you';
       }
+
+      if (repeatEnabled && repeatDays.length === 0) {
+        newErrors.repeatDays = 'Select at least one day';
+      }
+    }
+
+    if (pickupStyle === 'multi_stop') {
+      if (routeStops.length === 0) {
+        newErrors.routeStops = 'Add at least one stop';
+      }
+
+      routeStops.forEach((stop) => {
+        if (!stop.address.trim()) {
+          newErrors[`routeStop:${stop.id}`] = 'Stop address is required';
+        }
+      });
     }
 
     if (!description.trim()) newErrors.description = 'Description is required';
@@ -171,8 +285,8 @@ export default function RouteFormScreen() {
 
     // Validate departure datetime
     if (departureDate.trim() && departureTime.trim()) {
-      const dt = new Date(`${departureDate}T${departureTime}`);
-      if (isNaN(dt.getTime())) {
+      const dt = parseRouteDateTime(departureDate, departureTime);
+      if (!dt) {
         newErrors.departureDate = 'Invalid date';
         newErrors.departureTime = 'Invalid time';
       } else if (dt <= new Date()) {
@@ -185,9 +299,12 @@ export default function RouteFormScreen() {
       if (!returnDate.trim()) newErrors.returnDate = 'Return date is required';
       if (!returnTime.trim()) newErrors.returnTime = 'Return time is required';
       if (returnDate.trim() && returnTime.trim() && departureDate.trim() && departureTime.trim()) {
-        const depDt = new Date(`${departureDate}T${departureTime}`);
-        const retDt = new Date(`${returnDate}T${returnTime}`);
-        if (!isNaN(retDt.getTime()) && !isNaN(depDt.getTime()) && retDt <= depDt) {
+        const depDt = parseRouteDateTime(departureDate, departureTime);
+        const retDt = parseRouteDateTime(returnDate, returnTime);
+        if (!retDt) {
+          newErrors.returnDate = 'Invalid date';
+          newErrors.returnTime = 'Invalid time';
+        } else if (depDt && retDt <= depDt) {
           newErrors.returnTime = 'Return must be after departure';
         }
       }
@@ -195,7 +312,7 @@ export default function RouteFormScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime]);
+  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime, pickupStyle, routeStops, repeatEnabled, repeatDays]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -205,7 +322,18 @@ export default function RouteFormScreen() {
     }
 
     const priceCents = Math.round(parseFloat(priceDollars) * 100);
-    const departure = new Date(`${departureDate}T${departureTime}`).toISOString();
+    const departureAt = parseRouteDateTime(departureDate, departureTime);
+    const returnAt =
+      isOffer && isRoundTrip ? parseRouteDateTime(returnDate, returnTime) : null;
+
+    if (!departureAt) {
+      showAlert('Error', 'Enter a valid departure date and time');
+      return;
+    }
+    if (isOffer && isRoundTrip && !returnAt) {
+      showAlert('Error', 'Enter a valid return date and time');
+      return;
+    }
 
     try {
       await createPost({
@@ -219,16 +347,16 @@ export default function RouteFormScreen() {
         origin_lng: originCoords?.lng ?? null,
         dest_lat: destCoords?.lat ?? null,
         dest_lng: destCoords?.lng ?? null,
-        departure_at: departure,
+        departure_at: departureAt.toISOString(),
         price_cents: priceCents,
         seats_total: isOffer ? parseInt(seatsTotal, 10) : null,
         min_riders: minRiders.trim() ? parseInt(minRiders, 10) : null,
         pickup_style: isOffer ? pickupStyle : null,
         vehicle_description: isOffer ? vehicleDescription.trim() : null,
-        pickup_notes: isOffer && pickupNotes.trim() ? pickupNotes.trim() : null,
+        pickup_notes: isOffer && pickupStyle === 'multi_stop' ? serializeRouteStops(routeStops) : null,
         is_round_trip: isOffer ? isRoundTrip : false,
-        return_time: isOffer && isRoundTrip && returnTime.trim() ? returnTime.trim() : null,
-        repeat_days: isOffer && repeatDays.length > 0 ? repeatDays : null,
+        return_time: returnAt ? returnAt.toISOString() : null,
+        repeat_days: isOffer && repeatEnabled && repeatDays.length > 0 ? repeatDays : null,
         payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
@@ -306,6 +434,132 @@ export default function RouteFormScreen() {
               durationMinutes={routeInfo.duration_minutes}
               fuelCostCents={routeInfo.fuel_cost_cents}
             />
+          )}
+
+          {isOffer && (
+            <View style={styles.pickupSection}>
+              <Text style={styles.fieldLabel}>Pickup style</Text>
+              <View style={styles.row}>
+                <Pressable
+                  style={[
+                    styles.pickupOption,
+                    pickupStyle === 'single' && styles.pickupSelected,
+                  ]}
+                  onPress={() => setPickupStyle('single')}
+                >
+                  <Text
+                    style={[
+                      styles.pickupText,
+                      pickupStyle === 'single' && styles.pickupTextSelected,
+                    ]}
+                  >
+                    Single pickup
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.pickupOption,
+                    pickupStyle === 'multi_stop' && styles.pickupSelected,
+                  ]}
+                  onPress={() => {
+                    setPickupStyle('multi_stop');
+                    setRouteStops((prev) => (prev.length > 0 ? prev : [createRouteStop()]));
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.pickupText,
+                      pickupStyle === 'multi_stop' && styles.pickupTextSelected,
+                    ]}
+                  >
+                    Multi-stop
+                  </Text>
+                </Pressable>
+              </View>
+              {errors.routeStops ? <Text style={styles.inlineError}>{errors.routeStops}</Text> : null}
+            </View>
+          )}
+
+          {isOffer && pickupStyle === 'multi_stop' && (
+            <View style={styles.pickupSection}>
+              <View style={styles.stopHeaderRow}>
+                <Text style={styles.fieldLabel}>Stops on the way</Text>
+                <Text style={styles.stopCounter}>{routeStops.length}/{MAX_MULTI_STOPS}</Text>
+              </View>
+
+              {routeStops.map((stop, index) => (
+                <View key={stop.id} style={styles.stopRow}>
+                  <View style={styles.stopField}>
+                    <LocationInput
+                      label={`Stop ${index + 1}`}
+                      placeholder="e.g. Belmopan roundabout"
+                      value={stop.address}
+                      onChangeText={(text) => updateRouteStopAddress(stop.id, text)}
+                      onLocationSelect={(coords) => updateRouteStopCoords(stop.id, coords)}
+                      error={errors[`routeStop:${stop.id}`]}
+                    />
+                  </View>
+                  <Pressable
+                    style={styles.removeStopButton}
+                    onPress={() => removeRouteStop(stop.id)}
+                    hitSlop={8}
+                  >
+                    <Icon name="x" size={18} color={colors.forest[900]} />
+                  </Pressable>
+                </View>
+              ))}
+
+              {routeStops.length < MAX_MULTI_STOPS && (
+                <Pressable style={styles.addStopButton} onPress={addRouteStop}>
+                  <Icon name="plus-circle" size={18} color={colors.forest[600]} />
+                  <Text style={styles.addStopText}>Add another stop</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {isOffer && (
+            <View style={styles.pickupSection}>
+              <Text style={styles.fieldLabel}>Trip type</Text>
+              <View style={styles.row}>
+                <Pressable
+                  style={[
+                    styles.pickupOption,
+                    !isRoundTrip && styles.pickupSelected,
+                  ]}
+                  onPress={() => {
+                    setIsRoundTrip(false);
+                    setReturnDate('');
+                    setReturnTime('');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.pickupText,
+                      !isRoundTrip && styles.pickupTextSelected,
+                    ]}
+                  >
+                    One way
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.pickupOption,
+                    isRoundTrip && styles.pickupSelected,
+                  ]}
+                  onPress={() => setIsRoundTrip(true)}
+                >
+                  <Text
+                    style={[
+                      styles.pickupText,
+                      isRoundTrip && styles.pickupTextSelected,
+                    ]}
+                  >
+                    Round trip
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           )}
 
           <View style={styles.row}>
@@ -404,120 +658,48 @@ export default function RouteFormScreen() {
                 />
               </View>
 
-              <View style={styles.pickupSection}>
-                <Text style={styles.fieldLabel}>Trip type</Text>
-                <View style={styles.row}>
-                  <Pressable
-                    style={[
-                      styles.pickupOption,
-                      !isRoundTrip && styles.pickupSelected,
-                    ]}
-                    onPress={() => setIsRoundTrip(false)}
-                  >
-                    <Text
-                      style={[
-                        styles.pickupText,
-                        !isRoundTrip && styles.pickupTextSelected,
-                      ]}
-                    >
-                      One way
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[
-                      styles.pickupOption,
-                      isRoundTrip && styles.pickupSelected,
-                    ]}
-                    onPress={() => setIsRoundTrip(true)}
-                  >
-                    <Text
-                      style={[
-                        styles.pickupText,
-                        isRoundTrip && styles.pickupTextSelected,
-                      ]}
-                    >
-                      Round trip
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
               {/* Repeat trip toggle + day-of-week checkboxes */}
               <View style={styles.pickupSection}>
                 <Text style={styles.fieldLabel}>Repeat trip</Text>
                 <Pressable
-                  style={[styles.repeatToggle, repeatDays.length > 0 && styles.repeatToggleActive]}
+                  style={[styles.repeatToggle, repeatEnabled && styles.repeatToggleActive]}
                   onPress={() => {
-                    if (repeatDays.length > 0) setRepeatDays([]);
+                    setRepeatEnabled((prev) => {
+                      if (prev) {
+                        setRepeatDays([]);
+                        return false;
+                      }
+                      return true;
+                    });
                   }}
                 >
-                  <View style={[styles.checkbox, repeatDays.length > 0 && styles.checkboxChecked]} />
+                  <View style={[styles.checkbox, repeatEnabled && styles.checkboxChecked]}>
+                    {repeatEnabled ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                  </View>
                   <Text style={styles.repeatToggleText}>
                     This trip repeats on specific days
                   </Text>
                 </Pressable>
-                <View style={styles.daysRow}>
-                  {DAY_LABELS.map((label, idx) => (
-                    <Pressable
-                      key={idx}
-                      style={[styles.dayChip, repeatDays.includes(idx) && styles.dayChipSelected]}
-                      onPress={() => toggleRepeatDay(idx)}
-                    >
-                      <Text style={[styles.dayChipText, repeatDays.includes(idx) && styles.dayChipTextSelected]}>
-                        {label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                {repeatEnabled ? (
+                  <>
+                    <View style={styles.daysRow}>
+                      {DAY_LABELS.map((label, idx) => (
+                        <Pressable
+                          key={idx}
+                          style={[styles.dayChip, repeatDays.includes(idx) && styles.dayChipSelected]}
+                          onPress={() => toggleRepeatDay(idx)}
+                        >
+                          <Text style={[styles.dayChipText, repeatDays.includes(idx) && styles.dayChipTextSelected]}>
+                            {label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    {errors.repeatDays ? <Text style={styles.inlineError}>{errors.repeatDays}</Text> : null}
+                  </>
+                ) : null}
               </View>
 
-              <View style={styles.pickupSection}>
-                <Text style={styles.fieldLabel}>Pickup style</Text>
-                <View style={styles.row}>
-                  <Pressable
-                    style={[
-                      styles.pickupOption,
-                      pickupStyle === 'single' && styles.pickupSelected,
-                    ]}
-                    onPress={() => setPickupStyle('single')}
-                  >
-                    <Text
-                      style={[
-                        styles.pickupText,
-                        pickupStyle === 'single' && styles.pickupTextSelected,
-                      ]}
-                    >
-                      Single pickup
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[
-                      styles.pickupOption,
-                      pickupStyle === 'multi_stop' && styles.pickupSelected,
-                    ]}
-                    onPress={() => setPickupStyle('multi_stop')}
-                  >
-                    <Text
-                      style={[
-                        styles.pickupText,
-                        pickupStyle === 'multi_stop' && styles.pickupTextSelected,
-                      ]}
-                    >
-                      Multi-stop
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              <TextInput
-                label="Pickup notes (optional)"
-                placeholder="e.g. I'll be at Shell station by the roundabout"
-                value={pickupNotes}
-                onChangeText={setPickupNotes}
-                multiline
-                numberOfLines={2}
-                style={styles.textArea}
-              />
             </>
           )}
 
@@ -572,6 +754,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.lg,
     paddingBottom: spacing.lg,
+    overflow: 'visible',
   },
   row: {
     flexDirection: 'row',
@@ -587,6 +770,18 @@ const styles = StyleSheet.create({
   },
   pickupSection: {
     gap: 0,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  stopHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  stopCounter: {
+    ...typography.caption,
+    color: colors.neutral[400],
   },
   pickupOption: {
     flex: 1,
@@ -609,6 +804,49 @@ const styles = StyleSheet.create({
   pickupTextSelected: {
     ...typography.body2Bold,
     color: colors.forest[900],
+  },
+  stopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    zIndex: 20,
+  },
+  stopField: {
+    flex: 1,
+    zIndex: 20,
+  },
+  removeStopButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.neutral[0],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    marginBottom: spacing.xs,
+  },
+  addStopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    borderRadius: borderRadius.pill,
+    backgroundColor: colors.neutral[0],
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+  },
+  addStopText: {
+    ...typography.body2Bold,
+    color: colors.forest[600],
+  },
+  inlineError: {
+    ...typography.caption,
+    color: colors.error,
+    marginTop: spacing.xs,
   },
   textArea: {
     minHeight: 80,
@@ -638,6 +876,12 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     borderColor: colors.accent.green,
     backgroundColor: colors.accent.green,
+  },
+  checkboxTick: {
+    ...typography.caption,
+    color: colors.neutral[0],
+    fontWeight: '700',
+    lineHeight: 14,
   },
   daysRow: {
     flexDirection: 'row',

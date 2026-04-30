@@ -5,7 +5,7 @@ import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui/Card';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
-import { formatBZD } from '@/lib/helpers';
+import { formatBZD, formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 const TIMELINE_LABELS: Record<string, string> = {
@@ -40,6 +40,7 @@ export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardPro
   const payLabel = post.pay_rate_cents
     ? `${formatBZD(post.pay_rate_cents)}${post.pay_type === 'hourly' ? '/hr' : ' fixed'}`
     : null;
+  const scheduledAt = post.departure_at ? formatDeparture(post.departure_at) : null;
 
   return (
     <Card onPress={onPress} style={styles.card}>
@@ -68,6 +69,12 @@ export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardPro
             <View style={styles.payBadge}>
               <Icon name="receipt" size={12} color={colors.neutral[0]} />
               <Text style={styles.payBadgeText}>{payLabel}</Text>
+            </View>
+          )}
+          {scheduledAt && (
+            <View style={styles.timelineChip}>
+              <Icon name="clock" size={12} color={colors.forest[400]} />
+              <Text style={styles.timelineText}>{scheduledAt}</Text>
             </View>
           )}
           {post.job_timeline && (
@@ -147,6 +154,7 @@ const styles = StyleSheet.create({
   detailsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   payBadge: {

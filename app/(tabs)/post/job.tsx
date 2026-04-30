@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button, ScreenHeader } from '@/components/ui';
-import { LocationInput } from '@/components/forms';
+import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius } from '@/theme';
@@ -49,6 +49,15 @@ const TIMELINES: { value: JobTimeline; label: string }[] = [
   { value: 'flexible', label: 'Flexible' },
 ];
 
+function parseJobDateTime(date: string, time: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
+    return null;
+  }
+
+  const parsed = new Date(`${date}T${time}:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export default function JobFormScreen() {
   const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
@@ -66,6 +75,8 @@ export default function JobFormScreen() {
   const [payRateDollars, setPayRateDollars] = useState('');
   const [payType, setPayType] = useState<PayType>('fixed');
   const [timeline, setTimeline] = useState<JobTimeline>('flexible');
+  const [departureDate, setDepartureDate] = useState('');
+  const [departureTime, setDepartureTime] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,6 +88,8 @@ export default function JobFormScreen() {
     else if (title.trim().length > MAX_TITLE_LENGTH) newErrors.title = `Max ${MAX_TITLE_LENGTH} characters`;
     if (!description.trim()) newErrors.description = 'Description is required';
     if (!category) newErrors.category = 'Pick a category';
+    if (!departureDate.trim()) newErrors.departureDate = 'Date is required';
+    if (!departureTime.trim()) newErrors.departureTime = 'Time is required';
 
     const rateNum = parseFloat(payRateDollars);
     if (!payRateDollars.trim()) {
@@ -91,14 +104,30 @@ export default function JobFormScreen() {
       newErrors.description = `Max ${MAX_DESCRIPTION_LENGTH} characters`;
     }
 
+    if (departureDate.trim() && departureTime.trim()) {
+      const scheduledAt = parseJobDateTime(departureDate, departureTime);
+      if (!scheduledAt) {
+        newErrors.departureDate = 'Invalid date';
+        newErrors.departureTime = 'Invalid time';
+      } else if (scheduledAt <= new Date()) {
+        newErrors.departureDate = 'Job time must be in the future';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, description, category, payRateDollars]);
+  }, [title, description, category, payRateDollars, departureDate, departureTime]);
 
   const handleSubmit = async () => {
     if (!validate() || !userId || !category) return;
 
     const payRateCents = Math.round(parseFloat(payRateDollars) * 100);
+    const scheduledAt = parseJobDateTime(departureDate, departureTime);
+
+    if (!scheduledAt) {
+      showAlert('Error', 'Enter a valid job date and time');
+      return;
+    }
 
     try {
       await createPost({
@@ -109,6 +138,7 @@ export default function JobFormScreen() {
         origin_address: originAddress.trim() || null,
         origin_lat: originCoords?.lat ?? null,
         origin_lng: originCoords?.lng ?? null,
+        departure_at: scheduledAt.toISOString(),
         job_category: category,
         pay_rate_cents: payRateCents,
         pay_type: payType,
@@ -270,6 +300,21 @@ export default function JobFormScreen() {
             </View>
           </View>
 
+          <View style={styles.row}>
+            <DateInput
+              label="Job date"
+              value={departureDate}
+              onChangeText={setDepartureDate}
+              error={errors.departureDate}
+            />
+            <TimeInput
+              label="Start time"
+              value={departureTime}
+              onChangeText={setDepartureTime}
+              error={errors.departureTime}
+            />
+          </View>
+
           <TextInput
             label="Description"
             placeholder="Describe exactly where you'll be and what the job involves (time, tools, etc.)"
@@ -326,6 +371,10 @@ const styles = StyleSheet.create({
     ...typography.body2Bold,
     color: colors.forest[700],
     marginBottom: spacing.sm,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   chipRow: {
     flexDirection: 'row',

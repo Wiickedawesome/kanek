@@ -425,6 +425,10 @@ verify_jwt = false
 verify_jwt = false
 [functions.send-email-receipt]
 verify_jwt = false
+[functions.expire-posts]
+verify_jwt = false
+[functions.process-strikes]
+verify_jwt = false
 [functions.ekyash-authorize]
 verify_jwt = false
 [functions.ekyash-create-invoice]

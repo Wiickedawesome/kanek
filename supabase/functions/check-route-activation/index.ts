@@ -1,5 +1,7 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
+import { timingSafeEqual } from 'https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts';
+
 import {
   createServiceClient,
   getCorsHeaders,
@@ -13,13 +15,30 @@ import {
  * If seats_filled >= min_riders, activate the route.
  * Called via pg_cron or Supabase scheduled function.
  */
+function hasValidCronSecret(req: Request): boolean {
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const authHeader = req.headers.get('Authorization');
+
+  if (!cronSecret || !authHeader?.startsWith('Bearer ')) {
+    return false;
+  }
+
+  const token = authHeader.slice(7);
+  const tokenBytes = new TextEncoder().encode(token);
+  const secretBytes = new TextEncoder().encode(cronSecret);
+
+  return tokenBytes.length === secretBytes.length && timingSafeEqual(tokenBytes, secretBytes);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   // Internal-only: reject user-initiated requests
-  const authResult = await verifyAuthOrInternal(req);
+  const authResult = hasValidCronSecret(req)
+    ? { userId: null as string | null }
+    : await verifyAuthOrInternal(req);
   if ('error' in authResult) return authResult.error;
   if (authResult.userId !== null) {
     return errorResponse('Forbidden: internal-only endpoint', 403);
