@@ -278,8 +278,12 @@ export default function ContractDetailScreen() {
         </View>
       </ScreenHeader>
 
-      {/* Status bar */}
-      <View style={[styles.statusBar, { backgroundColor: statusColor.bg }]}>
+      {/* Status bar — tappable to view original post */}
+      <Pressable
+        style={[styles.statusBar, { backgroundColor: statusColor.bg }]}
+        onPress={() => contract.post?.id && router.push(`/(tabs)/activity/post/${contract.post.id}`)}
+        disabled={!contract.post?.id}
+      >
         <View style={styles.statusBarRow}>
           <View style={styles.statusBarLeft}>
             {postType && <PostTypeBadge type={postType} />}
@@ -296,21 +300,10 @@ export default function ContractDetailScreen() {
             {contract.origin_address} → {contract.dest_address ?? '…'}
           </Text>
         )}
-      </View>
+      </Pressable>
 
       {/* Main scrollable content — trip-focused */}
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        {/* View original post */}
-        {contract.post?.id && (
-          <Pressable
-            style={styles.viewPostLink}
-            onPress={() => router.push(`/(tabs)/activity/post/${contract.post!.id}`)}
-          >
-            <Icon name="external-link" size={16} color={colors.accent.green} />
-            <Text style={styles.viewPostText}>View Original Post</Text>
-          </Pressable>
-        )}
-
         {/* Route visual */}
         {(contract.origin_address || contract.dest_address) && (
           <View style={styles.section}>
@@ -584,17 +577,7 @@ const styles = StyleSheet.create({
     color: colors.forest[400],
     fontWeight: '600',
   },
-  viewPostLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  viewPostText: {
-    ...typography.body2Bold,
-    color: colors.accent.green,
-  },
+
   routeRow: { flexDirection: 'row', gap: spacing.md },
   routeDots: { alignItems: 'center', paddingVertical: 2 },
   dotGreen: {

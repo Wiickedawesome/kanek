@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   Image,
+  ScrollView,
 } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ import {
   useGetCheckinQuery,
   useSubmitCheckinMutation,
 } from '@/store/api/checkinsApi';
+import { useSendMessageMutation } from '@/store/api/messagesApi';
 import type { RootState } from '@/store';
 
 export default function SelfieCheckinModal() {
@@ -31,6 +33,7 @@ export default function SelfieCheckinModal() {
     { skip: !contractId },
   );
   const [submitCheckin] = useSubmitCheckinMutation();
+  const [sendMessage] = useSendMessageMutation();
 
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +87,18 @@ export default function SelfieCheckinModal() {
         lng,
       }).unwrap();
 
+      // Notify the other party via a system message in the contract thread.
+      // The DB trigger trg_message_notification creates a notification row for them.
+      try {
+        await sendMessage({
+          contractId,
+          senderId: userId,
+          body: 'Driver has checked in at the pickup location.',
+        }).unwrap();
+      } catch {
+        // Best-effort — don't block on notification failure
+      }
+
       showAlert('Checked In', 'Your selfie check-in has been recorded.');
       router.back();
     } catch {
@@ -136,7 +151,11 @@ export default function SelfieCheckinModal() {
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.instruction}>
           Take a quick selfie to confirm you{"'"}re at the pickup location. This
           builds trust with riders.
@@ -163,7 +182,7 @@ export default function SelfieCheckinModal() {
           loading={submitting}
           style={styles.submitBtn}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -184,9 +203,13 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.neutral[0],
   },
-  content: {
+  flex: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     padding: spacing.xl,
+    paddingBottom: spacing.xxxl,
     alignItems: 'center',
   },
   instruction: {

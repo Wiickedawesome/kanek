@@ -408,18 +408,9 @@ export default function PostDetailScreen({ backFallback }: Props) {
     if (isConfirmed && contractId) {
       bottomAction = (
         <View style={styles.bottomBar}>
-          <View style={styles.bottomBarRow}>
-            <Text style={[styles.bottomSuccessText, styles.bottomSuccessInRow]}>
-              {getAcceptedMessage(post.type)}
-            </Text>
-            <Button
-              title="Message"
-              variant="outline"
-              onPress={() => router.push(`/(tabs)/activity/${contractId}`)}
-              size="lg"
-              style={styles.messageButton}
-            />
-          </View>
+          <Text style={styles.bottomSuccessText}>
+            {getAcceptedMessage(post.type)}
+          </Text>
         </View>
       );
     } else if (isConfirmed) {
@@ -631,10 +622,19 @@ export default function PostDetailScreen({ backFallback }: Props) {
               <View style={styles.routeDot}>
                 <View style={styles.dotGreen} />
                 <View style={styles.routeLine} />
+                {pickupStops.map((_, i) => (
+                  <React.Fragment key={i}>
+                    <View style={styles.dotStop} />
+                    <View style={styles.routeLine} />
+                  </React.Fragment>
+                ))}
                 <View style={styles.dotRed} />
               </View>
               <View style={styles.routeAddresses}>
                 <Text style={styles.address}>{post.origin_address ?? 'Not specified'}</Text>
+                {pickupStops.map((stop, i) => (
+                  <Text key={i} style={styles.addressStop}>{stop.address}</Text>
+                ))}
                 <Text style={styles.address}>{post.dest_address ?? 'Not specified'}</Text>
               </View>
             </View>
@@ -740,20 +740,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
           <View style={styles.infoRow}>
             <Icon name="clock" size={18} color={colors.forest[400]} />
             <Text style={styles.infoText}>Repeats: {repeatDaysLabel}</Text>
-          </View>
-        )}
-
-        {pickupStops.length > 0 && (
-          <View style={styles.descSection}>
-            <Text style={styles.sectionLabel}>Stops on the way</Text>
-            <View style={styles.stopsList}>
-              {pickupStops.map((stop, index) => (
-                <View key={`${stop.address}-${index}`} style={styles.stopRow}>
-                  <Icon name="map-pin" size={16} color={colors.forest[400]} />
-                  <Text style={styles.stopText}>{stop.address}</Text>
-                </View>
-              ))}
-            </View>
           </View>
         )}
 
@@ -1040,7 +1026,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.xl,
-    paddingBottom: 220,
+    paddingBottom: 160,
     gap: spacing.lg,
   },
   badgeRow: {
@@ -1106,6 +1092,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: colors.error,
   },
+  dotStop: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.neutral[400],
+    borderWidth: 1.5,
+    borderColor: colors.neutral[300],
+  },
   routeAddresses: {
     flex: 1,
     justifyContent: 'space-between',
@@ -1115,6 +1109,10 @@ const styles = StyleSheet.create({
   address: {
     ...typography.body1,
     color: colors.forest[900],
+  },
+  addressStop: {
+    ...typography.body2,
+    color: colors.forest[500],
   },
   infoRow: {
     flexDirection: 'row',
