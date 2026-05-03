@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button, TextInput, ScreenHeader, TopographicBg } from '@/components/ui';
+import { Button, TextInput, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
@@ -83,7 +83,6 @@ export default function RateModal() {
   if (alreadyRated) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopographicBg />
         <ScreenHeader style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -104,7 +103,6 @@ export default function RateModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -217,7 +215,7 @@ export default function RateModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   flex: {
     flex: 1,
@@ -273,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   onTimeBtnActive: {
     borderColor: colors.accent.green,

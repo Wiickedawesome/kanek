@@ -205,13 +205,13 @@ function ToggleRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     flexDirection: 'row',
@@ -248,11 +248,11 @@ const styles = StyleSheet.create({
   },
   permissionBody: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
   },
   section: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 8,
     overflow: 'hidden',
     ...shadows.sm,
   },

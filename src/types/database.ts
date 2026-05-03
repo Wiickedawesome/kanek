@@ -606,6 +606,7 @@ export type Database = {
           payee_id: string
           payer_id: string
           platform_fee_cents: number
+          refunded_amount_cents: number
           status: Database["public"]["Enums"]["ekyash_status"]
           transaction_id: string | null
           updated_at: string
@@ -624,6 +625,7 @@ export type Database = {
           payee_id: string
           payer_id: string
           platform_fee_cents?: number
+          refunded_amount_cents?: number
           status?: Database["public"]["Enums"]["ekyash_status"]
           transaction_id?: string | null
           updated_at?: string
@@ -642,6 +644,7 @@ export type Database = {
           payee_id?: string
           payer_id?: string
           platform_fee_cents?: number
+          refunded_amount_cents?: number
           status?: Database["public"]["Enums"]["ekyash_status"]
           transaction_id?: string | null
           updated_at?: string
@@ -2000,6 +2003,16 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: boolean
       }
+      check_user_availability: {
+        Args: { p_at: string; p_duration_min: number; p_user_id: string }
+        Returns: {
+          contract_id: string
+          departure_at: string
+          post_id: string
+          post_title: string
+          post_type: Database["public"]["Enums"]["post_type"]
+        }[]
+      }
       compute_rating_avg: { Args: { p_user_id: string }; Returns: Json }
       is_active_account: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
@@ -2073,8 +2086,8 @@ export type Database = {
         | "active"
         | "restricted"
         | "suspended"
-        | "suspended_pending_deletion"
         | "dormant"
+        | "suspended_pending_deletion"
       admin_action_type:
         | "approve_driver"
         | "reject_driver"
@@ -2107,7 +2120,12 @@ export type Database = {
         | "vehicle_insurance"
         | "vehicle_registration"
         | "police_record"
-      ekyash_status: "pending" | "approved" | "cancelled" | "refunded"
+      ekyash_status:
+        | "pending"
+        | "approved"
+        | "cancelled"
+        | "refunded"
+        | "partially_refunded"
       errand_category:
         | "grocery"
         | "bill"
@@ -2297,8 +2315,8 @@ export const Constants = {
         "active",
         "restricted",
         "suspended",
-        "suspended_pending_deletion",
         "dormant",
+        "suspended_pending_deletion",
       ],
       admin_action_type: [
         "approve_driver",
@@ -2336,7 +2354,13 @@ export const Constants = {
         "vehicle_registration",
         "police_record",
       ],
-      ekyash_status: ["pending", "approved", "cancelled", "refunded"],
+      ekyash_status: [
+        "pending",
+        "approved",
+        "cancelled",
+        "refunded",
+        "partially_refunded",
+      ],
       errand_category: [
         "grocery",
         "bill",
@@ -2403,7 +2427,6 @@ export const Constants = {
     },
   },
 } as const
-
 // Convenience type aliases for enums
 export type AccountStatus = Enums<'account_status'>
 export type BelizeDistrict = Enums<'belize_district'>

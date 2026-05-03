@@ -364,7 +364,7 @@ export default function ErrandFormScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   flex: {
     flex: 1,

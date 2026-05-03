@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader , TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
@@ -231,7 +231,6 @@ export default function EkyashPayModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -248,7 +247,7 @@ export default function EkyashPayModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     flexDirection: 'row',
@@ -284,7 +283,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   qrContainer: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginTop: spacing.lg,
@@ -299,7 +298,7 @@ const styles = StyleSheet.create({
   },
   breakdown: {
     width: '100%',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,

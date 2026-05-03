@@ -12,7 +12,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader, FeedListSkeleton , TopographicBg , Card, EmptyState } from '@/components/ui';
+import { ScreenHeader, FeedListSkeleton, Card, EmptyState } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -551,7 +551,6 @@ export default function ActivityScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
@@ -710,7 +709,7 @@ function getBookingFooterLabel(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     flexDirection: 'row',
@@ -726,7 +725,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -753,8 +752,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   feed: {
-    padding: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingBottom: spacing.sm,
     flexGrow: 1,
   },
   separator: {

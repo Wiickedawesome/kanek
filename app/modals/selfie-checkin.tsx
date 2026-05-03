@@ -14,7 +14,7 @@ import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader, TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { formatDateTime, safeGoBack } from '@/lib/helpers';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
@@ -112,7 +112,6 @@ export default function SelfieCheckinModal() {
   if (!isLoading && existingCheckin) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopographicBg />
         <ScreenHeader style={styles.header}>
           <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
             <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -142,7 +141,6 @@ export default function SelfieCheckinModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -190,7 +188,7 @@ export default function SelfieCheckinModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     flexDirection: 'row',

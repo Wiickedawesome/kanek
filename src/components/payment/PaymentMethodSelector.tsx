@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   optionSelected: {
     borderColor: colors.accent.green,

@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     fontWeight: '600',
     fontSize: 11,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   timelineText: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     fontWeight: '600',
     fontSize: 11,
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   location: {
     ...typography.body2,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     flex: 1,
     fontSize: 13,
   },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.pill,

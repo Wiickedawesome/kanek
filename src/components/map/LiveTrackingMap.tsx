@@ -6,6 +6,8 @@ import { DriverPin } from './DriverPin';
 import { RouteOverlay } from './RouteOverlay';
 import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { BELIZE_CENTER } from '@/lib/mapbox';
+import { isInBelize } from '@/lib/helpers';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 
 interface LiveTrackingMapProps {
@@ -20,6 +22,16 @@ interface LiveTrackingMapProps {
   /** Whether current user is the driver */
   isDriver: boolean;
   style?: object;
+}
+
+/** Validate a `[lng, lat]` tuple is non-null and inside Belize. */
+function safeCoord(c: [number, number] | null): [number, number] | null {
+  if (!c) return null;
+  const [lng, lat] = c;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat === 0 && lng === 0) return null;
+  if (!isInBelize(lat, lng)) return null;
+  return c;
 }
 
 /**
@@ -38,11 +50,16 @@ export function LiveTrackingMap({
   const cameraRef = useRef<MapboxGL.Camera>(null);
 
   const driverCoord = useMemo<[number, number] | null>(
-    () => driverLocation
-      ? [driverLocation.longitude, driverLocation.latitude]
-      : null,
+    () => {
+      if (!driverLocation) return null;
+      const c: [number, number] = [driverLocation.longitude, driverLocation.latitude];
+      return safeCoord(c);
+    },
     [driverLocation],
   );
+
+  const safeOrigin = useMemo(() => safeCoord(origin), [origin]);
+  const safeDestination = useMemo(() => safeCoord(destination), [destination]);
 
   // Follow driver position when it updates
   useEffect(() => {
@@ -55,51 +72,46 @@ export function LiveTrackingMap({
     });
   }, [driverCoord]);
 
-  // Compute initial center — driver position, or midpoint of route, or origin
-  const initialCenter = useMemo(() => {
-    if (driverLocation) {
-      return { latitude: driverLocation.latitude, longitude: driverLocation.longitude };
+  // Compute initial center — driver position, origin, destination, or
+  // Belize fallback. Reactive to current props (not mount-only) so the
+  // first paint after data loads is correct.
+  const initialCenter = useMemo<{ latitude: number; longitude: number }>(() => {
+    if (driverCoord) {
+      return { latitude: driverCoord[1], longitude: driverCoord[0] };
     }
-    if (origin && destination) {
+    if (safeOrigin && safeDestination) {
       return {
-        latitude: (origin[1] + destination[1]) / 2,
-        longitude: (origin[0] + destination[0]) / 2,
+        latitude: (safeOrigin[1] + safeDestination[1]) / 2,
+        longitude: (safeOrigin[0] + safeDestination[0]) / 2,
       };
     }
-    if (origin) {
-      return { latitude: origin[1], longitude: origin[0] };
+    if (safeOrigin) {
+      return { latitude: safeOrigin[1], longitude: safeOrigin[0] };
     }
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally only on mount
+    if (safeDestination) {
+      return { latitude: safeDestination[1], longitude: safeDestination[0] };
+    }
+    return BELIZE_CENTER;
+  }, [driverCoord, safeOrigin, safeDestination]);
+
+  const initialZoom = driverCoord ? 14 : safeOrigin || safeDestination ? 11 : 7;
 
   return (
     <View style={[styles.container, style]}>
       <KanekMap
         center={initialCenter}
-        zoom={driverLocation ? 14 : 11}
+        zoom={initialZoom}
         showUserLocation={isDriver}
+        cameraRef={cameraRef}
       >
-        {/* Camera ref for programmatic updates */}
-        <MapboxGL.Camera
-          ref={cameraRef}
-          centerCoordinate={
-            driverCoord ??
-            (origin ? origin : undefined)
-          }
-          zoomLevel={driverLocation ? 14 : 11}
-          animationMode="easeTo"
-          animationDuration={500}
-        />
-
         {/* Route line */}
         {routeCoordinates && routeCoordinates.length >= 2 && (
           <RouteOverlay coordinates={routeCoordinates} width={5} />
         )}
 
         {/* Origin pin */}
-        {origin && (
-          <MapboxGL.MarkerView id="origin" coordinate={origin}>
+        {safeOrigin && (
+          <MapboxGL.MarkerView id="origin" coordinate={safeOrigin}>
             <View style={styles.endpointPin}>
               <View style={[styles.endpointDot, styles.originDot]} />
             </View>
@@ -107,8 +119,8 @@ export function LiveTrackingMap({
         )}
 
         {/* Destination pin */}
-        {destination && (
-          <MapboxGL.MarkerView id="destination" coordinate={destination}>
+        {safeDestination && (
+          <MapboxGL.MarkerView id="destination" coordinate={safeDestination}>
             <View style={styles.endpointPin}>
               <View style={[styles.endpointDot, styles.destDot]} />
             </View>

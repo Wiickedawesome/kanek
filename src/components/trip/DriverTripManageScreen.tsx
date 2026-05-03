@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader, TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { TripProgressTimeline } from '@/components/trip/TripProgressTimeline';
 import { LiveTrackingMap } from '@/components/map';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
@@ -227,7 +227,6 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -326,7 +325,7 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  container: { flex: 1, backgroundColor: colors.neutral[100] },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -346,7 +345,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
     gap: spacing.md,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
   errorText: {
@@ -355,7 +354,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   summaryCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginBottom: spacing.lg,

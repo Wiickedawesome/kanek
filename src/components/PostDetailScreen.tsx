@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { TopographicBg, Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -21,7 +21,7 @@ import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { buildPointMapUrl, buildRouteMapUrl } from '@/lib/mapbox';
-import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo, openInMaps, safeGoBack } from '@/lib/helpers';
+import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo, isInBelize, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { PostType } from '@/types/database';
@@ -125,7 +125,11 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const pointLocation = useMemo(() => {
     if (!post) return null;
 
-    if (post.origin_lat != null && post.origin_lng != null) {
+    if (
+      post.origin_lat != null &&
+      post.origin_lng != null &&
+      isInBelize(post.origin_lat, post.origin_lng)
+    ) {
       return {
         lat: post.origin_lat,
         lng: post.origin_lng,
@@ -133,7 +137,11 @@ export default function PostDetailScreen({ backFallback }: Props) {
       };
     }
 
-    if (post.dest_lat != null && post.dest_lng != null) {
+    if (
+      post.dest_lat != null &&
+      post.dest_lng != null &&
+      isInBelize(post.dest_lat, post.dest_lng)
+    ) {
       return {
         lat: post.dest_lat,
         lng: post.dest_lng,
@@ -557,7 +565,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       {/* Header */}
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
@@ -995,7 +1002,7 @@ function getUnavailablePostText(status: string): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   flex: {
     flex: 1,
@@ -1004,7 +1011,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
     gap: spacing.lg,
   },
   errorText: {
@@ -1220,7 +1227,7 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.xl,
     paddingBottom: spacing.xxl,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
   },

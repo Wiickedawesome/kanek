@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   sosButton: {
     width: '100%',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   callRow: {
     flexDirection: 'row',

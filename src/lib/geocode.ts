@@ -5,6 +5,7 @@
 
 import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox';
 import { BELIZE_BBOX } from '@/lib/constants';
+import { isInBelize } from '@/lib/helpers';
 import { searchLocalPois } from '@/lib/belizePois';
 
 export interface GeocodeSuggestion {
@@ -61,8 +62,11 @@ export async function searchPlaces(
     // Network failure — still return local results
   }
 
-  // 3. Merge: local first, then mapbox, deduplicated by proximity + name similarity
-  return deduplicateResults([...local, ...mapbox], limit);
+  // 3. Merge: local first, then mapbox, deduplicated by proximity + name similarity.
+  //    Belt-and-braces: drop anything outside Belize even though both sources
+  //    are bbox-bounded — protects against stale POI rows or API regressions.
+  const merged = [...local, ...mapbox].filter((r) => isInBelize(r.lat, r.lng));
+  return deduplicateResults(merged, limit);
 }
 
 /**

@@ -11,14 +11,16 @@ import { useAuthListener } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { InAppToast } from '@/components/ui/InAppToast';
 import { initSentry, Sentry } from '@/lib/sentry';
+import { initMapbox } from '@/lib/mapboxBootstrap';
 import { colors, typography, spacing } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 initSentry();
+initMapbox();
 
 const ROOT_STACK_OPTIONS = {
   headerShown: false,
-  contentStyle: { backgroundColor: colors.neutral[50] },
+  contentStyle: { backgroundColor: colors.neutral[100] },
 } as const;
 
 function RootLayoutInner() {
@@ -62,7 +64,7 @@ function ErrorFallback({ resetError }: { error: unknown; componentStack: string;
 }
 
 const errorStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.neutral[50] },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.neutral[100] },
   title: { ...typography.h2, color: colors.forest[900], marginBottom: spacing.sm },
   body: { ...typography.body1, color: colors.forest[400], textAlign: 'center', marginBottom: spacing.lg },
   button: { backgroundColor: colors.forest[600], paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, borderRadius: 999 },

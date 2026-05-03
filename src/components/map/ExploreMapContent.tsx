@@ -3,12 +3,10 @@ import MapboxGL from '@rnmapbox/maps';
 import { Pressable, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, spacing, shadows } from '@/theme';
-import { MAPBOX_ACCESS_TOKEN, BELIZE_BOUNDS, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
+import { BELIZE_BOUNDS, BELIZE_CENTER, BELIZE_ZOOM } from '@/lib/mapbox';
 import { DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { getDistrictBoundariesGeoJSON } from '@/lib/belizeDistricts';
 import type { BelizeDistrict } from '@/types/database';
-
-MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const BELIZE_SW: [number, number] = [BELIZE_BOUNDS.west, BELIZE_BOUNDS.south];
 const BELIZE_NE: [number, number] = [BELIZE_BOUNDS.east, BELIZE_BOUNDS.north];
@@ -60,15 +58,16 @@ export function ExploreMapContent({
   const center = initialCenter ?? BELIZE_CENTER;
   const zoom = initialZoom ?? BELIZE_ZOOM;
 
-  // When GPS is not active, fly camera whenever the district-based center changes
+  // Fly camera whenever the resolved center changes (e.g. profile/district
+  // data loads after first paint, or GPS arrives). Without this the Camera's
+  // initial centerCoordinate is captured once and stale updates are ignored.
   useEffect(() => {
-    if (showUserLocation) return; // followUserLocation on Camera handles GPS case
     cameraRef.current?.setCamera({
       centerCoordinate: [center.longitude, center.latitude],
       zoomLevel: zoom,
       animationDuration: 600,
     });
-  }, [center.latitude, center.longitude, zoom, showUserLocation]);
+  }, [center.latitude, center.longitude, zoom]);
 
   const districtGeoJSON = useMemo(
     () => getDistrictBoundariesGeoJSON(highlightDistrict),
@@ -157,7 +156,7 @@ export function ExploreMapContent({
           zoomLevel={showUserLocation ? DEFAULT_NEARBY_ZOOM : zoom}
           minZoomLevel={6}
           maxZoomLevel={18}
-          bounds={{ sw: BELIZE_SW, ne: BELIZE_NE }}
+          maxBounds={{ ne: BELIZE_NE, sw: BELIZE_SW }}
           animationMode="moveTo"
           animationDuration={0}
         />

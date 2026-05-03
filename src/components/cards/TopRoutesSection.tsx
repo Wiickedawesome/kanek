@@ -152,11 +152,11 @@ const styles = StyleSheet.create({
   // Card container — matte frosted card
   card: {
     width: CARD_WIDTH,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.neutral[0],
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.08)',
+    borderColor: 'rgba(20, 40, 0, 0.12)',
     ...shadows.sm,
   },
   cardPressed: {
@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
   // Bottom info area — same matte surface as the rest of the app cards
   infoArea: {
     padding: spacing.md,
-    backgroundColor: colors.neutral[0],
   },
   title: {
     ...typography.body1Bold,
@@ -204,7 +203,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.body2,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     fontSize: 13,
     marginBottom: spacing.sm,
   },
@@ -237,7 +236,7 @@ const styles = StyleSheet.create({
   },
   departureText: {
     ...typography.body2,
-    color: colors.neutral[400],
+    color: colors.forest[400],
     fontSize: 12,
     flexShrink: 1,
   },

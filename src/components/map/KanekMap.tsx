@@ -1,9 +1,7 @@
 import React, { forwardRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
-import { MAPBOX_ACCESS_TOKEN, BELIZE_CENTER, BELIZE_ZOOM, BELIZE_BOUNDS } from '@/lib/mapbox';
-
-MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+import { BELIZE_CENTER, BELIZE_ZOOM, BELIZE_BOUNDS } from '@/lib/mapbox';
 
 const BELIZE_SW: [number, number] = [BELIZE_BOUNDS.west, BELIZE_BOUNDS.south];
 const BELIZE_NE: [number, number] = [BELIZE_BOUNDS.east, BELIZE_BOUNDS.north];
@@ -19,6 +17,13 @@ interface KanekMapProps {
   padding?: { paddingTop: number; paddingBottom: number; paddingLeft: number; paddingRight: number };
   /** Called when map finishes loading */
   onMapReady?: () => void;
+  /**
+   * Optional ref to the internal MapboxGL.Camera. When the parent needs to
+   * imperatively drive the camera (e.g. follow a moving driver position),
+   * pass a ref here instead of mounting a second `<MapboxGL.Camera>` as a
+   * child — Mapbox does not support multiple Cameras on one MapView.
+   */
+  cameraRef?: React.Ref<MapboxGL.Camera>;
   children?: React.ReactNode;
   style?: object;
 }
@@ -31,6 +36,7 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
       showUserLocation = true,
       padding,
       onMapReady,
+      cameraRef,
       children,
       style,
     },
@@ -54,11 +60,12 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
           onDidFinishLoadingMap={onMapReady}
         >
           <MapboxGL.Camera
+            ref={cameraRef}
             centerCoordinate={centerCoord}
             zoomLevel={zoom ?? BELIZE_ZOOM}
             minZoomLevel={6}
             maxZoomLevel={18}
-            bounds={{ sw: BELIZE_SW, ne: BELIZE_NE }}
+            maxBounds={{ ne: BELIZE_NE, sw: BELIZE_SW }}
             padding={padding}
             animationMode="flyTo"
             animationDuration={500}

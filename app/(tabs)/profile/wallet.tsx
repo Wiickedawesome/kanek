@@ -138,7 +138,7 @@ const TXN_STATUS: Record<string, { label: string; color: string }> = {
 
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  container: { flex: 1, backgroundColor: colors.neutral[100] },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',

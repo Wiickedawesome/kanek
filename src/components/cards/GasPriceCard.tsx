@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   age: {
     ...typography.caption,
-    color: colors.neutral[400],
+    color: colors.forest[400],
   },
   addressRow: {
     flexDirection: 'row',
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   address: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     flex: 1,
     lineHeight: 16,
   },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(219, 218, 210, 0.6)',
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     textAlign: 'center',
   },
   priceValue: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   priceUnit: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     fontSize: 10,
     textAlign: 'center',
   },
@@ -160,6 +160,6 @@ const styles = StyleSheet.create({
   },
   verified: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
   },
 });

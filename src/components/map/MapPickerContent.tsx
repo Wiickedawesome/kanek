@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
-import { MAPBOX_ACCESS_TOKEN, BELIZE_BOUNDS } from '@/lib/mapbox';
-
-MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+import { BELIZE_BOUNDS } from '@/lib/mapbox';
 
 const BELIZE_SW: [number, number] = [BELIZE_BOUNDS.west, BELIZE_BOUNDS.south];
 const BELIZE_NE: [number, number] = [BELIZE_BOUNDS.east, BELIZE_BOUNDS.north];
@@ -38,7 +36,7 @@ export function MapPickerContent({ initialCenter, onCenterChange }: MapPickerCon
         zoomLevel={14}
         minZoomLevel={6}
         maxZoomLevel={18}
-        bounds={{ sw: BELIZE_SW, ne: BELIZE_NE }}
+        maxBounds={{ ne: BELIZE_NE, sw: BELIZE_SW }}
       />
       {MapboxGL.UserLocation && (
         <MapboxGL.UserLocation visible androidRenderMode="compass" />

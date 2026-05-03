@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { BELIZE_BBOX } from './constants';
+import { isInBelize } from './helpers';
 
 // ── Reverse Geocoding ────────────────────────────────────────────────
 
@@ -10,10 +11,10 @@ export const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 /** @deprecated Use BELIZE_BBOX from '@/lib/constants' directly. Re-exported for backward compat. */
 export const BELIZE_BOUNDS = BELIZE_BBOX;
 
-/** Center of Belize for default map view */
+/** Center of Belize for default map view (geometric center of BELIZE_BBOX). */
 export const BELIZE_CENTER = {
-  latitude: 17.189,
-  longitude: -88.497,
+  latitude: 17.193,
+  longitude: -88.355,
 } as const;
 
 export const BELIZE_ZOOM = 7;
@@ -240,6 +241,9 @@ function simplifyCoordinates(
  * points. Uses the actual route geometry when available, otherwise falls
  * back to a straight line. Automatically simplifies geometry to stay
  * within URL length limits.
+ *
+ * Returns `null` when either endpoint is outside Belize (or non-finite) so
+ * callers can render a placeholder rather than a misleading map.
  */
 export function buildRouteMapUrl(
   originLat: number,
@@ -252,7 +256,10 @@ export function buildRouteMapUrl(
     routeGeometry?: { type: string; coordinates: [number, number][] } | null;
     padding?: number;
   },
-): string {
+): string | null {
+  if (!isInBelize(originLat, originLng) || !isInBelize(destLat, destLng)) {
+    return null;
+  }
   const { width, height, routeGeometry, padding = 50 } = opts;
 
   let lineCoords: [number, number][] = routeGeometry?.coordinates ?? [
@@ -317,9 +324,13 @@ export function buildPointMapUrl(
     width: number;
     height: number;
     padding?: number;
+    zoom?: number;
   },
-): string {
-  const { width, height, padding = 50 } = opts;
+): string | null {
+  if (!isInBelize(lat, lng)) {
+    return null;
+  }
+  const { width, height, zoom = 13 } = opts;
   const geojson = encodeURIComponent(
     JSON.stringify({
       type: 'FeatureCollection',
@@ -333,8 +344,11 @@ export function buildPointMapUrl(
     }),
   );
 
+  // Use explicit center/zoom rather than `/auto/` so the static image is a
+  // tight, predictable view of the pin instead of Mapbox's auto-fit (which
+  // for a single point can zoom out to country level).
   return (
     `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/geojson(${geojson})` +
-    `/auto/${width}x${height}?padding=${padding}&access_token=${MAPBOX_ACCESS_TOKEN}`
+    `/${lng},${lat},${zoom}/${width}x${height}?access_token=${MAPBOX_ACCESS_TOKEN}`
   );
 }

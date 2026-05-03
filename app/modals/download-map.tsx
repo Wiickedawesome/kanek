@@ -9,7 +9,7 @@ import {
 import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader , TopographicBg } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import { safeGoBack } from '@/lib/helpers';
 import {
@@ -129,7 +129,6 @@ export default function DownloadMapModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -162,7 +161,7 @@ export default function DownloadMapModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     flexDirection: 'row',
@@ -185,7 +184,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
   },
   list: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.lg,
   },

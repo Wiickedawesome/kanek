@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { safeGoBack, getTimeAgo } from '@/lib/helpers';
+import { safeGoBack, getTimeAgo, isInBelize } from '@/lib/helpers';
 import { reverseGeocode } from '@/lib/mapbox';
 import { ScreenHeader } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
@@ -116,7 +116,9 @@ export default function ExploreMapScreen() {
       (posts ?? [])
         .filter(
           (p): p is PostWithAuthor & { origin_lat: number; origin_lng: number } =>
-            p.origin_lat != null && p.origin_lng != null,
+            p.origin_lat != null &&
+            p.origin_lng != null &&
+            isInBelize(p.origin_lat, p.origin_lng),
         )
         .map((p) => ({
           id: p.id,
@@ -132,13 +134,15 @@ export default function ExploreMapScreen() {
 
   const gasPoints = useMemo(
     () =>
-      (gasPrices ?? []).map((g) => ({
-        id: g.id,
-        lng: g.station_lng,
-        lat: g.station_lat,
-        color: GAS_PIN_COLOR,
-        label: g.station_name,
-      })),
+      (gasPrices ?? [])
+        .filter((g) => isInBelize(g.station_lat, g.station_lng))
+        .map((g) => ({
+          id: g.id,
+          lng: g.station_lng,
+          lat: g.station_lat,
+          color: GAS_PIN_COLOR,
+          label: g.station_name,
+        })),
     [gasPrices],
   );
 
@@ -344,7 +348,7 @@ function LegendRow({ color, label }: { color: string; label: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   mapContainer: {
     flex: 1,
@@ -388,7 +392,7 @@ const styles = StyleSheet.create({
   },
   searchResults: {
     marginHorizontal: spacing.xl,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     maxHeight: 200,
     ...shadows.md,
@@ -414,7 +418,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.xl,
     left: spacing.lg,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     gap: spacing.xs,

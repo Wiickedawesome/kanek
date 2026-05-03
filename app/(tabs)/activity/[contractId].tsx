@@ -503,12 +503,12 @@ const STATUS_COLORS: Record<ContractStatus, { bg: string; fg: string }> = {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  container: { flex: 1, backgroundColor: colors.neutral[100] },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   errorText: {
     ...typography.body1,
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neutral[200],

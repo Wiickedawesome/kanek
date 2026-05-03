@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
-import { FilterChip, EmptyState, TopographicBg, ScreenHeader, FeedListSkeleton } from '@/components/ui';
+import { FilterChip, EmptyState, ScreenHeader, FeedListSkeleton } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery } from '@/store/api/postsApi';
@@ -151,7 +151,6 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.greeting}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
@@ -275,7 +274,7 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -336,8 +335,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   feed: {
-    padding: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.lg,
     paddingBottom: spacing.lg,
   },
   sectionHeading: {

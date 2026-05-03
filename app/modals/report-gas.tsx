@@ -15,7 +15,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
 import { reverseGeocode } from '@/lib/mapbox';
-import { Button, TextInput, ScreenHeader, TopographicBg } from '@/components/ui';
+import { Button, TextInput, ScreenHeader } from '@/components/ui';
 import { MapPicker } from '@/components/map/MapPicker';
 import { colors, typography, spacing, borderRadius } from '@/theme';
 import {
@@ -125,7 +125,6 @@ export default function ReportGasModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={safeBack} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -228,7 +227,7 @@ export default function ReportGasModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   flex: {
     flex: 1,
@@ -258,7 +257,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,

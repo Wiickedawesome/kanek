@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button, TextInput, FilterChip, ScreenHeader , TopographicBg } from '@/components/ui';
+import { Button, TextInput, FilterChip, ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';
@@ -74,7 +74,6 @@ export default function FlagContentModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -134,7 +133,7 @@ export default function FlagContentModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   flex: {
     flex: 1,
@@ -158,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     padding: spacing.lg,
     borderRadius: 12,
     borderWidth: 1,

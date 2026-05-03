@@ -7,6 +7,8 @@ import { Icon } from '@/components/icons';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { reverseGeocode, BELIZE_CENTER } from '@/lib/mapbox';
 import { searchPlaces as searchGeocode, type GeocodeSuggestion } from '@/lib/geocode';
+import { isInBelize } from '@/lib/helpers';
+import { showAlert } from '@/lib/alert';
 import type { RootState } from '@/store';
 
 type SearchResult = GeocodeSuggestion;
@@ -92,6 +94,13 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
   }, []);
 
   const handleConfirm = useCallback(async () => {
+    if (!isInBelize(center.latitude, center.longitude)) {
+      showAlert(
+        'Outside Belize',
+        'Pick a location inside Belize. Drag the map until the pin is on a Belize address.',
+      );
+      return;
+    }
     setLoading(true);
     try {
       const placeName = await reverseGeocode(center.latitude, center.longitude);

@@ -13,7 +13,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader , TopographicBg , Card } from '@/components/ui';
+import { ScreenHeader, Card } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
@@ -167,7 +167,6 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
       </ScreenHeader>
@@ -406,13 +405,13 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -424,8 +423,9 @@ const styles = StyleSheet.create({
     color: colors.neutral[0],
   },
   scrollContent: {
-    padding: spacing.xl,
-    gap: spacing.xl,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
     paddingBottom: spacing.lg,
   },
   profileCard: {
@@ -487,12 +487,12 @@ const styles = StyleSheet.create({
   },
   statusHint: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 8,
     paddingVertical: spacing.lg,
     ...shadows.sm,
   },
@@ -512,15 +512,15 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...typography.caption,
-    color: colors.neutral[500],
+    color: colors.forest[500],
   },
   statDivider: {
     width: 1,
     backgroundColor: colors.neutral[200],
   },
   reviewsSection: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 8,
     padding: spacing.lg,
     ...shadows.sm,
   },
@@ -565,11 +565,11 @@ const styles = StyleSheet.create({
   },
   reviewDate: {
     ...typography.caption,
-    color: colors.neutral[400],
+    color: colors.forest[400],
   },
   reviewComment: {
     ...typography.body2,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     marginTop: spacing.xs,
     marginLeft: 40 + spacing.sm,
   },
@@ -587,8 +587,8 @@ const styles = StyleSheet.create({
     color: colors.accent.green,
   },
   menuSection: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 8,
     overflow: 'hidden',
     ...shadows.sm,
   },

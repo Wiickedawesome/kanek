@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neutral[200],
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.caption,
-    color: colors.neutral[400],
+    color: colors.forest[400],
   },
   divider: {
     width: 1,
@@ -91,6 +91,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.body2,
-    color: colors.neutral[400],
+    color: colors.forest[400],
   },
 });

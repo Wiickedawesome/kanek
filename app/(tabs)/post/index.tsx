@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import type { IconName } from '@/components/icons';
-import { ScreenHeader , TopographicBg } from '@/components/ui';
+import { ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import type { RootState } from '@/store';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -79,7 +79,6 @@ export default function PostScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>New Post</Text>
         <Text style={styles.subtitle}>What do you need?</Text>
@@ -134,7 +133,7 @@ export default function PostScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -171,21 +170,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     gap: spacing.md,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 8,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: 'rgba(20, 40, 0, 0.12)',
     ...shadows.sm,
   },
   cardPressed: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   iconContainer: {
     width: 48,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     ...typography.body2,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     marginTop: 2,
   },
 });

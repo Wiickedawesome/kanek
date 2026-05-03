@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   title: {
     ...typography.h2,

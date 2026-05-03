@@ -56,7 +56,7 @@ export function LegalScreen({ backFallback, title, sections, lastUpdated, contac
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  container: { flex: 1, backgroundColor: colors.neutral[100] },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

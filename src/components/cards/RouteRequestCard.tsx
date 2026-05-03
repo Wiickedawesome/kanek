@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     ...typography.body2,
-    color: colors.neutral[500],
+    color: colors.forest[500],
     fontSize: 13,
   },
   priceBadge: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.pill,

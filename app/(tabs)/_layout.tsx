@@ -67,7 +67,7 @@ function TabNavigator({ userId }: { userId?: string }) {
             paddingTop: 4,
           } as any,
           default: {
-            backgroundColor: colors.neutral[50],
+            backgroundColor: colors.neutral[100],
             borderTopWidth: 1,
             borderTopColor: 'rgba(0, 0, 0, 0.06)',
             elevation: 0,

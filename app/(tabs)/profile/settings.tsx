@@ -509,8 +509,8 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[50] },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
+  container: { flex: 1, backgroundColor: colors.neutral[100] },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[100] },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -12,7 +12,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
-import { TopographicBg, ScreenHeader } from '@/components/ui';
+import { ScreenHeader } from '@/components/ui';
 import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
@@ -61,7 +61,6 @@ export default function UserProfileModal() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <TopographicBg />
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
           <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
@@ -169,13 +168,13 @@ export default function UserProfileModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.neutral[100],
     gap: spacing.md,
   },
   errorText: {
@@ -239,7 +238,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   reviewCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
