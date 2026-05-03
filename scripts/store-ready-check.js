@@ -173,11 +173,11 @@ const androidSubmitProfile = submitProfiles.storeTest?.android;
 if (
   androidSubmitProfile?.serviceAccountKeyPath === './play-store-service-account.json'
   && androidSubmitProfile?.track === 'internal'
-  && androidSubmitProfile?.releaseStatus === 'completed'
+  && (androidSubmitProfile?.releaseStatus === 'draft' || androidSubmitProfile?.releaseStatus === 'completed')
 ) {
-  addStatus('ok', 'Play internal submit profile', 'submit.storeTest.android targets the internal track and publishes finished builds directly to internal testers.');
+  addStatus('ok', 'Play internal submit profile', `submit.storeTest.android targets the internal track with releaseStatus "${androidSubmitProfile.releaseStatus}". "draft" is the deliberate Kanek policy: Google Play rejects automated completed publishes, so the release is finalized manually in the Play Console.`);
 } else {
-  addStatus('block', 'Play internal submit profile', 'submit.storeTest.android should point at ./play-store-service-account.json, target the internal track, and use releaseStatus "completed" so internal testers receive the build automatically.');
+  addStatus('block', 'Play internal submit profile', 'submit.storeTest.android should point at ./play-store-service-account.json, target the internal track, and use releaseStatus "draft" (Kanek policy — finalize in Play Console) or "completed".');
 }
 
 const iosSubmitProfile = submitProfiles.storeTest?.ios;
