@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -28,6 +27,7 @@ import type { RootState } from '@/store';
 import { showAlert } from '@/lib/alert';
 import { showToast } from '@/store/slices/toastSlice';
 import type { PostType, PickupStyle, PaymentMethod } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 const safeBack = () => safeGoBack('/(tabs)/post/');
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   Image,
@@ -21,6 +20,7 @@ import {
   useCreatePaymentMutation,
   useGetPaymentStatusQuery,
 } from '@/store/api/ekyashApi';
+import { Text } from '@/components/ui/Text';
 
 /**
  * E-Kyash payment screen:

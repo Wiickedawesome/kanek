@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
 import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { safeGoBack } from '@/lib/helpers';
+import { Text } from '@/components/ui/Text';
 
 interface LegalScreenProps {
   backFallback: string;

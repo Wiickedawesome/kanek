@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, Modal, StyleSheet, Pressable, ActivityIndicator, TextInput as RNTextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Modal, StyleSheet, Pressable, ActivityIndicator, TextInput as RNTextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { MapPickerContent } from './MapPickerContent';
@@ -11,6 +11,7 @@ import { searchPlaces as searchGeocode, type GeocodeSuggestion } from '@/lib/geo
 import { isInBelize } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import type { RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 type SearchResult = GeocodeSuggestion;
 

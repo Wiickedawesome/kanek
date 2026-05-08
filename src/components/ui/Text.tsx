@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
+import { Text as RNText, type TextProps as RNTextProps, type StyleProp, type TextStyle } from 'react-native';
 import { useTheme, type TextTone } from '@/theme/ThemeContext';
 import type { TypographyVariant, TypographyWeight } from '@/theme/typography';
 
@@ -10,7 +10,7 @@ export type TextProps<V extends TypographyVariant = 'body'> = Omit<RNTextProps, 
   /** Optional style override. Use sparingly — colour and font fields will be
    *  overridden by `tone`/`variant`/`weight` if present. Layout-only props
    *  (margin, textAlign, etc.) are the intended use. */
-  style?: TextStyle | TextStyle[] | null | false;
+  style?: StyleProp<TextStyle>;
   children?: React.ReactNode;
 };
 
@@ -35,6 +35,5 @@ export function Text<V extends TypographyVariant = 'body'>({
   const { t } = useTheme();
   const v = (variant ?? 'body') as TypographyVariant;
   const base = t(v, weight as never, tone);
-  const flat = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style || undefined;
-  return <RNText {...rest} style={[base, flat]} />;
+  return <RNText {...rest} style={[base, style]} />;
 }

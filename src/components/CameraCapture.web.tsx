@@ -1,9 +1,10 @@
 // Web camera capture modal using getUserMedia — forces a live camera capture
 // rather than falling through to the browser file picker.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { Modal, View, Pressable, StyleSheet, Platform } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { colors, type, spacing, borderRadius } from '@/theme';
+import { Text } from '@/components/ui/Text';
 
 export type CameraFacing = 'front' | 'back';
 

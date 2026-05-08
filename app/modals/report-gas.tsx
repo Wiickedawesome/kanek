@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -25,6 +24,7 @@ import {
   useGetGasPricesQuery,
 } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 

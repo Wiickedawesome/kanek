@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable, Platform } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -11,6 +11,7 @@ import { ENABLE_APPLE_AUTH, ENABLE_EMAIL_AUTH, ENABLE_GOOGLE_AUTH } from '@/lib/
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
+import { Text } from '@/components/ui/Text';
 
 export default function LoginScreen() {
   const { c } = useTheme();

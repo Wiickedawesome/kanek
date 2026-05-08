@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import type { RootState } from '@/store';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { showAlert } from '@/lib/alert';
+import { Text } from '@/components/ui/Text';
 
 interface PostTypeOption {
   type: string;

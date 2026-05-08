@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, borderRadius } from '@/theme';
+import { Text } from '@/components/ui/Text';
 
 type PaymentMethod = 'cash' | 'ekyash';
 

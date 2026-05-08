@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { getEventIcon, getEventSequence } from '@/lib/tripEvents';
 import type { ContractEvent } from '@/store/api/contractEventsApi';
 import type { PostType } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 interface Props {
   postType: PostType;

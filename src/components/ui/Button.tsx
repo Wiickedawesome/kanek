@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Pressable,
-  Text,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
@@ -14,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, type, borderRadius, spacing, shadows, useTheme } from '@/theme';
 import { hapticLight } from '@/lib/haptics';
+import { Text } from '@/components/ui/Text';
 
 const SPRING_CONFIG = { damping: 15, stiffness: 350 };
 

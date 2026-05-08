@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
+import { Text } from '@/components/ui/Text';
 
 interface FormFieldProps {
   label: string;

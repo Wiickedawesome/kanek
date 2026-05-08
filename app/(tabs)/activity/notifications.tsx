@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
   StyleSheet,
   Pressable,
@@ -22,6 +21,7 @@ import {
 } from '@/store/api/notificationsApi';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 

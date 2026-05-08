@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -25,6 +24,7 @@ import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import type { AppDispatch, RootState } from '@/store';
 import type { DriverDocumentType } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 const ONBOARDING_DOCS: DriverDocumentType[] = ['drivers_license', 'vehicle_insurance'];
 

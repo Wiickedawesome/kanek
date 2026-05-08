@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';
 import type { FlagReason } from '@/types/database';
 import { safeGoBack } from '@/lib/helpers';
+import { Text } from '@/components/ui/Text';
 
 const REASONS: { value: FlagReason; label: string }[] = [
   { value: 'spam', label: 'Spam' },

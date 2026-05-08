@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { Icon } from '@/components/icons';
 import { colors, type, shadows } from '@/theme';
 import type { PostType } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 interface PostPinProps {
   id: string;

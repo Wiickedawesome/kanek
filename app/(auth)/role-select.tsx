@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, StyleSheet, Pressable, TextInput } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,6 +10,7 @@ import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { profilesApi, useSetInitialRoleMutation } from '@/store/api/profilesApi';
 import type { RootState, AppDispatch } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 type RoleChoice = 'rider' | 'driver';
 

@@ -1,7 +1,17 @@
-import { useRef, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
-import { View, Modal, StyleSheet, Pressable, Text } from 'react-native';
+import {
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+  useState,
+  useCallback } from 'react';
+import { View,
+  Modal,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { colors, type, spacing } from '@/theme';
+import { Text } from '@/components/ui/Text';
 
 const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 

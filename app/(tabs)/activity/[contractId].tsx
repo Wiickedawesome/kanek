@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -37,6 +36,7 @@ import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 import type { RootState } from '@/store';
 import type { ContractStatus } from '@/types/database';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
+import { Text } from '@/components/ui/Text';
 
 export default function ContractDetailScreen() {
   const { c } = useTheme();

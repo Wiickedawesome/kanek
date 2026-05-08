@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   Pressable,
@@ -18,6 +17,7 @@ import { formatBZD, formatDate, safeGoBack } from '@/lib/helpers';
 import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type EkyashTxnRow = Database['public']['Tables']['ekyash_transactions']['Row'];
 

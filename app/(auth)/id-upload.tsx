@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, Image, StyleSheet, Pressable, ScrollView, Platform, View } from 'react-native';
+import { Image, StyleSheet, Pressable, ScrollView, Platform, View } from 'react-native';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import type { AppDispatch, RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 export default function IdUploadScreen() {
   const { c } = useTheme();

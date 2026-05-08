@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { consumeAuthRedirectUrl } from '@/lib/authRedirect';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { colors, spacing, type, useTheme } from '@/theme';
+import { Text } from '@/components/ui/Text';
 
 type CallbackParams = Record<string, string | string[] | undefined>;
 

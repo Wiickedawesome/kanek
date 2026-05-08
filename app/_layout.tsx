@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
@@ -13,6 +13,7 @@ import { InAppToast } from '@/components/ui/InAppToast';
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initMapbox } from '@/lib/mapboxBootstrap';
 import { colors, type, spacing, ThemeProvider, useTheme } from '@/theme';
+import { Text } from '@/components/ui/Text';
 
 SplashScreen.preventAutoHideAsync();
 initSentry();

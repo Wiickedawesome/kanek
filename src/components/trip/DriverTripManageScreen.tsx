@@ -11,7 +11,6 @@
 import React, { useMemo, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -41,6 +40,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
 import type { ContractEvent } from '@/store/api/contractEventsApi';
+import { Text } from '@/components/ui/Text';
 
 interface Props {
   backFallback: string;

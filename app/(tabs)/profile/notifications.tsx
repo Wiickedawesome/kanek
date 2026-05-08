@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Switch,
@@ -18,6 +17,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
 import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Text } from '@/components/ui/Text';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
 

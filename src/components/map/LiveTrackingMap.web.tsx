@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, borderRadius, shadows } from '@/theme';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
+import { Text } from '@/components/ui/Text';
 
 interface LiveTrackingMapProps {
   driverLocation: DriverLocationUpdate | null;

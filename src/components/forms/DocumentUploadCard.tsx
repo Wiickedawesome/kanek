@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
   Pressable,
@@ -19,6 +18,7 @@ import { showAlert } from '@/lib/alert';
 import { readUploadFile } from '@/lib/uploadFile';
 import type { DriverDocumentType, ReviewStatus , Database } from '@/types/database';
 import { DRIVER_DOC_LABELS } from '@/store/api/driverDocumentsApi';
+import { Text } from '@/components/ui/Text';
 
 type DriverDocumentRow = Database['public']['Tables']['driver_documents']['Row'];
 

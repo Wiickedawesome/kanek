@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, FlatList, Keyboard, Alert, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, TextInput, FlatList, Keyboard, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
@@ -17,6 +17,7 @@ import { DISTRICT_CENTERS, DEFAULT_NEARBY_ZOOM } from '@/lib/constants';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
 import type { BelizeDistrict } from '@/types/database';
 import type { RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 /** Colors for each post type pin */
 const PIN_COLORS: Record<string, string> = {

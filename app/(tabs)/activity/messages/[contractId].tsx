@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   FlatList,
@@ -23,6 +22,7 @@ import { useRealtime } from '@/hooks/useRealtime';
 import { safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import type { RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 const MESSAGING_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   Linking,
@@ -13,6 +12,7 @@ import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { safeGoBack } from '@/lib/helpers';
 import { useSOS } from '@/hooks/useSOS';
+import { Text } from '@/components/ui/Text';
 
 export default function SOSModal() {
   const { c } = useTheme();

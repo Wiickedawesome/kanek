@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   FlatList,
@@ -21,6 +20,7 @@ import {
   type OfflineRegionKey,
   type DownloadProgress,
 } from '@/lib/offline';
+import { Text } from '@/components/ui/Text';
 
 interface RegionItem {
   key: OfflineRegionKey;

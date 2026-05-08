@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { AccountStatus } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 interface VerificationStatusProps {
   status: AccountStatus;

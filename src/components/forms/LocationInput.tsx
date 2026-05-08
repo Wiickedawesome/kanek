@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
 import { Icon } from '@/components/icons';
 import { MapPicker } from '@/components/map/MapPicker';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
+import { Text } from '@/components/ui/Text';
 
 type Suggestion = GeocodeSuggestion;
 

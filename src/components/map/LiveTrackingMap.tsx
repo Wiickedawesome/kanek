@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { KanekMap } from './KanekMap';
 import { DriverPin } from './DriverPin';
@@ -9,6 +9,7 @@ import { colors, type, spacing, borderRadius, shadows } from '@/theme';
 import { BELIZE_CENTER } from '@/lib/mapbox';
 import { isInBelize } from '@/lib/helpers';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
+import { Text } from '@/components/ui/Text';
 
 interface LiveTrackingMapProps {
   /** Driver's live position */

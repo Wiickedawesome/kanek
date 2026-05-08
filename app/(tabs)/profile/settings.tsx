@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TextInput,
@@ -37,6 +36,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { RootState } from '@/store';
 import type { Role, BelizeDistrict } from '@/types/database';
 import { showAlert } from '@/lib/alert';
+import { Text } from '@/components/ui/Text';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

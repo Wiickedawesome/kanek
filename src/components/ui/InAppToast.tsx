@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,6 +17,7 @@ import { hapticLight } from '@/lib/haptics';
 import type { AppDispatch } from '@/store';
 import { dismissToast, selectCurrentToast } from '@/store/slices/toastSlice';
 import type { IconName } from '@/components/icons';
+import { Text } from '@/components/ui/Text';
 
 const NOTIFICATION_ICON_MAP: Record<string, IconName> = {
   payment_sent: 'receipt',

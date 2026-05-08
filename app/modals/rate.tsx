@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   KeyboardAvoidingView,
@@ -21,6 +20,7 @@ import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/rati
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 import { safeGoBack } from '@/lib/helpers';
+import { Text } from '@/components/ui/Text';
 
 export default function RateModal() {
   const { c } = useTheme();

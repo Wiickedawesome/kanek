@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import type { Database } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 

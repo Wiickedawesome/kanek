@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput as RNTextInput,
-  Text,
   StyleSheet,
   TextInputProps as RNTextInputProps,
   ViewStyle,
 } from 'react-native';
 import { colors, type, borderRadius, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
+import { Text } from '@/components/ui/Text';
 
 interface TextInputProps extends RNTextInputProps {
   label?: string;

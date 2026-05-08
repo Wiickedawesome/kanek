@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
 } from 'react-native';
@@ -14,6 +13,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
+import { Text } from '@/components/ui/Text';
 
 /**
  * Payment method selection: Cash vs E-Kyash.

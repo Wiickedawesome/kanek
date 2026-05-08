@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -34,6 +33,7 @@ import {
 import type { RootState , AppDispatch } from '@/store';
 import type { ReviewStatus } from '@/types/database';
 import { showAlert } from '@/lib/alert';
+import { Text } from '@/components/ui/Text';
 
 function getGovIdStatusLabel(status: ReviewStatus | 'not_uploaded'): string {
   switch (status) {

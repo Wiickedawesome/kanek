@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -26,6 +25,7 @@ import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo, isInBel
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { PostType } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 const MAP_HEIGHT = 200;
 const MAP_PIXEL_WIDTH = 800; // retina

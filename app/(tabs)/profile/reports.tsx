@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   SectionList,
   Pressable,
@@ -18,6 +17,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetGasPricesQuery } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, type, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
+import { Text } from '@/components/ui/Text';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 

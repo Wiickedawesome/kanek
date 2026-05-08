@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   StyleSheet,
@@ -26,6 +25,7 @@ import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
 import { openInMaps } from '@/lib/helpers';
 import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
+import { Text } from '@/components/ui/Text';
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
   { label: 'All', value: null },

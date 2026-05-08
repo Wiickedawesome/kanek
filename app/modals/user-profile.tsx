@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -18,6 +17,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { formatMonthYear, formatShortDate, safeGoBack } from '@/lib/helpers';
+import { Text } from '@/components/ui/Text';
 
 export default function UserProfileModal() {
   const { c } = useTheme();

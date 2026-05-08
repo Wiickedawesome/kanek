@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui';
 import { colors, type, spacing, borderRadius } from '@/theme';
 import { formatBZD, formatDate } from '@/lib/helpers';
 import type { Database } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type EkyashTxnRow = Database['public']['Tables']['ekyash_transactions']['Row'];
 

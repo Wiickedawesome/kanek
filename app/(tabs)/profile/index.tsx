@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -29,6 +28,7 @@ import { uploadProfileAvatar } from '@/lib/avatar';
 import type { RootState } from '@/store';
 import Constants from 'expo-constants';
 import type { AccountStatus } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 export default function ProfileScreen() {
   const { c } = useTheme();

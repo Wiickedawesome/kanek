@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   Image,
@@ -24,6 +23,7 @@ import {
 } from '@/store/api/checkinsApi';
 import { useSendMessageMutation } from '@/store/api/messagesApi';
 import type { RootState } from '@/store';
+import { Text } from '@/components/ui/Text';
 
 export default function SelfieCheckinModal() {
   const { c } = useTheme();

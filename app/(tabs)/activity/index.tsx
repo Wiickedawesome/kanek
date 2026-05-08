@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
   SectionList,
   StyleSheet,
@@ -26,6 +25,7 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { useRealtime } from '@/hooks/useRealtime';
 import type { RootState } from '@/store';
 import type { BookingStatus, ContractStatus, PostType } from '@/types/database';
+import { Text } from '@/components/ui/Text';
 
 type Tab = 'my_posts' | 'history';
 
