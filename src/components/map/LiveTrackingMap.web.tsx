@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows } from '@/theme';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 
 interface LiveTrackingMapProps {
@@ -59,11 +59,11 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   title: {
-    ...typography.body1Bold,
+    ...type.body.bold,
     color: colors.neutral[500],
   },
   subtitle: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.neutral[400],
   },
   infoOverlay: {
@@ -81,13 +81,13 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   infoText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.forest[900],
     fontWeight: '600',
     flex: 1,
   },
   speedText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.accent.green,
     fontWeight: '700',
   },

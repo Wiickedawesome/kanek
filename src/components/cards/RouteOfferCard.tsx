@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { View, StyleSheet } from 'react-native';
+import { spacing, borderRadius, colors, useTheme } from '@/theme';
 import { Icon } from '@/components/icons';
-import { Card } from '@/components/ui/Card';
+import { PostCardShell } from './PostCardShell';
+import { HeroMap } from './HeroMap';
+import { HeroGradient } from './HeroGradient';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Text } from '@/components/ui/Text';
 import { formatBZD, formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
@@ -14,217 +17,115 @@ interface RouteOfferCardProps {
 }
 
 export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress }: RouteOfferCardProps) {
+  const { c } = useTheme();
   const authorName = post.author
     ? `${post.author.first_name ?? ''} ${(post.author.last_name ?? '')[0] ?? ''}.`.trim()
     : 'Unknown';
 
-  const departure = post.departure_at
-    ? formatDeparture(post.departure_at)
-    : null;
+  const departure = post.departure_at ? formatDeparture(post.departure_at) : null;
+
+  const hasOrigin = post.origin_lat != null && post.origin_lng != null;
+  const hasDest = post.dest_lat != null && post.dest_lng != null;
+
+  const hero = hasOrigin ? (
+    <HeroMap
+      origin={{ lat: post.origin_lat as number, lng: post.origin_lng as number }}
+      destination={hasDest ? { lat: post.dest_lat as number, lng: post.dest_lng as number } : null}
+      fallbackType="route_offer"
+    />
+  ) : (
+    <HeroGradient type="route_offer" />
+  );
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <PostCardShell
+      hero={hero}
+      heroOverlayLeft={<PostTypeBadge type="route_offer" variant="overlay" />}
+      onPress={onPress}
+    >
+      <Text variant="body" weight="bold" numberOfLines={1}>
+        {post.origin_address ?? 'Origin'} → {post.dest_address ?? 'Destination'}
+      </Text>
 
-      <View style={styles.content}>
-        <PostTypeBadge type="route_offer" />
-
-        {/* Route path */}
-        <View style={styles.routePath}>
-          <View style={styles.pathDot}>
-            <View style={[styles.dot, { backgroundColor: colors.accent.green }]} />
+      <View style={styles.metaRow}>
+        {departure && (
+          <View style={styles.metaItem}>
+            <Icon name="clock" size={12} color={c.textMuted} />
+            <Text variant="bodySm" tone="muted">{departure}</Text>
           </View>
-          <View style={styles.pathInfo}>
-            <Text style={styles.placeName} numberOfLines={1}>
-              {post.origin_address ?? 'Origin'}
+        )}
+        {post.author?.rating_avg != null && (
+          <View style={styles.metaItem}>
+            <Icon name="star" size={12} color={colors.accent.green} />
+            <Text variant="bodySm" tone="muted">
+              {post.author.rating_avg.toFixed(1)}
             </Text>
           </View>
-        </View>
-        <View style={styles.pathConnector}>
-          <View style={styles.pathLine} />
-        </View>
-        <View style={styles.routePath}>
-          <View style={styles.pathDot}>
-            <View style={[styles.dot, { backgroundColor: colors.error }]} />
-          </View>
-          <View style={styles.pathInfo}>
-            <Text style={styles.placeName} numberOfLines={1}>
-              {post.dest_address ?? 'Destination'}
+        )}
+        {post.price_cents != null && (
+          <View style={styles.priceBadge}>
+            <Text variant="caption" weight="semibold" tone="inverse">
+              {formatBZD(post.price_cents)}/seat
             </Text>
           </View>
-        </View>
-
-        {/* Meta row: departure + price badge */}
-        <View style={styles.metaRow}>
-          {departure && (
-            <View style={styles.metaItem}>
-              <Icon name="clock" size={13} color={colors.forest[400]} />
-              <Text style={styles.metaText}>{departure}</Text>
-            </View>
-          )}
-          {post.price_cents != null && (
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>
-                {formatBZD(post.price_cents)}/seat
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.authorRow}>
-            <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
-            <Text style={styles.authorName}>{authorName}</Text>
-          </View>
-          <View style={styles.stats}>
-            {post.author && (
-              <>
-                <View style={styles.statChip}>
-                  <Icon name="star" size={12} color={colors.accent.green} />
-                  <Text style={styles.statText}>
-                    {(post.author.rating_avg ?? 0).toFixed(1)}
-                  </Text>
-                </View>
-                <View style={styles.statChip}>
-                  <Icon name="clock" size={12} color={colors.forest[400]} />
-                  <Text style={styles.statText}>
-                    {post.author.punctuality_pct}%
-                  </Text>
-                </View>
-              </>
-            )}
-            {post.seats_total != null && (
-              <View style={[styles.statChip, styles.seatsChip]}>
-                <Text style={styles.seatsText}>
-                  {post.seats_filled}/{post.seats_total}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
+        )}
       </View>
-    </Card>
+
+      <View style={styles.footer}>
+        <View style={styles.authorRow}>
+          <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
+          <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.flex1}>
+            {authorName}
+          </Text>
+        </View>
+        {post.seats_total != null && (
+          <View style={[styles.seatsChip, { backgroundColor: c.surfaceMuted }]}>
+            <Text variant="caption" weight="semibold">
+              {post.seats_filled}/{post.seats_total} seats
+            </Text>
+          </View>
+        )}
+      </View>
+    </PostCardShell>
   );
 });
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.lg,
-    gap: spacing.xs,
-  },
-  routePath: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  pathDot: {
-    width: 18,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  pathLine: {
-    width: 1.5,
-    height: 12,
-    backgroundColor: colors.neutral[300],
-  },
-  pathConnector: {
-    paddingLeft: 8,
-    alignItems: 'flex-start',
-  },
-  pathInfo: {
-    flex: 1,
-  },
-  placeName: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
-    fontSize: 15,
-  },
+  flex1: { flex: 1 },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    gap: spacing.md,
+    marginTop: 2,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  metaText: {
-    ...typography.body2,
-    color: colors.forest[500],
-    fontSize: 13,
-  },
   priceBadge: {
     backgroundColor: colors.accent.green,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
     borderRadius: borderRadius.pill,
-  },
-  priceBadgeText: {
-    ...typography.caption,
-    color: colors.neutral[0],
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.neutral[100],
-    marginVertical: spacing.xs,
+    marginLeft: 'auto',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flex: 1,
   },
-  authorName: {
-    ...typography.body2,
-    color: colors.forest[900],
-    fontWeight: '600',
-  },
-  stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.neutral[100],
+  seatsChip: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.pill,
-  },
-  statText: {
-    ...typography.caption,
-    color: colors.forest[900],
-    fontWeight: '600',
-    fontSize: 11,
-  },
-  seatsChip: {
-    backgroundColor: colors.forest[600],
-  },
-  seatsText: {
-    ...typography.caption,
-    color: colors.neutral[0],
-    fontWeight: '700',
-    fontSize: 11,
   },
 });

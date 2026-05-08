@@ -8,7 +8,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
-import { colors, borderRadius, spacing } from '@/theme';
+import { colors, borderRadius, spacing, useTheme } from '@/theme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -51,8 +51,9 @@ export function Skeleton({ width = '100%', height = 16, radius = 6, style }: Ske
 
 /** Skeleton mimicking a feed card (route/errand/job) */
 export function FeedCardSkeleton() {
+  const { c } = useTheme();
   return (
-    <View style={skeletonStyles.card}>
+    <View style={[skeletonStyles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
       {/* Badge row */}
       <View style={skeletonStyles.row}>
         <Skeleton width={72} height={22} radius={borderRadius.pill} />
@@ -66,7 +67,7 @@ export function FeedCardSkeleton() {
         <Skeleton width="60%" height={14} radius={4} />
       </View>
       {/* Footer */}
-      <View style={[skeletonStyles.row, skeletonStyles.footer]}>
+      <View style={[skeletonStyles.row, skeletonStyles.footer, { borderTopColor: c.border }]}>
         <Skeleton width={80} height={14} radius={4} />
         <Skeleton width={50} height={14} radius={4} />
       </View>
@@ -116,12 +117,10 @@ export function FeedListSkeleton({ count = 4 }: { count?: number }) {
 
 const skeletonStyles = StyleSheet.create({
   card: {
-    backgroundColor: colors.neutral[0],
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   row: {
     flexDirection: 'row',
@@ -132,7 +131,6 @@ const skeletonStyles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
     marginTop: spacing.xs,
   },
   topRouteCard: {

@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { View, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import { colors, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { Icon } from '@/components/icons';
+import { Text } from '@/components/ui/Text';
 import { buildRouteMapUrl } from '@/lib/mapbox';
 import { formatBZD, formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
@@ -17,11 +19,13 @@ interface TopRoutesSectionProps {
 }
 
 export function TopRoutesSection({ routes, onPressRoute }: TopRoutesSectionProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   if (routes.length === 0) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Top routes nearby</Text>
+      <Text variant="h3" style={styles.heading}>Top routes nearby</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -52,6 +56,8 @@ function RouteCardCompact({
   route: PostWithAuthor;
   onPress: () => void;
 }) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const origin = shortPlace(route.origin_address);
   const dest = shortPlace(route.dest_address);
   const fullOrigin = route.origin_address ?? 'Origin';
@@ -97,36 +103,38 @@ function RouteCardCompact({
 
       {/* Type badge overlaid on map */}
       <View style={styles.typeBadge}>
-        <Text style={styles.typeBadgeText}>
+        <Text variant="caption" weight="semibold" tone="inverse">
           {isOffer ? 'Ride offered' : 'Ride wanted'}
         </Text>
       </View>
 
       {/* Info area below — white, like AllTrails */}
       <View style={styles.infoArea}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text variant="body" weight="bold" numberOfLines={1} style={styles.title}>
           {origin} to {dest}
         </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text variant="bodySm" tone="muted" numberOfLines={1} style={styles.subtitle}>
           {fullOrigin}
         </Text>
 
         <View style={styles.statsRow}>
           {route.price_cents != null && (
             <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>{formatBZD(route.price_cents)}</Text>
+              <Text variant="caption" weight="semibold" tone="inverse">
+                {formatBZD(route.price_cents)}
+              </Text>
             </View>
           )}
 
           {rating > 0 && (
             <View style={styles.ratingRow}>
               <Icon name="star" size={13} color={colors.accent.green} />
-              <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+              <Text variant="bodySm" weight="bold">{rating.toFixed(1)}</Text>
             </View>
           )}
 
           {departure && (
-            <Text style={styles.departureText} numberOfLines={1}>
+            <Text variant="bodySm" tone="muted" numberOfLines={1} style={styles.flexShrink}>
               {departure}
             </Text>
           )}
@@ -136,108 +144,73 @@ function RouteCardCompact({
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.md,
-  },
-  heading: {
-    ...typography.h3,
-    color: colors.forest[900],
-    marginBottom: spacing.sm,
-  },
-  scroll: {
-    gap: spacing.md,
-  },
-
-  // Card container — matte frosted card
-  card: {
-    width: CARD_WIDTH,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.12)',
-    ...shadows.sm,
-  },
-  cardPressed: {
-    opacity: 0.92,
-  },
-
-  // Map image area
-  mapImage: {
-    width: CARD_WIDTH,
-    height: IMAGE_HEIGHT,
-  },
-  mapFallback: {
-    backgroundColor: colors.forest[700],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Type badge overlaid on map top-left
-  typeBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.sm,
-  },
-  typeBadgeText: {
-    ...typography.caption,
-    color: colors.neutral[0],
-    fontSize: 11,
-    fontWeight: '600',
-  },
-
-  // Bottom info area — same matte surface as the rest of the app cards
-  infoArea: {
-    padding: spacing.md,
-  },
-  title: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  subtitle: {
-    ...typography.body2,
-    color: colors.forest[500],
-    fontSize: 13,
-    marginBottom: spacing.sm,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  priceBadge: {
-    backgroundColor: colors.accent.green,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  priceBadgeText: {
-    ...typography.caption,
-    color: colors.neutral[0],
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  ratingText: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
-    fontSize: 13,
-  },
-  departureText: {
-    ...typography.body2,
-    color: colors.forest[400],
-    fontSize: 12,
-    flexShrink: 1,
-  },
-});
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+    section: {
+      marginBottom: spacing.md,
+    },
+    heading: {
+      marginBottom: spacing.sm,
+    },
+    scroll: {
+      gap: spacing.md,
+    },
+    card: {
+      width: CARD_WIDTH,
+      borderRadius: 8,
+      backgroundColor: c.surface,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: c.border,
+      ...shadows.sm,
+    },
+    cardPressed: {
+      opacity: 0.92,
+    },
+    mapImage: {
+      width: CARD_WIDTH,
+      height: IMAGE_HEIGHT,
+    },
+    mapFallback: {
+      backgroundColor: colors.forest[700],
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    typeBadge: {
+      position: 'absolute',
+      top: spacing.sm,
+      left: spacing.sm,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: borderRadius.sm,
+    },
+    infoArea: {
+      padding: spacing.md,
+    },
+    title: {
+      marginBottom: 2,
+    },
+    subtitle: {
+      marginBottom: spacing.sm,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    priceBadge: {
+      backgroundColor: colors.accent.green,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: borderRadius.sm,
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+    },
+    flexShrink: {
+      flexShrink: 1,
+    },
+  });

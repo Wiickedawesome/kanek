@@ -16,7 +16,8 @@ import * as Location from 'expo-location';
 import { Icon } from '@/components/icons';
 import { Button, ScreenHeader } from '@/components/ui';
 import { formatDateTime, safeGoBack } from '@/lib/helpers';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useGetCheckinQuery,
   useSubmitCheckinMutation,
@@ -25,6 +26,8 @@ import { useSendMessageMutation } from '@/store/api/messagesApi';
 import type { RootState } from '@/store';
 
 export default function SelfieCheckinModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { contractId } = useLocalSearchParams<{ contractId: string }>();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
 
@@ -113,8 +116,13 @@ export default function SelfieCheckinModal() {
     return (
       <SafeAreaView style={styles.container}>
         <ScreenHeader style={styles.header}>
-          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          <Pressable
+            onPress={() => safeGoBack('/(tabs)/activity/')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="chevron-left" size={24} color={c.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Check-In</Text>
           <View style={{ width: 24 }} />
@@ -142,8 +150,13 @@ export default function SelfieCheckinModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/activity/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Selfie Check-In</Text>
         <View style={{ width: 24 }} />
@@ -168,7 +181,7 @@ export default function SelfieCheckinModal() {
           </View>
         ) : (
           <Pressable style={styles.cameraPlaceholder} onPress={takeSelfie}>
-            <Icon name="user" size={48} color={colors.neutral[300]} />
+            <Icon name="user" size={48} color={c.textMuted} />
             <Text style={styles.placeholderText}>Tap to take selfie</Text>
           </Pressable>
         )}
@@ -185,10 +198,11 @@ export default function SelfieCheckinModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -198,8 +212,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   flex: {
     flex: 1,
@@ -211,8 +225,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   instruction: {
-    ...typography.body1,
-    color: colors.forest[500],
+    ...type.body.regular,
+    color: c.textMuted,
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
@@ -220,17 +234,17 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderWidth: 2,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
   },
   placeholderText: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: spacing.sm,
   },
   previewContainer: {
@@ -248,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   retakeText: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.accent.blue,
   },
   submitBtn: {
@@ -263,8 +277,8 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   doneTitle: {
-    ...typography.h2,
-    color: colors.forest[900],
+    ...type.h2.bold,
+    color: c.text,
   },
   doneImage: {
     width: 160,
@@ -272,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
   },
   doneCaption: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
 });

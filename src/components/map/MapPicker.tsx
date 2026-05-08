@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { MapPickerContent } from './MapPickerContent';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { reverseGeocode, BELIZE_CENTER } from '@/lib/mapbox';
 import { searchPlaces as searchGeocode, type GeocodeSuggestion } from '@/lib/geocode';
 import { isInBelize } from '@/lib/helpers';
@@ -23,6 +24,8 @@ interface MapPickerProps {
 }
 
 export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 'Drop Pin' }: MapPickerProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const insets = useSafeAreaInsets();
   const userLat = useSelector((s: RootState) => s.location.latitude);
   const userLng = useSelector((s: RootState) => s.location.longitude);
@@ -122,7 +125,7 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}>
-            <Icon name="x" size={24} color={colors.forest[900]} />
+            <Icon name="x" size={24} color={c.text} />
           </Pressable>
           <Text style={styles.title}>{title}</Text>
           <View style={styles.closeBtn} />
@@ -131,23 +134,23 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
         {/* Search bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchRow}>
-            <Icon name="search" size={18} color={colors.neutral[400]} />
+            <Icon name="search" size={18} color={c.textMuted} />
             <RNTextInput
               value={query}
               onChangeText={handleQueryChange}
               placeholder="Search places, landmarks, stores..."
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={c.textMuted}
               style={styles.searchInput}
               autoCapitalize="words"
               returnKeyType="search"
             />
-            {searching && <ActivityIndicator size="small" color={colors.forest[400]} />}
+            {searching && <ActivityIndicator size="small" color={c.textMuted} />}
             {query.length > 0 && !searching && (
               <Pressable
                 onPress={() => { setQuery(''); setResults([]); setShowResults(false); }}
                 hitSlop={8}
               >
-                <Icon name="x" size={16} color={colors.neutral[400]} />
+                <Icon name="x" size={16} color={c.textMuted} />
               </Pressable>
             )}
           </View>
@@ -162,7 +165,7 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
                   onPress={() => handleSelectResult(item)}
                   activeOpacity={0.7}
                 >
-                  <Icon name="map-pin" size={16} color={colors.forest[400]} />
+                  <Icon name="map-pin" size={16} color={c.textMuted} />
                   <Text style={styles.resultText} numberOfLines={2}>
                     {item.place_name}
                   </Text>
@@ -178,7 +181,7 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
 
           {/* Fixed center pin */}
           <View style={styles.pinOverlay} pointerEvents="none">
-            <Icon name="map-pin" size={40} color={colors.forest[900]} />
+            <Icon name="map-pin" size={40} color={c.text} />
           </View>
 
           {/* Crosshair hint */}
@@ -206,10 +209,11 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
   },
   header: {
     flexDirection: 'row',
@@ -218,7 +222,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: c.border,
   },
   closeBtn: {
     width: 40,
@@ -227,8 +231,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    ...typography.h3,
-    color: colors.forest[900],
+    ...type.h3.bold,
+    color: c.text,
     textAlign: 'center',
     flex: 1,
   },
@@ -236,22 +240,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: c.border,
     zIndex: 100,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'web' ? spacing.sm : spacing.xs,
   },
   searchInput: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     flex: 1,
-    color: colors.forest[900],
+    color: c.text,
     paddingVertical: spacing.xs,
     ...Platform.select({
       web: { outlineStyle: 'none' } as Record<string, string>,
@@ -261,10 +265,10 @@ const styles = StyleSheet.create({
   },
   resultsDropdown: {
     maxHeight: 240,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     marginTop: spacing.xs,
     ...shadows.md,
   },
@@ -275,12 +279,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: c.border,
   },
   resultText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     flex: 1,
-    color: colors.forest[900],
+    color: c.text,
   },
   mapContainer: {
     flex: 1,
@@ -301,9 +305,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   hintText: {
-    ...typography.caption,
-    color: colors.forest[900],
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    ...type.caption.regular,
+    color: c.text,
+    backgroundColor: c.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.pill,
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
   },
   confirmBtn: {
     backgroundColor: colors.forest[900],
@@ -326,7 +330,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   confirmText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: c.textInverse,
   },
 });

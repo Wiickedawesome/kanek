@@ -2,7 +2,8 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, ActivityIndicator, Platform, TextInput as RNTextInput } from 'react-native';
 import { Icon } from '@/components/icons';
 import { MapPicker } from '@/components/map/MapPicker';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
 
 type Suggestion = GeocodeSuggestion;
@@ -34,6 +35,8 @@ export function LocationInput({
   placeholder = 'Enter address',
   required,
 }: LocationInputProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -123,20 +126,20 @@ export function LocationInput({
           {required && <Text style={styles.required}>*</Text>}
         </View>
         <View style={[styles.inputRow, error ? styles.errorBorder : undefined]}>
-          <Icon name="map-pin" size={18} color={colors.forest[400]} />
+          <Icon name="map-pin" size={18} color={c.textMuted} />
           <RNTextInput
             value={value}
             onChangeText={handleChangeText}
             onBlur={handleBlur}
             onFocus={handleFocus}
             placeholder={placeholder}
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             style={styles.input}
             autoCapitalize="words"
           />
-          {loading && <ActivityIndicator size="small" color={colors.forest[400]} />}
+          {loading && <ActivityIndicator size="small" color={c.textMuted} />}
           <Pressable onPress={() => setShowMapPicker(true)} hitSlop={8} style={styles.mapBtn}>
-            <Icon name="map-pin" size={18} color={colors.forest[900]} />
+            <Icon name="map-pin" size={18} color={c.text} />
           </Pressable>
         </View>
         {error && <Text style={styles.error}>{error}</Text>}
@@ -151,7 +154,7 @@ export function LocationInput({
               onPress={() => handleSelect(item)}
               activeOpacity={0.7}
             >
-              <Icon name="map-pin" size={14} color={colors.neutral[400]} />
+              <Icon name="map-pin" size={14} color={c.textMuted} />
               <Text style={styles.suggestionText} numberOfLines={2}>
                 {item.place_name}
               </Text>
@@ -171,7 +174,8 @@ export function LocationInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   wrapper: {
     position: 'relative',
     zIndex: 1,
@@ -190,21 +194,21 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   label: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
   },
   required: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.error,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
@@ -214,12 +218,12 @@ const styles = StyleSheet.create({
   mapBtn: {
     padding: spacing.xs,
     borderRadius: borderRadius.sm,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   input: {
-    ...typography.body1,
+    ...type.body.regular,
     flex: 1,
-    color: colors.forest[900],
+    color: c.text,
     ...Platform.select({
       web: { outlineStyle: 'none' } as Record<string, string>,
       ios: {} as Record<string, string>,
@@ -231,10 +235,10 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     marginTop: 4,
     ...shadows.md,
     zIndex: 1001,
@@ -247,15 +251,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: c.border,
   },
   suggestionText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     flex: 1,
-    color: colors.forest[900],
+    color: c.text,
   },
   error: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
   },
 });

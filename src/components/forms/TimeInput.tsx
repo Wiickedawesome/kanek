@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput as RNTextInput } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface TimeInputProps {
   label: string;
@@ -14,6 +15,8 @@ interface TimeInputProps {
  * Stores value as 24-hour "HH:MM" string for backend compatibility.
  */
 export function TimeInput({ label, value, onChangeText, error }: TimeInputProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   // Parse current value into display parts
   const parsed = parse24(value);
   const [hour, setHour] = useState(parsed.hour);
@@ -70,7 +73,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
           <RNTextInput
             style={styles.timeField}
             placeholder="hh"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             value={hour}
             onChangeText={handleHourChange}
             keyboardType="number-pad"
@@ -81,7 +84,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
           <RNTextInput
             style={styles.timeField}
             placeholder="mm"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             value={minute}
             onChangeText={handleMinuteChange}
             keyboardType="number-pad"
@@ -124,14 +127,15 @@ function parse24(value: string): { hour: string; minute: string; period: 'AM' | 
   return { hour: String(h), minute: mStr, period };
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     gap: spacing.xs,
   },
   label: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
   },
   row: {
     flexDirection: 'row',
@@ -145,9 +149,9 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -157,19 +161,19 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   timeField: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     textAlign: 'center',
     width: 32,
   },
   colon: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     fontWeight: '600',
   },
   toggleTrack: {
     flexDirection: 'row',
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
     borderRadius: borderRadius.pill,
     padding: 3,
   },
@@ -190,15 +194,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.forest[900],
   },
   toggleText: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '700',
-    color: colors.neutral[500],
+    color: c.textMuted,
   },
   toggleTextActive: {
-    color: colors.neutral[0],
+    color: c.textInverse,
   },
   error: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
   },
 });

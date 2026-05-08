@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, typography, borderRadius, spacing, shadows } from '@/theme';
+import { colors, type, borderRadius, spacing, shadows, useTheme } from '@/theme';
 import { hapticLight } from '@/lib/haptics';
 
 const SPRING_CONFIG = { damping: 15, stiffness: 350 };
@@ -41,6 +41,7 @@ export function Button({
   icon,
   style,
 }: ButtonProps) {
+  const { c, isDark } = useTheme();
   const isDisabled = disabled || loading;
   const scale = useSharedValue(1);
 
@@ -53,6 +54,39 @@ export function Button({
       hapticLight();
       onPress();
     }
+  };
+
+  // Theme-aware variant colours
+  const primaryBg = isDark ? colors.accent.neonGreen : colors.forest[600];
+  const primaryFg = isDark ? colors.forest[900] : colors.neutral[0];
+  const accentFg = isDark ? colors.accent.neonGreen : colors.forest[600];
+
+  const variantBg: Record<ButtonVariant, ViewStyle> = {
+    primary: {
+      backgroundColor: primaryBg,
+      shadowColor: colors.forest[900],
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.4 : 0.25,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    secondary: {
+      backgroundColor: c.surfaceElevated,
+      ...shadows.sm,
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: accentFg,
+    },
+    ghost: { backgroundColor: 'transparent' },
+  };
+
+  const variantFg: Record<ButtonVariant, TextStyle> = {
+    primary: { color: primaryFg },
+    secondary: { color: c.text },
+    outline: { color: accentFg },
+    ghost: { color: accentFg },
   };
 
   return (
@@ -70,7 +104,7 @@ export function Button({
         style={[
           styles.base,
           sizeStyles[size],
-          variantStyles[variant],
+          variantBg[variant],
           isDisabled && styles.disabled,
           style,
           animatedStyle,
@@ -79,7 +113,7 @@ export function Button({
         {loading ? (
           <ActivityIndicator
             size="small"
-            color={variant === 'primary' ? colors.neutral[0] : colors.forest[600]}
+            color={variant === 'primary' ? primaryFg : accentFg}
           />
         ) : (
           <>
@@ -88,7 +122,7 @@ export function Button({
               style={[
                 styles.text,
                 sizeTextStyles[size],
-                variantTextStyles[variant],
+                variantFg[variant],
                 isDisabled && styles.disabledText,
               ]}
             >
@@ -110,7 +144,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   text: {
-    ...typography.body1Bold,
+    ...type.body.bold,
   },
   disabled: {
     opacity: 0.5,
@@ -127,35 +161,7 @@ const sizeStyles: Record<ButtonSize, ViewStyle> = {
 };
 
 const sizeTextStyles: Record<ButtonSize, TextStyle> = {
-  sm: { ...typography.body2Bold },
-  md: { ...typography.body1Bold },
-  lg: { ...typography.body1Bold },
-};
-
-const variantStyles: Record<ButtonVariant, ViewStyle> = {
-  primary: {
-    backgroundColor: colors.forest[600],
-    shadowColor: colors.forest[900],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  secondary: {
-    backgroundColor: colors.neutral[100],
-    ...shadows.sm,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.forest[600],
-  },
-  ghost: { backgroundColor: 'transparent' },
-};
-
-const variantTextStyles: Record<ButtonVariant, TextStyle> = {
-  primary: { color: colors.neutral[0] },
-  secondary: { color: colors.forest[900] },
-  outline: { color: colors.forest[600] },
-  ghost: { color: colors.forest[600] },
+  sm: { ...type.bodySm.bold },
+  md: { ...type.body.bold },
+  lg: { ...type.body.bold },
 };

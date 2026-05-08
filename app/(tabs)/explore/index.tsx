@@ -13,8 +13,9 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
-import { FilterChip, EmptyState, ScreenHeader, FeedListSkeleton } from '@/components/ui';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
+import { FilterChip, EmptyState, ScreenHeader, FeedListSkeleton, MapFab, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery } from '@/store/api/postsApi';
@@ -44,9 +45,13 @@ function getGreeting(): string {
 }
 
 export default function ExploreScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad({ withMapFab: true });
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<FeedFilter>(null);
   const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
+  const [showDistance, setShowDistance] = useState(false);
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const userLatRaw = useSelector((state: RootState) => state.location.latitude);
@@ -158,13 +163,13 @@ export default function ExploreScreen() {
 
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
-            <Icon name="search" size={20} color={colors.neutral[0]} />
+            <Icon name="search" size={20} color={c.textMuted} />
             <TextInput
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
               placeholder="Search rides, errands..."
-              placeholderTextColor={'rgba(255,255,255,0.68)'}
+              placeholderTextColor={colors.forest[400]}
               returnKeyType="search"
             />
           </View>
@@ -174,7 +179,7 @@ export default function ExploreScreen() {
             onPress={() => router.push('/(tabs)/explore/map')}
             hitSlop={8}
           >
-            <Icon name="map-pin" size={20} color={colors.neutral[0]} />
+            <Icon name="map-pin" size={20} color={c.text} />
           </Pressable>
         </View>
       </ScreenHeader>
@@ -185,6 +190,21 @@ export default function ExploreScreen() {
         style={styles.filterScroll}
         contentContainerStyle={styles.filters}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Toggle distance filters"
+          onPress={() => setShowDistance((v) => !v)}
+          style={({ pressed }) => [
+            styles.allChip,
+            { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+            showDistance && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
+            pressed && { opacity: 0.85 },
+          ]}
+        >
+          <Icon name="filter" size={14} color={showDistance ? c.chipSelectedText : c.chipText} />
+          <Text style={[styles.allChipLabel, { color: showDistance ? c.chipSelectedText : c.chipText }]}>All</Text>
+        </Pressable>
+
         {FILTER_OPTIONS.map((opt) => (
           <FilterChip
             key={opt.label}
@@ -195,8 +215,8 @@ export default function ExploreScreen() {
         ))}
       </ScrollView>
 
-      {/* Distance radius chips (only when GPS available) */}
-      {hasGPS && (
+      {/* Distance radius chips (only when GPS available and toggled on) */}
+      {hasGPS && showDistance && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -219,12 +239,23 @@ export default function ExploreScreen() {
         </ScrollView>
       )}
 
+      {/* Count + sort row */}
+      <View style={styles.countRow}>
+        <Text style={[styles.countText, { color: c.text }]}>
+          {feedItems.length} {feedItems.length === 1 ? 'post' : 'posts'}
+        </Text>
+        <Pressable hitSlop={8} style={styles.sortPill}>
+          <Text style={[styles.sortText, { color: c.textMuted }]}>Kanek sort</Text>
+          <Icon name="chevron-down" size={14} color={c.textMuted} />
+        </Pressable>
+      </View>
+
       <FlatList
         data={feedItems}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         style={styles.list}
-        contentContainerStyle={styles.feed}
+        contentContainerStyle={[styles.feed, { paddingBottom: tabBarPad + spacing.xl }]}
         initialNumToRender={8}
         maxToRenderPerBatch={6}
         windowSize={5}
@@ -235,9 +266,6 @@ export default function ExploreScreen() {
             {topRoutes.length > 0 && (
               <TopRoutesSection routes={topRoutes} onPressRoute={openPost} />
             )}
-            <Text style={styles.sectionHeading}>
-              {typeFilter === null ? 'Community board' : FILTER_OPTIONS.find(o => o.value === typeFilter)?.label ?? 'Posts'}
-            </Text>
           </View>
         }
         refreshControl={
@@ -258,23 +286,17 @@ export default function ExploreScreen() {
         }
       />
 
-      {/* Report FABs */}
-      <View style={styles.fabContainer}>
-        <Pressable
-          style={styles.fab}
-          onPress={() => router.push('/modals/report-gas')}
-        >
-          <Icon name="fuel" size={20} color={colors.neutral[0]} />
-        </Pressable>
-      </View>
+      {/* Floating Map pill (above tab bar) */}
+      <MapFab onPress={() => router.push('/(tabs)/explore/map')} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -282,8 +304,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   greeting: {
-    ...typography.h2,
-    color: colors.neutral[0],
+    ...type.h2.bold,
+    color: c.text,
     marginBottom: spacing.md,
   },
   searchRow: {
@@ -295,32 +317,32 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 40, 0, 0.42)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.pill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.32)',
+    borderColor: c.border,
   },
   searchInput: {
     flex: 1,
-    ...typography.body2,
-    color: colors.neutral[0],
+    ...type.bodySm.regular,
+    color: c.text,
     padding: 0,
   },
   iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(20, 40, 0, 0.58)',
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.32)',
+    borderColor: c.border,
   },
   iconButtonPressed: {
-    backgroundColor: 'rgba(20, 40, 0, 0.72)',
+    backgroundColor: c.bg,
   },
   filters: {
     paddingHorizontal: spacing.lg,
@@ -331,34 +353,63 @@ const styles = StyleSheet.create({
   filterScroll: {
     flexGrow: 0,
   },
+  allChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+  },
+  allChipLabel: {
+    ...type.bodySm.regular,
+    fontFamily: 'Manrope-Bold',
+    fontSize: 13,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  countText: {
+    ...type.body.bold,
+    fontSize: 15,
+  },
+  sortPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  sortText: {
+    ...type.bodySm.regular,
+    fontSize: 13,
+  },
   list: {
     flex: 1,
   },
   feed: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  sectionHeading: {
-    ...typography.h3,
-    color: colors.forest[900],
-    marginBottom: spacing.md,
-    marginTop: spacing.lg,
   },
   separator: {
     height: spacing.md,
   },
   fabContainer: {
     position: 'absolute',
-    bottom: spacing.xl,
     right: spacing.lg,
     gap: spacing.sm,
     alignItems: 'center',
   },
   fab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',

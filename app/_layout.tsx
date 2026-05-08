@@ -12,25 +12,24 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { InAppToast } from '@/components/ui/InAppToast';
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initMapbox } from '@/lib/mapboxBootstrap';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, ThemeProvider, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 initSentry();
 initMapbox();
 
-const ROOT_STACK_OPTIONS = {
-  headerShown: false,
-  contentStyle: { backgroundColor: colors.neutral[100] },
-} as const;
-
 function RootLayoutInner() {
+  const { c, isDark } = useTheme();
   useAuthListener();
   useNotifications();
 
   const [fontsLoaded] = useFonts({
     'WorkSans-Bold': require('../assets/fonts/WorkSans-Bold.ttf'),
+    'WorkSans-SemiBold': require('../assets/fonts/WorkSans-SemiBold.ttf'),
     'WorkSans-Medium': require('../assets/fonts/WorkSans-Medium.ttf'),
     'Manrope-Regular': require('../assets/fonts/Manrope-Regular.ttf'),
+    'Manrope-Medium': require('../assets/fonts/Manrope-Medium.ttf'),
+    'Manrope-SemiBold': require('../assets/fonts/Manrope-SemiBold.ttf'),
     'Manrope-Bold': require('../assets/fonts/Manrope-Bold.ttf'),
   });
 
@@ -44,40 +43,50 @@ function RootLayoutInner() {
 
   return (
     <>
-      <StatusBar style="light" backgroundColor={colors.forest[900]} translucent={false} />
+      <StatusBar style={isDark ? 'light' : 'light'} backgroundColor={isDark ? c.bg : colors.forest[900]} translucent={false} />
       <InAppToast />
-      <Stack screenOptions={ROOT_STACK_OPTIONS} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }} />
     </>
   );
 }
 
 function ErrorFallback({ resetError }: { error: unknown; componentStack: string; eventId: string; resetError: () => void }) {
+  const { c, isDark } = useTheme();
+  const primaryBg = isDark ? colors.accent.neonGreen : colors.forest[600];
+  const primaryFg = isDark ? colors.forest[900] : '#fff';
   return (
-    <View style={errorStyles.container}>
-      <Text style={errorStyles.title}>Something went wrong</Text>
-      <Text style={errorStyles.body}>The app ran into an unexpected error. Please try again.</Text>
-      <TouchableOpacity style={errorStyles.button} onPress={resetError}>
-        <Text style={errorStyles.buttonText}>Try Again</Text>
+    <View style={[errorStyles.container, { backgroundColor: c.bg }]}>
+      <Text style={[errorStyles.title, { color: c.text }]}>Something went wrong</Text>
+      <Text style={[errorStyles.body, { color: c.textMuted }]}>The app ran into an unexpected error. Please try again.</Text>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Try again"
+        style={[errorStyles.button, { backgroundColor: primaryBg }]}
+        onPress={resetError}
+      >
+        <Text style={[errorStyles.buttonText, { color: primaryFg }]}>Try Again</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const errorStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, backgroundColor: colors.neutral[100] },
-  title: { ...typography.h2, color: colors.forest[900], marginBottom: spacing.sm },
-  body: { ...typography.body1, color: colors.forest[400], textAlign: 'center', marginBottom: spacing.lg },
-  button: { backgroundColor: colors.forest[600], paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, borderRadius: 999 },
-  buttonText: { ...typography.body1Bold, color: '#fff' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  title: { ...type.h2.bold, marginBottom: spacing.sm },
+  body: { ...type.body.regular, textAlign: 'center', marginBottom: spacing.lg },
+  button: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, borderRadius: 999 },
+  buttonText: { ...type.body.bold },
 });
 
 export default Sentry.wrap(function RootLayout() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <Sentry.ErrorBoundary fallback={ErrorFallback}>
-          <RootLayoutInner />
-        </Sentry.ErrorBoundary>
+        <ThemeProvider>
+          <Sentry.ErrorBoundary fallback={ErrorFallback}>
+            <RootLayoutInner />
+          </Sentry.ErrorBoundary>
+        </ThemeProvider>
       </SafeAreaProvider>
     </Provider>
   );

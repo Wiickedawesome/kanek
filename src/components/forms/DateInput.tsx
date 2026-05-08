@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput as RNTextInput } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface DateInputProps {
   label: string;
@@ -14,6 +15,8 @@ interface DateInputProps {
  * Stores value as ISO "YYYY-MM-DD" string for backend compatibility.
  */
 export function DateInput({ label, value, onChangeText, error }: DateInputProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const parsed = parseISO(value);
   const [day, setDay] = useState(parsed.day);
   const [month, setMonth] = useState(parsed.month);
@@ -69,7 +72,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
         <RNTextInput
           style={styles.field}
           placeholder="DD"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={day}
           onChangeText={handleDayChange}
           keyboardType="number-pad"
@@ -80,7 +83,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
         <RNTextInput
           style={styles.field}
           placeholder="MM"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={month}
           onChangeText={handleMonthChange}
           keyboardType="number-pad"
@@ -91,7 +94,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
         <RNTextInput
           style={styles.yearField}
           placeholder="YYYY"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={year}
           onChangeText={handleYearChange}
           keyboardType="number-pad"
@@ -111,21 +114,22 @@ function parseISO(value: string): { day: string; month: string; year: string } {
   return { day: d ?? '', month: m ?? '', year: y ?? '' };
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     gap: spacing.xs,
   },
   label: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -135,23 +139,23 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   field: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     textAlign: 'center',
     width: 32,
   },
   yearField: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     textAlign: 'center',
     width: 52,
   },
   separator: {
-    ...typography.body1,
-    color: colors.forest[400],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   error: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
   },
 });

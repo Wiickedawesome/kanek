@@ -13,12 +13,15 @@ import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { RatingBreakdown } from '@/components/profile';
 import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { formatMonthYear, formatShortDate, safeGoBack } from '@/lib/helpers';
 
 export default function UserProfileModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { userId } = useLocalSearchParams<{ userId: string }>();
 
   const {
@@ -45,7 +48,7 @@ export default function UserProfileModal() {
   if (!profile) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Icon name="user" size={48} color={colors.neutral[400]} />
+        <Icon name="user" size={48} color={c.textMuted} />
         <Text style={styles.errorText}>User not found</Text>
         <Pressable onPress={() => safeGoBack('/(tabs)/explore/')}>
           <Text style={styles.backLink}>Go back</Text>
@@ -62,8 +65,13 @@ export default function UserProfileModal() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/explore/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Trust Profile</Text>
         <View style={{ width: 24 }} />
@@ -165,24 +173,25 @@ export default function UserProfileModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     gap: spacing.md,
   },
   errorText: {
-    ...typography.body1,
-    color: colors.neutral[400],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   backLink: {
-    ...typography.body1Bold,
+    ...type.body.bold,
     color: colors.accent.green,
   },
   header: {
@@ -193,8 +202,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   scrollContent: {
     padding: spacing.xl,
@@ -206,8 +215,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   name: {
-    ...typography.h2,
-    color: colors.forest[900],
+    ...type.h2.bold,
+    color: c.text,
   },
   roleBadge: {
     paddingHorizontal: spacing.md,
@@ -216,29 +225,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.forest[600],
   },
   roleText: {
-    ...typography.caption,
-    color: colors.neutral[0],
+    ...type.caption.regular,
+    color: c.textInverse,
     fontWeight: '600',
   },
   memberSince: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   reviewsSection: {
     gap: spacing.md,
   },
   sectionTitle: {
-    ...typography.h3,
-    color: colors.forest[900],
+    ...type.h3.bold,
+    color: c.text,
   },
   emptyText: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     textAlign: 'center',
     paddingVertical: spacing.xl,
   },
   reviewCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -253,12 +262,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reviewerName: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
   },
   reviewDate: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   starsRow: {
     flexDirection: 'row',
@@ -271,12 +280,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   onTimeText: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '600',
   },
   reviewComment: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     lineHeight: 20,
   },
 });

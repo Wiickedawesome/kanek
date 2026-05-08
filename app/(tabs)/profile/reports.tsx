@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetGasPricesQuery } from '@/store/api/reportsApi';
 import type { RootState } from '@/store';
 import type { Database } from '@/types/database';
@@ -23,6 +24,9 @@ type GasPriceRow = Database['public']['Tables']['gas_prices']['Row'];
 type ReportItem = { type: 'gas'; data: GasPriceRow };
 
 export default function ReportsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
 
   const {
@@ -43,7 +47,7 @@ export default function ReportsScreen() {
     return (
       <Card style={styles.card}>
         <View style={styles.cardHeader}>
-          <Icon name="fuel" size={18} color={colors.forest[400]} />
+          <Icon name="fuel" size={18} color={c.textMuted} />
           <Text style={styles.reportType}>{g.station_name}</Text>
           {(g.verified_count ?? 0) > 0 && (
             <View style={styles.verifiedBadge}>
@@ -74,8 +78,13 @@ export default function ReportsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/profile/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>My Fuel Reports</Text>
         <View style={{ width: 24 }} />
@@ -101,7 +110,7 @@ export default function ReportsScreen() {
             <Text style={styles.sectionHeader}>{section.title}</Text>
           )}
           keyExtractor={(item) => item.data.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarPad }]}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
             <RefreshControl
@@ -116,8 +125,9 @@ export default function ReportsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -126,21 +136,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: { ...type.h3.bold, color: c.text, flex: 1, textAlign: 'center' },
 
   list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.md },
 
   sectionHeader: {
-    ...typography.body1Bold,
-    color: colors.forest[400],
+    ...type.body.bold,
+    color: c.textMuted,
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
 
   card: { padding: spacing.lg, gap: spacing.sm },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  reportType: { ...typography.body1Bold, color: colors.forest[900], flex: 1 },
+  reportType: { ...type.body.bold, color: c.text, flex: 1 },
 
   cardFooter: {
     flexDirection: 'row',
@@ -148,15 +158,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xs,
   },
-  footerDate: { ...typography.caption, color: colors.neutral[500] },
+  footerDate: { ...type.caption.regular, color: c.textMuted },
 
-  priceText: { ...typography.body1Bold, color: colors.forest[900] },
+  priceText: { ...type.body.bold, color: c.text },
 
   verifiedBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.pill,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
-  verifiedText: { ...typography.caption, color: colors.accent.green, fontWeight: '600' },
+  verifiedText: { ...type.caption.regular, color: colors.accent.green, fontWeight: '600' },
 });

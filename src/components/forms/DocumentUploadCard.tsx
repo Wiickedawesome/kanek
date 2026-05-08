@@ -11,7 +11,8 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Icon, type IconName } from '@/components/icons';
 import { Button, Card } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { showAlert } from '@/lib/alert';
@@ -87,6 +88,8 @@ function numberFieldLabel(type: DriverDocumentType): string {
 }
 
 export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert }: Props) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const status: ReviewStatus | 'not_uploaded' = existingDoc?.review_status ?? 'not_uploaded';
   const [expanded, setExpanded] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -220,7 +223,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
         <Icon
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={20}
-          color={colors.forest[400]}
+          color={c.textMuted}
         />
       </Pressable>
 
@@ -238,11 +241,11 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
           ) : (
             <View style={styles.captureRow}>
               <Pressable style={styles.captureBtn} onPress={() => pickImage(true)}>
-                <Icon name="circle-dot" size={24} color={colors.forest[600]} />
+                <Icon name="circle-dot" size={24} color={c.textMuted} />
                 <Text style={styles.captureBtnText}>Take Photo</Text>
               </Pressable>
               <Pressable style={styles.captureBtn} onPress={() => pickImage(false)}>
-                <Icon name="external-link" size={24} color={colors.forest[600]} />
+                <Icon name="external-link" size={24} color={c.textMuted} />
                 <Text style={styles.captureBtnText}>Gallery</Text>
               </Pressable>
             </View>
@@ -256,7 +259,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
               value={docNumber}
               onChangeText={setDocNumber}
               placeholder="Optional"
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={c.textMuted}
               autoCapitalize="characters"
               maxLength={30}
             />
@@ -271,7 +274,7 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
                 value={expirationDate}
                 onChangeText={setExpirationDate}
               placeholder="DD/MM/YYYY"
-                placeholderTextColor={colors.neutral[400]}
+                placeholderTextColor={c.textMuted}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'}
                 maxLength={10}
               />
@@ -290,7 +293,8 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   card: { padding: spacing.lg, gap: 0 },
   headerRow: {
     flexDirection: 'row',
@@ -298,11 +302,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   headerText: { flex: 1 },
-  docName: { ...typography.body1Bold, color: colors.forest[900] },
-  statusText: { ...typography.caption, marginTop: 2 },
-  expText: { ...typography.caption, color: colors.forest[400], marginTop: 2 },
+  docName: { ...type.body.bold, color: c.text },
+  statusText: { ...type.caption.regular, marginTop: 2 },
+  expText: { ...type.caption.regular, color: c.textMuted, marginTop: 2 },
   expExpired: { color: colors.error },
-  rejectionText: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
+  rejectionText: { ...type.caption.regular, color: colors.error, marginTop: spacing.xs },
 
   formArea: { marginTop: spacing.lg, gap: spacing.md },
 
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   removeBtn: {
     position: 'absolute',
@@ -334,24 +338,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     borderStyle: 'dashed',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
-  captureBtnText: { ...typography.caption, color: colors.forest[600] },
+  captureBtnText: { ...type.caption.regular, color: c.textMuted },
 
   field: { gap: spacing.xs },
-  fieldLabel: { ...typography.body2Bold, color: colors.forest[400] },
+  fieldLabel: { ...type.bodySm.bold, color: c.textMuted },
   input: {
-    ...typography.body1,
-    color: colors.forest[900],
-    backgroundColor: colors.neutral[0],
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
 
-  hint: { ...typography.caption, color: colors.forest[400], fontStyle: 'italic' },
+  hint: { ...type.caption.regular, color: c.textMuted, fontStyle: 'italic' },
 });

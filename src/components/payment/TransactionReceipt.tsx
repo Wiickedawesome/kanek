@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius } from '@/theme';
 import { formatBZD, formatDate } from '@/lib/helpers';
 import type { Database } from '@/types/database';
 
@@ -88,20 +88,20 @@ const STATUS_COLORS: Record<string, string> = {
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerTitle: { ...typography.body1Bold, color: colors.forest[900] },
+  headerTitle: { ...type.body.bold, color: colors.forest[900] },
   divider: { height: 1, backgroundColor: colors.neutral[200] },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  label: { ...typography.body2, color: colors.forest[400] },
-  value: { ...typography.body2, color: colors.forest[900], maxWidth: '50%' },
-  amount: { ...typography.h3, color: colors.forest[900] },
+  label: { ...type.bodySm.regular, color: colors.forest[400] },
+  value: { ...type.bodySm.regular, color: colors.forest[900], maxWidth: '50%' },
+  amount: { ...type.h3.bold, color: colors.forest[900] },
   statusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.pill,
   },
-  statusText: { ...typography.caption, fontWeight: '600' },
+  statusText: { ...type.caption.regular, fontWeight: '600' },
 });

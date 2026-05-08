@@ -11,12 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -82,6 +83,9 @@ function parsePickupStops(raw: string | null | undefined): StoredPickupStop[] {
 }
 
 export default function PostDetailScreen({ backFallback }: Props) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const authUser = useSelector((state: RootState) => state.auth.user);
   const userId = authUser?.id;
@@ -188,7 +192,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   if (error || !post) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Icon name="alert-triangle" size={48} color={colors.neutral[400]} />
+        <Icon name="alert-triangle" size={48} color={c.textMuted} />
         <Text style={styles.errorText}>Post not found</Text>
         <Button title="Go Back" variant="outline" onPress={() => safeGoBack(backFallback)} />
       </SafeAreaView>
@@ -362,7 +366,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
                 onPress={() => router.push(`/(tabs)/activity/messages/${b.contract![0]!.id}`)}
                 hitSlop={8}
               >
-                <Icon name="message-circle" size={20} color={colors.forest[600]} />
+                <Icon name="message-circle" size={20} color={c.textMuted} />
               </Pressable>
             )}
           </>
@@ -567,18 +571,23 @@ export default function PostDetailScreen({ backFallback }: Props) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack(backFallback)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          Post Details
+          {post.title}
         </Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
       <ScrollView
         style={styles.flex}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}
       >
         {/* Type badge + status */}
         <View style={styles.badgeRow}>
@@ -589,9 +598,6 @@ export default function PostDetailScreen({ backFallback }: Props) {
             </Text>
           </View>
         </View>
-
-        {/* Title */}
-        <Text style={styles.title}>{post.title}</Text>
 
         {/* Route map */}
         {mapUri && (
@@ -656,7 +662,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
                     : null,
                 )}
               >
-                <Icon name="external-link" size={14} color={colors.forest[400]} />
+                <Icon name="external-link" size={14} color={c.textMuted} />
                 <Text style={styles.openMapsLinkText}>Open in Maps</Text>
               </Pressable>
             )}
@@ -666,7 +672,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {!showsRouteLayout && (post.origin_address || post.dest_address) && (
           <View style={styles.section}>
             <View style={styles.infoRow}>
-              <Icon name="map-pin" size={18} color={colors.forest[400]} />
+              <Icon name="map-pin" size={18} color={c.textMuted} />
               <Text style={styles.infoText}>{post.origin_address ?? post.dest_address}</Text>
             </View>
             {!mapUri && pointLocation && (
@@ -674,7 +680,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
                 style={styles.openMapsLink}
                 onPress={() => openInMaps(pointLocation)}
               >
-                <Icon name="external-link" size={14} color={colors.forest[400]} />
+                <Icon name="external-link" size={14} color={c.textMuted} />
                 <Text style={styles.openMapsLinkText}>Open in Maps</Text>
               </Pressable>
             )}
@@ -693,7 +699,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Departure */}
         {post.departure_at && (
           <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Icon name="clock" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>{formatDeparture(post.departure_at)}</Text>
           </View>
         )}
@@ -701,7 +707,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Price */}
         {isRoute && post.price_cents != null && (
           <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={colors.forest[400]} />
+            <Icon name="receipt" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               {formatBZD(post.price_cents)}{post.type === 'route_offer' ? '/seat' : ' offered'}
             </Text>
@@ -711,7 +717,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Seats (route_offer) */}
         {showSeatsInfo && (
           <View style={styles.infoRow}>
-            <Icon name="user" size={18} color={colors.forest[400]} />
+            <Icon name="user" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               {post.seats_filled}/{post.seats_total} seats filled
               {post.min_riders != null ? ` · Min ${post.min_riders} to go` : ''}
@@ -722,7 +728,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Pickup style */}
         {post.pickup_style && (
           <View style={styles.infoRow}>
-            <Icon name="map-pin" size={18} color={colors.forest[400]} />
+            <Icon name="map-pin" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               {post.pickup_style === 'single' ? 'Single pickup point' : 'Multi-stop pickups'}
             </Text>
@@ -731,21 +737,21 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
         {post.is_round_trip && (
           <View style={styles.infoRow}>
-            <Icon name="navigation" size={18} color={colors.forest[400]} />
+            <Icon name="navigation" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>Round trip</Text>
           </View>
         )}
 
         {post.return_time && (
           <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Icon name="clock" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>Return: {formatDeparture(post.return_time)}</Text>
           </View>
         )}
 
         {repeatDaysLabel && (
           <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Icon name="clock" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>Repeats: {repeatDaysLabel}</Text>
           </View>
         )}
@@ -755,7 +761,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           <>
             {post.errand_category && (
               <View style={styles.infoRow}>
-                <Icon name="package" size={18} color={colors.forest[400]} />
+                <Icon name="package" size={18} color={c.textMuted} />
                 <Text style={styles.infoText}>
                   {post.errand_category.charAt(0).toUpperCase() + post.errand_category.slice(1)}
                 </Text>
@@ -763,7 +769,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             )}
             {post.errand_fee_cents != null && (
               <View style={styles.infoRow}>
-                <Icon name="receipt" size={18} color={colors.forest[400]} />
+                <Icon name="receipt" size={18} color={c.textMuted} />
                 <Text style={styles.infoText}>
                   Errand fee: {formatBZD(post.errand_fee_cents)}
                 </Text>
@@ -771,7 +777,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             )}
             {post.item_cost_cents != null && (
               <View style={styles.infoRow}>
-                <Icon name="receipt" size={18} color={colors.neutral[400]} />
+                <Icon name="receipt" size={18} color={c.textMuted} />
                 <Text style={styles.infoMuted}>
                   Est. item cost: ~{formatBZD(post.item_cost_cents)} (separate)
                 </Text>
@@ -783,7 +789,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
         {/* Job pay */}
         {showJobPrice && (
           <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={colors.forest[400]} />
+            <Icon name="receipt" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               Pay: {formatBZD(jobPriceCents!)}{jobPayType === 'hourly' ? '/hr' : ' fixed'}
             </Text>
@@ -791,13 +797,13 @@ export default function PostDetailScreen({ backFallback }: Props) {
         )}
         {jobCategory != null && (
           <View style={styles.infoRow}>
-            <Icon name="package" size={18} color={colors.forest[400]} />
+            <Icon name="package" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>{JOB_CATEGORY_LABELS[jobCategory] ?? jobCategory}</Text>
           </View>
         )}
         {jobTimeline != null && (
           <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Icon name="clock" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>{JOB_TIMELINE_LABELS[jobTimeline] ?? jobTimeline}</Text>
           </View>
         )}
@@ -845,7 +851,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
                     </Text>
                   </View>
                   <View style={styles.stat}>
-                    <Icon name="clock" size={14} color={colors.forest[400]} />
+                    <Icon name="clock" size={14} color={c.textMuted} />
                     <Text style={styles.statText}>
                       {post.author.punctuality_pct}% on time
                     </Text>
@@ -868,7 +874,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
               }}
               hitSlop={8}
             >
-              <Icon name="alert-triangle" size={14} color={colors.neutral[400]} />
+              <Icon name="alert-triangle" size={14} color={c.textMuted} />
               <Text style={styles.reportText}>Report</Text>
             </Pressable>
           )}
@@ -878,10 +884,10 @@ export default function PostDetailScreen({ backFallback }: Props) {
         <Text style={styles.postedAt}>
           Posted {getTimeAgo(post.created_at)}
         </Text>
-      </ScrollView>
 
-      {/* Bottom action */}
-      {bottomAction}
+        {/* Bottom action */}
+        {bottomAction}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -999,10 +1005,11 @@ function getUnavailablePostText(status: string): string {
 }
 
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -1011,12 +1018,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     gap: spacing.lg,
   },
   errorText: {
-    ...typography.body1,
-    color: colors.neutral[400],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   header: {
     flexDirection: 'row',
@@ -1026,8 +1033,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -1045,21 +1052,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.pill,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   statusOpen: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
   statusText: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   statusTextOpen: {
-    color: colors.forest[600],
+    color: c.textMuted,
   },
   title: {
-    ...typography.h2,
-    color: colors.forest[900],
+    ...type.h2.bold,
+    color: c.text,
   },
   mapContainer: {
     borderRadius: borderRadius.md,
@@ -1105,7 +1112,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.neutral[400],
     borderWidth: 1.5,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
   },
   routeAddresses: {
     flex: 1,
@@ -1114,12 +1121,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   address: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
   },
   addressStop: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   infoRow: {
     flexDirection: 'row',
@@ -1127,18 +1134,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   infoText: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
   },
   infoMuted: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   descSection: {
     gap: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
   },
   stopsList: {
     gap: spacing.sm,
@@ -1149,26 +1156,26 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   stopText: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     flex: 1,
   },
   sectionLabel: {
-    ...typography.body2Bold,
-    color: colors.neutral[500],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   description: {
-    ...typography.body1,
-    color: colors.forest[800],
+    ...type.body.regular,
+    color: c.text,
     lineHeight: 24,
   },
   responsesSection: {
     gap: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
   },
   responsesList: {
     gap: spacing.sm,
@@ -1177,7 +1184,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
   },
   authorRow: {
     flexDirection: 'row',
@@ -1189,8 +1196,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   authorName: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   authorStats: {
     flexDirection: 'row',
@@ -1202,12 +1209,12 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   statText: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   postedAt: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
   reportButton: {
@@ -1217,19 +1224,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   reportText: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.xl,
-    paddingBottom: spacing.xxl,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   actionButton: {
     width: '100%',
@@ -1239,8 +1239,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   bottomStatusText: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
   bookerSection: {
@@ -1248,8 +1248,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   bookerLabel: {
-    ...typography.body2Bold,
-    color: colors.neutral[500],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -1264,12 +1264,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bookerName: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   bookerMeta: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   bookerMetaRow: {
     flexDirection: 'row',
@@ -1282,8 +1282,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bookerRatingText: {
-    ...typography.caption,
-    color: colors.forest[600],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '600',
   },
   openMapsBtn: {
@@ -1299,8 +1299,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
   },
   openMapsText: {
-    ...typography.caption,
-    color: colors.neutral[0],
+    ...type.caption.regular,
+    color: c.textInverse,
     fontWeight: '600',
   },
   openMapsLink: {
@@ -1311,8 +1311,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   openMapsLinkText: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '600',
   },
   bookerProfilePressable: {
@@ -1336,12 +1336,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
   },
   acceptedBadgeText: {
-    ...typography.caption,
-    color: colors.forest[600],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '700',
   },
   bottomSuccessText: {
-    ...typography.h3,
+    ...type.h3.bold,
     color: colors.accent.green,
     textAlign: 'center',
   },

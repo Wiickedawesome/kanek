@@ -51,19 +51,50 @@ AllTrails Trailblazer-inspired. Forest greens reflect Belize (jungle, nature, co
 
 Two font families loaded via `expo-font` from `assets/fonts/`:
 
-- **Work Sans** — headings and emphasis
-- **Manrope** — body text
+- **Work Sans** — display / headings (Medium 500, SemiBold 600, Bold 700)
+- **Manrope** — body / UI text (Regular 400, Medium 500, SemiBold 600, Bold 700)
 
-| Role | Font | Weight | Size / Line Height |
-|------|------|--------|--------------------|
-| H1 | Work Sans | Bold (700) | 32 / 36 |
-| H2 | Work Sans | Bold (700) | 24 / 28 |
-| H3 | Work Sans | Medium (500) | 20 / 24 |
-| Body 1 | Manrope | Regular (400) | 16 / 24 |
-| Body 1 Bold | Manrope | Bold (700) | 16 / 24 |
-| Body 2 | Manrope | Regular (400) | 14 / 20 |
-| Body 2 Bold | Manrope | Bold (700) | 14 / 20 |
-| Caption | Manrope | Regular (400) | 12 / 16 |
+### Scale (9 variants)
+
+| Variant | Family | Size / Line Height | Letter spacing | Weights available |
+|---|---|---|---|---|
+| `display` | Work Sans | 44 / 48 | -1.0 | bold |
+| `h1` | Work Sans | 32 / 38 | -0.6 | bold |
+| `h2` | Work Sans | 26 / 32 | -0.4 | bold |
+| `h3` | Work Sans | 22 / 28 | -0.2 | medium / semibold / bold |
+| `subtitle` | Manrope | 18 / 26 | 0 | regular / medium / semibold / bold |
+| `body` | Manrope | 16 / 24 | 0 | regular / medium / semibold / bold |
+| `bodySm` | Manrope | 14 / 20 | 0.1 | regular / medium / semibold / bold |
+| `caption` | Manrope | 12 / 16 | 0.2 | regular / medium / semibold |
+| `overline` | Manrope | 11 / 14 | 0.6 (uppercase) | medium |
+
+### Tones
+
+`text` (default), `muted`, `subtle`, `inverse`, `onAccent`, `danger`, `accent`. Tones resolve light/dark automatically through `SemanticColors`.
+
+### Usage
+
+Always use the `<Text>` wrapper from `@/components/ui/Text`. Never import `Text` from `react-native` in feature code.
+
+```tsx
+import { Text } from '@/components/ui/Text';
+
+<Text variant="h2">Page title</Text>
+<Text variant="body" tone="muted">Subtitle copy</Text>
+<Text variant="bodySm" weight="semibold" tone="danger">Warning</Text>
+```
+
+For raw `TextStyle` (e.g. inside a `StyleSheet`), use `t(variant, weight?, tone?)` from `useTheme()` or `resolveTextStyle(variant, weight)` from `@/theme`.
+
+### Escape hatch
+
+If a one-off component genuinely needs a non-token font/size (e.g. a brand mark, animated number, third-party widget), import `react-native`'s `Text` and add a comment on the same line:
+
+```tsx
+import { Text as RNText } from 'react-native'; // kanek-allow-typography
+```
+
+The lint rule (see below) ignores any line containing `kanek-allow-typography`.
 
 ---
 

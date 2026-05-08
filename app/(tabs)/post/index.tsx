@@ -5,8 +5,9 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import type { IconName } from '@/components/icons';
-import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import type { RootState } from '@/store';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { showAlert } from '@/lib/alert';
@@ -65,17 +66,20 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Post a Job',
     description: 'Hire someone for a task',
     icon: 'clipboard-list',
-    color: colors.forest[600],
+    color: colors.forest[500],
     bgColor: colors.neutral[100],
     route: '/(tabs)/post/job',
   },
 ];
 
 export default function PostScreen() {
+  const { c, isDark } = useTheme();
+  const styles = createStyles(c);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
   const role = profile?.role;
   const isAccountActive = profile?.account_status === 'active';
+  const tabBarPad = useFloatingTabBarPad();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -91,7 +95,7 @@ export default function PostScreen() {
           </Text>
         </View>
       )}
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.content} contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         {POST_OPTIONS.map((option) => {
           // Hide driver-only options for non-drivers
           if (option.driverOnly && role !== 'driver') return null;
@@ -114,14 +118,14 @@ export default function PostScreen() {
                 });
               }}
             >
-              <View style={[styles.iconContainer, { backgroundColor: option.bgColor }]}>
+              <View style={[styles.iconContainer, { backgroundColor: isDark ? c.surfaceElevated : option.bgColor }]}>
                 <Icon name={option.icon} size={28} color={option.color} />
               </View>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{option.label}</Text>
                 <Text style={styles.cardDesc}>{option.description}</Text>
               </View>
-              <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
+              <Icon name="chevron-right" size={18} color={c.textMuted} />
             </Pressable>
           );
         })}
@@ -130,10 +134,11 @@ export default function PostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -141,12 +146,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   title: {
-    ...typography.h2,
-    color: colors.neutral[0],
+    ...type.h2.bold,
+    color: c.text,
   },
   subtitle: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: spacing.xs,
   },
   content: {
@@ -155,18 +160,18 @@ const styles = StyleSheet.create({
   pendingBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fff8e1',
+    backgroundColor: 'rgba(255, 193, 7, 0.18)',
     marginHorizontal: spacing.xl,
     marginBottom: spacing.sm,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#ffe082',
+    borderColor: 'rgba(255, 193, 7, 0.40)',
   },
   pendingBannerText: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
     flex: 1,
   },
   scrollContent: {
@@ -177,21 +182,21 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: c.surface,
     borderRadius: 8,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.12)',
+    borderColor: c.border,
     ...shadows.sm,
   },
   cardPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: c.surface,
   },
   iconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -200,12 +205,12 @@ const styles = StyleSheet.create({
     marginLeft: spacing.lg,
   },
   cardTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   cardDesc: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: 2,
   },
 });

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { colors, typography, borderRadius, spacing } from '@/theme';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { colors, borderRadius, spacing, useTheme } from '@/theme';
 import { Icon, type IconName } from '@/components/icons';
+import { Text } from '@/components/ui/Text';
 import type { PostType } from '@/types/database';
 
 interface BadgeProps {
@@ -15,59 +16,98 @@ interface BadgeProps {
 export function Badge({
   label,
   icon,
-  color = colors.forest[900],
-  backgroundColor = colors.neutral[200],
+  color,
+  backgroundColor,
   style,
 }: BadgeProps) {
+  const { c } = useTheme();
+  const fg = color ?? c.text;
+  const bg = backgroundColor ?? c.surfaceElevated;
   return (
-    <View style={[styles.badge, { backgroundColor }, style]}>
-      {icon && <Icon name={icon} size={14} color={color} />}
-      <Text style={[styles.label, { color }]}>{label}</Text>
+    <View style={[styles.badge, { backgroundColor: bg }, style]}>
+      {icon && <Icon name={icon} size={14} color={fg} />}
+      <Text variant="caption" weight="semibold" style={{ color: fg }}>{label}</Text>
     </View>
   );
 }
 
-const postTypeBadgeConfig: Record<PostType, { label: string; icon: IconName; color: string; bg: string }> = {
+type PostTypePalette = { label: string; icon: IconName; lightFg: string; lightBg: string; darkFg: string; darkBg: string };
+
+const postTypeBadgeConfig: Record<PostType, PostTypePalette> = {
   route_offer: {
     label: 'Driver Offering',
     icon: 'circle-dot',
-    color: colors.forest[600],
-    bg: '#e8f5e9',
+    lightFg: colors.forest[600],
+    lightBg: '#e8f5e9',
+    darkFg: colors.accent.neonGreen,
+    darkBg: 'rgba(81, 193, 82, 0.18)',
   },
   route_request: {
     label: 'Riders Looking',
     icon: 'circle-dot',
-    color: colors.accent.blue,
-    bg: '#e3f2fd',
+    lightFg: colors.accent.blue,
+    lightBg: '#e3f2fd',
+    darkFg: '#7da0ff',
+    darkBg: 'rgba(73, 103, 246, 0.22)',
   },
   errand: {
     label: 'Errand',
     icon: 'package',
-    color: '#7b5e00',
-    bg: '#fff8e1',
+    lightFg: '#7b5e00',
+    lightBg: '#fff8e1',
+    darkFg: '#ffd76d',
+    darkBg: 'rgba(255, 193, 7, 0.18)',
   },
   package: {
     label: 'Package',
     icon: 'package',
-    color: '#4a148c',
-    bg: '#f3e5f5',
+    lightFg: '#4a148c',
+    lightBg: '#f3e5f5',
+    darkFg: '#d8a3ff',
+    darkBg: 'rgba(156, 39, 176, 0.22)',
   },
   job: {
     label: 'Job',
     icon: 'clipboard-list',
-    color: colors.forest[700],
-    bg: colors.neutral[100],
+    lightFg: colors.forest[700],
+    lightBg: colors.neutral[100],
+    darkFg: '#e0e0e0',
+    darkBg: 'rgba(255, 255, 255, 0.08)',
   },
 };
 
-export function PostTypeBadge({ type, style }: { type: PostType; style?: ViewStyle }) {
+export function PostTypeBadge({
+  type,
+  style,
+  variant = 'default',
+}: {
+  type: PostType;
+  style?: ViewStyle;
+  /**
+   * `default` — themed pastel/translucent background; used inline.
+   * `overlay` — translucent glass background; used on top of a hero image.
+   */
+  variant?: 'default' | 'overlay';
+}) {
+  const { isDark } = useTheme();
   const config = postTypeBadgeConfig[type];
+  if (variant === 'overlay') {
+    return (
+      <Badge
+        label={config.label}
+        icon={config.icon}
+        color="#ffffff"
+        backgroundColor="rgba(20,40,0,0.55)"
+        style={style}
+      />
+    );
+  }
   return (
     <Badge
       label={config.label}
       icon={config.icon}
-      color={config.color}
-      backgroundColor={config.bg}
+      color={isDark ? config.darkFg : config.lightFg}
+      backgroundColor={isDark ? config.darkBg : config.lightBg}
       style={style}
     />
   );
@@ -82,10 +122,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.pill,
-  },
-  label: {
-    ...typography.caption,
-    fontWeight: '600',
-    fontSize: 11,
   },
 });

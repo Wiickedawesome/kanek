@@ -5,7 +5,7 @@ import { KanekMap } from './KanekMap';
 import { DriverPin } from './DriverPin';
 import { RouteOverlay } from './RouteOverlay';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows } from '@/theme';
 import { BELIZE_CENTER } from '@/lib/mapbox';
 import { isInBelize } from '@/lib/helpers';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   infoText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.forest[900],
     fontWeight: '600',
     flex: 1,
   },
   speedText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.accent.green,
     fontWeight: '700',
   },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
   },
   waitingText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.neutral[400],
   },
 });

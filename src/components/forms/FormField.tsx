@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface FormFieldProps {
   label: string;
@@ -11,6 +12,8 @@ interface FormFieldProps {
 }
 
 export function FormField({ label, error, required, hint, children }: FormFieldProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
@@ -27,11 +30,12 @@ export function FormField({ label, error, required, hint, children }: FormFieldP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: { gap: spacing.xs },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  label: { ...typography.body2Bold, color: colors.forest[400] },
-  required: { ...typography.body2Bold, color: colors.error },
-  error: { ...typography.caption, color: colors.error },
-  hint: { ...typography.caption, color: colors.neutral[400] },
+  label: { ...type.bodySm.bold, color: c.text },
+  required: { ...type.bodySm.bold, color: colors.error },
+  error: { ...type.caption.regular, color: colors.error },
+  hint: { ...type.caption.regular, color: c.textMuted },
 });

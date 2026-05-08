@@ -12,9 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput } from '@/components/forms/LocationInput';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useGetMyProfileQuery,
   useGetLatestRiderDocumentQuery,
@@ -49,6 +50,9 @@ const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
 ];
 
 export default function SettingsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile, isLoading } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
   const { data: riderDocument } = useGetLatestRiderDocumentQuery(userId ?? '', { skip: !userId });
@@ -155,14 +159,19 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/profile/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Account Settings</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         <View style={styles.field}>
           <Text style={styles.label}>First Name</Text>
           <TextInput
@@ -170,7 +179,7 @@ export default function SettingsScreen() {
             value={firstName}
             onChangeText={setFirstName}
             placeholder="Enter first name"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             autoCapitalize="words"
             maxLength={50}
           />
@@ -183,7 +192,7 @@ export default function SettingsScreen() {
             value={lastName}
             onChangeText={setLastName}
             placeholder="Enter last name"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             autoCapitalize="words"
             maxLength={50}
           />
@@ -196,7 +205,7 @@ export default function SettingsScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             maxLength={254}
@@ -210,7 +219,7 @@ export default function SettingsScreen() {
             value={emergencyContact}
             onChangeText={setEmergencyContact}
             placeholder="family@example.com"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             maxLength={254}
@@ -359,7 +368,7 @@ export default function SettingsScreen() {
                     value={newPhone}
                     onChangeText={setNewPhone}
                     placeholder="600 0000"
-                    placeholderTextColor={colors.neutral[400]}
+                    placeholderTextColor={c.textMuted}
                     keyboardType="phone-pad"
                     autoFocus
                     maxLength={15}
@@ -376,7 +385,7 @@ export default function SettingsScreen() {
                   value={phoneOtp}
                   onChangeText={setPhoneOtp}
                   placeholder="000000"
-                  placeholderTextColor={colors.neutral[400]}
+                  placeholderTextColor={c.textMuted}
                   keyboardType="number-pad"
                   maxLength={6}
                   autoFocus
@@ -466,7 +475,7 @@ export default function SettingsScreen() {
               value={deleteConfirmText}
               onChangeText={setDeleteConfirmText}
               placeholder="Type DELETE"
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={c.textMuted}
               autoCapitalize="characters"
               autoFocus
             />
@@ -508,9 +517,10 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,24 +528,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: { ...type.h3.bold, color: c.text, flex: 1, textAlign: 'center' },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.lg },
 
   field: { gap: spacing.xs },
-  label: { ...typography.body2Bold, color: colors.forest[400] },
+  label: { ...type.bodySm.bold, color: c.textMuted },
   input: {
-    ...typography.body1,
-    color: colors.forest[900],
-    backgroundColor: colors.neutral[0],
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  inputDisabled: { backgroundColor: colors.neutral[100] },
-  disabledText: { ...typography.body1, color: colors.neutral[500] },
-  hint: { ...typography.caption, color: colors.neutral[400] },
+  inputDisabled: { backgroundColor: c.bg },
+  disabledText: { ...type.body.regular, color: c.textMuted },
+  hint: { ...type.caption.regular, color: c.textMuted },
 
   roleRow: { flexDirection: 'row', gap: spacing.md },
   roleBtn: {
@@ -544,13 +554,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[0],
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
-  roleBtnActive: { borderColor: colors.accent.green, backgroundColor: '#e8f5e9' },
-  roleBtnText: { ...typography.body1Bold, color: colors.neutral[500] },
+  roleBtnActive: { borderColor: colors.accent.green, backgroundColor: 'rgba(81, 193, 82, 0.18)' },
+  roleBtnText: { ...type.body.bold, color: c.textMuted },
   roleBtnTextActive: { color: colors.accent.green },
-  driverNote: { ...typography.caption, color: colors.warning, marginTop: spacing.xs },
+  driverNote: { ...type.caption.regular, color: colors.warning, marginTop: spacing.xs },
 
   districtGrid: {
     flexDirection: 'row',
@@ -562,16 +572,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[0],
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   districtBtnActive: {
     borderColor: colors.accent.green,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
   districtBtnText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   districtBtnTextActive: {
     color: colors.accent.green,
@@ -580,9 +590,9 @@ const styles = StyleSheet.create({
 
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   phoneInput: { flex: 1 },
-  phoneText: { ...typography.body1, color: colors.forest[900] },
+  phoneText: { ...type.body.regular, color: c.text },
   phoneInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  phonePrefix: { ...typography.body1Bold, color: colors.forest[900] },
+  phonePrefix: { ...type.body.bold, color: c.text },
   phoneModalInput: { flex: 1 },
   changeBtn: {
     paddingHorizontal: spacing.md,
@@ -591,7 +601,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent.green,
   },
-  changeBtnText: { ...typography.body2Bold, color: colors.accent.green },
+  changeBtnText: { ...type.bodySm.bold, color: colors.accent.green },
 
   modalOverlay: {
     flex: 1,
@@ -600,17 +610,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   modalContent: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     gap: spacing.md,
   },
-  modalTitle: { ...typography.h3, color: colors.forest[900] },
-  modalDesc: { ...typography.body2, color: colors.neutral[500] },
+  modalTitle: { ...type.h3.bold, color: c.text },
+  modalDesc: { ...type.bodySm.regular, color: c.textMuted },
   modalBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.md, marginTop: spacing.sm },
   modalCancelBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-  modalCancelText: { ...typography.body2Bold, color: colors.neutral[500] },
-  phoneErrorText: { ...typography.caption, color: colors.error },
+  modalCancelText: { ...type.bodySm.bold, color: c.textMuted },
+  phoneErrorText: { ...type.caption.regular, color: colors.error },
 
   deleteBtn: {
     alignItems: 'center',
@@ -620,7 +630,7 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
     marginTop: spacing.lg,
   },
-  deleteBtnText: { ...typography.body1Bold, color: colors.error },
+  deleteBtnText: { ...type.body.bold, color: colors.error },
   deleteConfirmBtn: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -628,7 +638,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
   },
   deleteConfirmBtnDisabled: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
-  deleteConfirmBtnText: { ...typography.body2Bold, color: colors.neutral[0] },
+  deleteConfirmBtnText: { ...type.bodySm.bold, color: c.textInverse },
 });

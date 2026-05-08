@@ -1,14 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { View, StyleSheet } from 'react-native';
+import { spacing, borderRadius, colors, useTheme } from '@/theme';
 import { Icon } from '@/components/icons';
-import { Card } from '@/components/ui/Card';
+import { PostCardShell } from './PostCardShell';
+import { HeroGradient } from './HeroGradient';
+import { HeroMap } from './HeroMap';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Text } from '@/components/ui/Text';
 import { formatBZD } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
-const ACCENT_COLORS: Record<string, string> = {
+const ACCENT_BG: Record<string, string> = {
   errand: colors.warning,
   package: '#9c27b0',
 };
@@ -19,188 +22,130 @@ interface ErrandCardProps {
 }
 
 export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: ErrandCardProps) {
+  const { c } = useTheme();
   const authorName = post.author
     ? `${post.author.first_name ?? ''} ${(post.author.last_name ?? '')[0] ?? ''}.`.trim()
     : 'Unknown';
 
-  const accent = ACCENT_COLORS[post.type] ?? colors.warning;
+  const accent = ACCENT_BG[post.type] ?? colors.warning;
+  const badgeType = post.type === 'package' ? 'package' : 'errand';
+
+  const hero = post.origin_lat != null && post.origin_lng != null
+    ? (
+      <HeroMap
+        origin={{ lat: post.origin_lat, lng: post.origin_lng }}
+        destination={post.dest_lat != null && post.dest_lng != null ? { lat: post.dest_lat, lng: post.dest_lng } : null}
+        fallbackType={badgeType}
+      />
+    )
+    : <HeroGradient type={badgeType} />;
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <PostCardShell
+      hero={hero}
+      heroOverlayLeft={<PostTypeBadge type={badgeType} variant="overlay" />}
+      onPress={onPress}
+    >
+      <Text variant="body" weight="bold" numberOfLines={1}>{post.title}</Text>
 
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <PostTypeBadge type={post.type === 'package' ? 'package' : 'errand'} />
-          {post.errand_category && (
-            <View style={styles.categoryChip}>
-              <Text style={styles.categoryText}>
-                {post.errand_category.charAt(0).toUpperCase() + post.errand_category.slice(1)}
-              </Text>
-            </View>
-          )}
+      {(post.origin_address || post.dest_address) && (
+        <View style={styles.locationRow}>
+          <Icon name="map-pin" size={12} color={c.textMuted} />
+          <Text variant="bodySm" tone="muted" numberOfLines={1} style={styles.flex1}>
+            {[post.origin_address, post.dest_address].filter(Boolean).join(' → ')}
+          </Text>
         </View>
+      )}
 
-        <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
+      {post.description && (
+        <Text variant="bodySm" tone="muted" numberOfLines={2}>
+          {post.description}
+        </Text>
+      )}
 
-        {(post.origin_address || post.dest_address) && (
-          <View style={styles.locationRow}>
-            <Icon name="map-pin" size={13} color={colors.neutral[400]} />
-            <Text style={styles.location} numberOfLines={1}>
-              {[post.origin_address, post.dest_address].filter(Boolean).join(' → ')}
+      <View style={styles.metaRow}>
+        {post.author?.rating_avg != null && (
+          <View style={styles.metaItem}>
+            <Icon name="star" size={12} color={colors.accent.green} />
+            <Text variant="bodySm" tone="muted">
+              {post.author.rating_avg.toFixed(1)}
             </Text>
           </View>
         )}
-
-        {post.description && (
-          <Text style={styles.description} numberOfLines={2}>{post.description}</Text>
-        )}
-
-        {/* Price chips row */}
-        <View style={styles.priceRow}>
-          {post.type === 'package' && post.price_cents != null ? (
-            <View style={[styles.priceBadge, { backgroundColor: accent }]}>
-              <Text style={styles.priceBadgeText}>Delivery: {formatBZD(post.price_cents)}</Text>
-            </View>
-          ) : post.errand_fee_cents != null ? (
-            <View style={[styles.priceBadge, { backgroundColor: accent }]}>
-              <Text style={styles.priceBadgeText}>Fee: {formatBZD(post.errand_fee_cents)}</Text>
-            </View>
-          ) : null}
-          {post.item_cost_cents != null && (
-            <View style={styles.itemCostChip}>
-              <Text style={styles.itemCostText}>Items ~{formatBZD(post.item_cost_cents)}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.authorRow}>
-            <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
-            <Text style={styles.authorName}>{authorName}</Text>
+        {post.type === 'package' && post.price_cents != null ? (
+          <View style={[styles.priceBadge, { backgroundColor: accent }]}>
+            <Text variant="caption" weight="semibold" tone="inverse">
+              Delivery {formatBZD(post.price_cents)}
+            </Text>
           </View>
-          {post.author && (
-            <View style={styles.statChip}>
-              <Icon name="star" size={12} color={colors.accent.green} />
-              <Text style={styles.statText}>{(post.author.rating_avg ?? 0).toFixed(1)}</Text>
-            </View>
-          )}
-        </View>
+        ) : post.errand_fee_cents != null ? (
+          <View style={[styles.priceBadge, { backgroundColor: accent }]}>
+            <Text variant="caption" weight="semibold" tone="inverse">
+              Fee {formatBZD(post.errand_fee_cents)}
+            </Text>
+          </View>
+        ) : null}
       </View>
-    </Card>
+
+      <View style={styles.footer}>
+        <View style={styles.authorRow}>
+          <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
+          <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.flex1}>
+            {authorName}
+          </Text>
+        </View>
+        {post.item_cost_cents != null && (
+          <View style={[styles.itemChip, { backgroundColor: c.surfaceMuted }]}>
+            <Text variant="caption" weight="semibold">
+              Items ~{formatBZD(post.item_cost_cents)}
+            </Text>
+          </View>
+        )}
+      </View>
+    </PostCardShell>
   );
 });
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  categoryChip: {
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.pill,
-  },
-  categoryText: {
-    ...typography.caption,
-    color: colors.forest[500],
-    fontWeight: '600',
-    fontSize: 11,
-  },
-  title: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
-    fontSize: 15,
-  },
+  flex1: { flex: 1 },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  location: {
-    ...typography.body2,
-    color: colors.forest[500],
-    flex: 1,
-    fontSize: 13,
-  },
-  description: {
-    ...typography.body2,
-    color: colors.forest[500],
-    fontSize: 13,
-  },
-  priceRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
+    marginTop: 2,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   priceBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.pill,
-  },
-  priceBadgeText: {
-    ...typography.caption,
-    color: colors.neutral[0],
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  itemCostChip: {
-    backgroundColor: colors.neutral[100],
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 3,
     borderRadius: borderRadius.pill,
-  },
-  itemCostText: {
-    ...typography.caption,
-    color: colors.forest[500],
-    fontSize: 11,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.neutral[100],
-    marginVertical: 2,
+    marginLeft: 'auto',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flex: 1,
   },
-  authorName: {
-    ...typography.body2,
-    color: colors.forest[900],
-    fontWeight: '600',
-  },
-  statChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.neutral[100],
+  itemChip: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.pill,
-  },
-  statText: {
-    ...typography.caption,
-    color: colors.forest[900],
-    fontWeight: '600',
-    fontSize: 11,
   },
 });

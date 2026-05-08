@@ -12,12 +12,13 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader, FeedListSkeleton, Card, EmptyState } from '@/components/ui';
+import { ScreenHeader, FeedListSkeleton, Card, EmptyState, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo } from '@/lib/helpers';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetMyBookingsQuery, useGetMyContractsQuery, useCancelBookingMutation, type BookingWithPost, type ContractWithDetails } from '@/store/api/bookingsApi';
 import { useGetMyPostsQuery, useDeletePostMutation, type ActiveBookingPreview, type MyPostWithBookings } from '@/store/api/postsApi';
 import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
@@ -34,6 +35,9 @@ const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
 const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
 
 export default function ActivityScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const params = useLocalSearchParams<{ tab?: string }>();
   const initialTab = params.tab === 'history' ? 'history' : 'my_posts';
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -171,7 +175,7 @@ export default function ActivityScreen() {
 
               {item.post?.origin_address && item.post?.dest_address && (
                 <View style={styles.routeInfo}>
-                  <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                  <Icon name="map-pin" size={14} color={c.textMuted} />
                   <Text style={styles.routeText} numberOfLines={1}>
                     {item.post.origin_address} → {item.post.dest_address}
                   </Text>
@@ -180,7 +184,7 @@ export default function ActivityScreen() {
 
               {item.post?.departure_at && (
                 <View style={styles.routeInfo}>
-                  <Icon name="clock" size={14} color={colors.forest[400]} />
+                  <Icon name="clock" size={14} color={c.textMuted} />
                   <Text style={styles.routeText}>{formatDeparture(item.post.departure_at)}</Text>
                 </View>
               )}
@@ -229,7 +233,7 @@ export default function ActivityScreen() {
 
             {item.post?.origin_address && item.post?.dest_address && (
               <View style={styles.routeInfo}>
-                <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                <Icon name="map-pin" size={14} color={c.textMuted} />
                 <Text style={styles.routeText} numberOfLines={1}>
                   {item.post.origin_address} → {item.post.dest_address}
                 </Text>
@@ -338,7 +342,7 @@ export default function ActivityScreen() {
 
             {item.origin_address && item.dest_address && (
               <View style={styles.routeInfo}>
-                <Icon name="map-pin" size={14} color={colors.forest[400]} />
+                <Icon name="map-pin" size={14} color={c.textMuted} />
                 <Text style={styles.routeText} numberOfLines={1}>
                   {item.origin_address} → {item.dest_address}
                 </Text>
@@ -347,14 +351,14 @@ export default function ActivityScreen() {
 
             {item.departure_at && (
               <View style={styles.routeInfo}>
-                <Icon name="clock" size={14} color={colors.forest[400]} />
+                <Icon name="clock" size={14} color={c.textMuted} />
                 <Text style={styles.routeText}>{formatDeparture(item.departure_at)}</Text>
               </View>
             )}
 
             {item.price_cents != null && (
               <View style={styles.routeInfo}>
-                <Icon name="receipt" size={14} color={colors.forest[400]} />
+                <Icon name="receipt" size={14} color={c.textMuted} />
                 <Text style={styles.routeText}>{formatBZD(item.price_cents)}</Text>
               </View>
             )}
@@ -496,7 +500,7 @@ export default function ActivityScreen() {
         renderItem={renderSectionItem}
         renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.kind === 'contract' ? `c_${item.data.id}` : item.data.id}
-        contentContainerStyle={styles.feed}
+        contentContainerStyle={[styles.feed, { paddingBottom: tabBarPad }]}
         initialNumToRender={8}
         maxToRenderPerBatch={6}
         windowSize={5}
@@ -525,7 +529,7 @@ export default function ActivityScreen() {
         data={historyItems}
         renderItem={renderHistoryItem}
         keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : `b_${item.data.id}`)}
-        contentContainerStyle={styles.feed}
+        contentContainerStyle={[styles.feed, { paddingBottom: tabBarPad }]}
         initialNumToRender={8}
         maxToRenderPerBatch={6}
         windowSize={5}
@@ -554,7 +558,7 @@ export default function ActivityScreen() {
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
-          <Icon name="bell" size={22} color={colors.neutral[0]} />
+          <Icon name="bell" size={22} color={c.text} />
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -589,57 +593,92 @@ export default function ActivityScreen() {
 }
 
 function StatusBadge({ status }: { status: BookingStatus }) {
-  const config: Record<BookingStatus, { label: string; bg: string; fg: string }> = {
-    pending: { label: 'Pending', bg: '#fff8e1', fg: colors.warning },
-    confirmed: { label: 'Confirmed', bg: '#e8f5e9', fg: colors.accent.green },
-    completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
-    cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
-    rejected: { label: 'Rejected', bg: '#ffebee', fg: colors.error },
-    no_show: { label: 'No Show', bg: '#ffebee', fg: colors.error },
-  };
+  const { c, isDark } = useTheme();
+  const styles = createStyles(c);
+  const config: Record<BookingStatus, { label: string; bg: string; fg: string }> = isDark
+    ? {
+        pending: { label: 'Pending', bg: 'rgba(255, 193, 7, 0.18)', fg: '#ffd76d' },
+        confirmed: { label: 'Confirmed', bg: 'rgba(81, 193, 82, 0.18)', fg: colors.accent.neonGreen },
+        completed: { label: 'Completed', bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted },
+        cancelled: { label: 'Cancelled', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
+        rejected: { label: 'Rejected', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
+        no_show: { label: 'No Show', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
+      }
+    : {
+        pending: { label: 'Pending', bg: '#fff8e1', fg: colors.warning },
+        confirmed: { label: 'Confirmed', bg: '#e8f5e9', fg: colors.accent.green },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
+        rejected: { label: 'Rejected', bg: '#ffebee', fg: colors.error },
+        no_show: { label: 'No Show', bg: '#ffebee', fg: colors.error },
+      };
 
-  const c = config[status];
+  const cfg = config[status];
 
   return (
-    <View style={[styles.statusBadge, { backgroundColor: c.bg }]}>
-      <Text style={[styles.statusText, { color: c.fg }]}>{c.label}</Text>
+    <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
+      <Text style={[styles.statusText, { color: cfg.fg }]}>{cfg.label}</Text>
     </View>
   );
 }
 
 function PostStatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; bg: string; fg: string }> = {
-    open: { label: 'Open', bg: '#e8f5e9', fg: colors.accent.green },
-    activated: { label: 'Activated', bg: '#e3f2fd', fg: '#1565c0' },
-    in_progress: { label: 'In Progress', bg: '#fff8e1', fg: colors.warning },
-    filled: { label: 'Accepted', bg: '#e3f2fd', fg: '#1565c0' },
-    completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
-    cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
-    expired: { label: 'Expired', bg: colors.neutral[200], fg: colors.neutral[500] },
-  };
+  const { c, isDark } = useTheme();
+  const styles = createStyles(c);
+  const config: Record<string, { label: string; bg: string; fg: string }> = isDark
+    ? {
+        open: { label: 'Open', bg: 'rgba(81, 193, 82, 0.18)', fg: colors.accent.neonGreen },
+        activated: { label: 'Activated', bg: 'rgba(73, 103, 246, 0.22)', fg: '#7da0ff' },
+        in_progress: { label: 'In Progress', bg: 'rgba(255, 193, 7, 0.18)', fg: '#ffd76d' },
+        filled: { label: 'Accepted', bg: 'rgba(73, 103, 246, 0.22)', fg: '#7da0ff' },
+        completed: { label: 'Completed', bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted },
+        cancelled: { label: 'Cancelled', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
+        expired: { label: 'Expired', bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted },
+      }
+    : {
+        open: { label: 'Open', bg: '#e8f5e9', fg: colors.accent.green },
+        activated: { label: 'Activated', bg: '#e3f2fd', fg: '#1565c0' },
+        in_progress: { label: 'In Progress', bg: '#fff8e1', fg: colors.warning },
+        filled: { label: 'Accepted', bg: '#e3f2fd', fg: '#1565c0' },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
+        expired: { label: 'Expired', bg: colors.neutral[200], fg: colors.neutral[500] },
+      };
 
-  const c = config[status] ?? { label: status, bg: colors.neutral[200], fg: colors.neutral[500] };
+  const fallback = isDark
+    ? { label: status, bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted }
+    : { label: status, bg: colors.neutral[200], fg: colors.neutral[500] };
+  const cfg = config[status] ?? fallback;
 
   return (
-    <View style={[styles.statusBadge, { backgroundColor: c.bg }]}>
-      <Text style={[styles.statusText, { color: c.fg }]}>{c.label}</Text>
+    <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
+      <Text style={[styles.statusText, { color: cfg.fg }]}>{cfg.label}</Text>
     </View>
   );
 }
 
 function ContractStatusBadge({ status }: { status: ContractStatus }) {
-  const config: Record<ContractStatus, { label: string; bg: string; fg: string }> = {
-    active: { label: 'Active', bg: '#e8f5e9', fg: colors.accent.green },
-    completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
-    cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
-    disputed: { label: 'Disputed', bg: '#fff8e1', fg: colors.warning },
-  };
+  const { c, isDark } = useTheme();
+  const styles = createStyles(c);
+  const config: Record<ContractStatus, { label: string; bg: string; fg: string }> = isDark
+    ? {
+        active: { label: 'Active', bg: 'rgba(81, 193, 82, 0.18)', fg: colors.accent.neonGreen },
+        completed: { label: 'Completed', bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted },
+        cancelled: { label: 'Cancelled', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
+        disputed: { label: 'Disputed', bg: 'rgba(255, 193, 7, 0.18)', fg: '#ffd76d' },
+      }
+    : {
+        active: { label: 'Active', bg: '#e8f5e9', fg: colors.accent.green },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
+        disputed: { label: 'Disputed', bg: '#fff8e1', fg: colors.warning },
+      };
 
-  const c = config[status];
+  const cfg = config[status];
 
   return (
-    <View style={[styles.statusBadge, { backgroundColor: c.bg }]}>
-      <Text style={[styles.statusText, { color: c.fg }]}>{c.label}</Text>
+    <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
+      <Text style={[styles.statusText, { color: cfg.fg }]}>{cfg.label}</Text>
     </View>
   );
 }
@@ -706,10 +745,11 @@ function getBookingFooterLabel(
 }
 
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -720,14 +760,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   title: {
-    ...typography.h2,
-    color: colors.neutral[0],
+    ...type.h2.bold,
+    color: c.text,
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    backgroundColor: c.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: c.border,
   },
   tab: {
     flex: 1,
@@ -740,12 +780,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.accent.green,
   },
   tabText: {
-    ...typography.body1,
-    color: colors.neutral[400],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   tabTextActive: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   centered: {
     flex: 1,
@@ -765,8 +805,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   sectionHeaderText: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
     fontSize: 15,
   },
   bookingCard: {
@@ -778,8 +818,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   routeInfo: {
     flexDirection: 'row',
@@ -787,8 +827,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   routeText: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     flex: 1,
   },
   joinerPreview: {
@@ -810,12 +850,12 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   joinerPreviewLabel: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
   },
   joinerPreviewNames: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -823,15 +863,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
   },
   footerText: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   timestamp: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
@@ -839,7 +879,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
   },
   statusText: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '600',
   },
   deleteButton: {
@@ -848,7 +888,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   deleteText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
     fontWeight: '600',
   },
@@ -868,7 +908,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: colors.neutral[0],
+    color: c.textInverse,
     fontSize: 10,
     fontWeight: '700',
   },

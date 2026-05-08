@@ -8,10 +8,8 @@ import {
   type StyleProp,
   type LayoutChangeEvent,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, shadows } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 interface ScreenHeaderProps {
   children: React.ReactNode;
@@ -20,17 +18,15 @@ interface ScreenHeaderProps {
 }
 
 /**
- * Unified header shell used on every screen.
+ * Unified header shell. Theme-aware, flat against the screen surface, with
+ * a subtle bottom accent edge. No heavy forest-green gradient.
  *
- * iOS   — BlurView (dark, intensity 65) + gradient tint overlay
- * Other — gradient from forest-900 → forest-800
- *
- * Features: 20px bottom radius, subtle drop shadow, accent-green bottom edge.
  * Pass per-screen layout styles (padding, flex, etc.) via the `style` prop.
  * Do NOT set backgroundColor in the passed style — this component owns that.
  */
 export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { c, isDark } = useTheme();
   const topInset = Platform.OS === 'android'
     ? Math.max(insets.top, StatusBar.currentHeight ?? 0)
     : insets.top;
@@ -38,53 +34,43 @@ export function ScreenHeader({ children, style, onLayout }: ScreenHeaderProps) {
     ? { marginTop: -topInset, paddingTop: topInset }
     : null;
 
-  if (Platform.OS === 'ios') {
-    return (
-      <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
-        <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }]}>
-          <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
-          <LinearGradient
-            colors={['rgba(20, 45, 0, 0.45)', 'rgba(28, 37, 19, 0.35)']}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={style}>{children}</View>
-          <View style={styles.accentEdge} />
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.outer, safeAreaStyle && { marginTop: safeAreaStyle.marginTop }]} onLayout={onLayout}>
-      <View style={[styles.container, safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop }]}>
-        <LinearGradient
-          colors={[colors.forest[900], colors.forest[800]]}
-          style={StyleSheet.absoluteFill}
-        />
+    <View
+      style={[
+        styles.outer,
+        { backgroundColor: c.bg },
+        safeAreaStyle && { marginTop: safeAreaStyle.marginTop },
+      ]}
+      onLayout={onLayout}
+    >
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: c.bg },
+          safeAreaStyle && { paddingTop: safeAreaStyle.paddingTop },
+        ]}
+      >
         <View style={style}>{children}</View>
-        <View style={styles.accentEdge} />
+        <View
+          style={[
+            styles.accentEdge,
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(20,40,0,0.08)' },
+          ]}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: {
-    ...shadows.md,
-    shadowColor: 'rgba(20, 40, 0, 0.5)',
-  },
-  container: {
-    overflow: 'hidden',
-    backgroundColor: colors.forest[900],
-  },
+  outer: {},
+  container: { overflow: 'hidden' },
   accentEdge: {
     position: 'absolute',
     bottom: 0,
     left: spacing.lg,
     right: spacing.lg,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: colors.accent.neonGreen,
-    opacity: 0.35,
+    height: 1,
+    borderRadius: 0.5,
   },
 });

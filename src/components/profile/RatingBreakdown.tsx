@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface RatingBreakdownProps {
   ratingAvg: number;
@@ -16,6 +17,8 @@ export function RatingBreakdown({
   strikesSoft,
   strikesHard,
 }: RatingBreakdownProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const totalStrikes = strikesSoft + strikesHard;
 
   return (
@@ -30,7 +33,7 @@ export function RatingBreakdown({
         <View style={styles.divider} />
 
         <View style={styles.metric}>
-          <Icon name="clock" size={20} color={colors.forest[400]} />
+          <Icon name="clock" size={20} color={c.textMuted} />
           <Text style={styles.value}>{punctualityPct}%</Text>
           <Text style={styles.label}>On time</Text>
         </View>
@@ -59,22 +62,23 @@ export function RatingBreakdown({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
     ...shadows.sm,
   },
   metric: { flex: 1, alignItems: 'center', gap: spacing.xs },
-  value: { ...typography.h3, color: colors.forest[900] },
+  value: { ...type.h3.bold, color: c.text },
   errorValue: { color: colors.error },
-  label: { ...typography.caption, color: colors.neutral[500] },
-  divider: { width: 1, backgroundColor: colors.neutral[200] },
+  label: { ...type.caption.regular, color: c.textMuted },
+  divider: { width: 1, backgroundColor: c.border },
   warning: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
     textAlign: 'center',
   },

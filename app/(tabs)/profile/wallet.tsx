@@ -10,8 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPaymentHistoryQuery } from '@/store/api/ekyashApi';
 import { formatBZD, formatDate, safeGoBack } from '@/lib/helpers';
 import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
@@ -21,6 +22,9 @@ import type { Database } from '@/types/database';
 type EkyashTxnRow = Database['public']['Tables']['ekyash_transactions']['Row'];
 
 export default function WalletScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: transactions, isLoading, refetch, isFetching } = useGetPaymentHistoryQuery(
     userId ?? '',
@@ -35,7 +39,7 @@ export default function WalletScreen() {
       return (
         <Card style={styles.txnCard}>
           <View style={styles.txnHeader}>
-            <View style={[styles.directionBadge, { backgroundColor: isSender ? '#ffebee' : '#e8f5e9' }]}>
+            <View style={[styles.directionBadge, { backgroundColor: isSender ? 'rgba(211, 47, 47, 0.22)' : 'rgba(81, 193, 82, 0.18)' }]}>
               <Text style={[styles.directionText, { color: isSender ? colors.error : colors.accent.green }]}>
                 {isSender ? 'Sent' : 'Received'}
               </Text>
@@ -75,8 +79,13 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/profile/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>E-Kyash Wallet</Text>
         <View style={{ width: 24 }} />
@@ -108,7 +117,7 @@ export default function WalletScreen() {
           data={transactions}
           renderItem={renderTransaction}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarPad }]}
           initialNumToRender={10}
           maxToRenderPerBatch={8}
           windowSize={5}
@@ -132,13 +141,14 @@ export default function WalletScreen() {
 const TXN_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: colors.warning },
   approved: { label: 'Approved', color: colors.accent.green },
-  cancelled: { label: 'Cancelled', color: colors.neutral[400] },
-  refunded: { label: 'Refunded', color: colors.forest[400] },
+  cancelled: { label: 'Cancelled', color: colors.neutral[500] },
+  refunded: { label: 'Refunded', color: colors.neutral[500] },
 };
 
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -147,7 +157,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: { ...type.h3.bold, color: c.text, flex: 1, textAlign: 'center' },
 
   summaryCard: {
     flexDirection: 'row',
@@ -159,8 +169,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     backgroundColor: colors.forest[600],
   },
-  summaryLabel: { ...typography.caption, color: colors.neutral[200] },
-  summaryValue: { ...typography.h2, color: colors.neutral[0] },
+  summaryLabel: { ...type.caption.regular, color: colors.neutral[200] },
+  summaryValue: { ...type.h2.bold, color: c.textInverse },
 
   list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.md },
@@ -172,15 +182,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: borderRadius.pill,
   },
-  directionText: { ...typography.caption, fontWeight: '600' },
+  directionText: { ...type.caption.regular, fontWeight: '600' },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginLeft: 'auto' },
-  statusText: { ...typography.caption },
+  statusText: { ...type.caption.regular },
 
   txnBody: { gap: spacing.xs },
-  amount: { ...typography.h3, color: colors.forest[900] },
-  feeText: { ...typography.caption, color: colors.neutral[400] },
+  amount: { ...type.h3.bold, color: c.text },
+  feeText: { ...type.caption.regular, color: c.textMuted },
 
   txnFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
-  txnId: { ...typography.caption, color: colors.neutral[400], flex: 1, marginRight: spacing.md },
-  txnDate: { ...typography.caption, color: colors.neutral[500] },
+  txnId: { ...type.caption.regular, color: c.textMuted, flex: 1, marginRight: spacing.md },
+  txnDate: { ...type.caption.regular, color: c.textMuted },
 });

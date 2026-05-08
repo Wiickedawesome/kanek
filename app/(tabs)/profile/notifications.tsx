@@ -13,10 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
-import { ScreenHeader } from '@/components/ui';
+import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
 
@@ -41,6 +42,9 @@ const DEFAULT_PREFS: NotificationPrefs = {
 };
 
 export default function NotificationSettingsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
   const [systemPermission, setSystemPermission] = useState<string | null>(null);
@@ -87,14 +91,19 @@ export default function NotificationSettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={8}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/profile/')}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         {/* System permission banner */}
         {showPermissionBanner && (
           <Pressable style={styles.permissionBanner} onPress={requestPermission}>
@@ -105,7 +114,7 @@ export default function NotificationSettingsScreen() {
                 Tap to enable push notifications for this device.
               </Text>
             </View>
-            <Icon name="chevron-right" size={16} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={16} color={c.textMuted} />
           </Pressable>
         )}
 
@@ -185,9 +194,11 @@ function ToggleRow({
   value: boolean;
   onToggle: (v: boolean) => void;
 }) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <View style={styles.toggleRow}>
-      <Icon name={icon} size={20} color={colors.forest[400]} />
+      <Icon name={icon} size={20} color={c.textMuted} />
       <View style={styles.toggleInfo}>
         <Text style={styles.toggleLabel}>{label}</Text>
         <Text style={styles.toggleDesc}>{description}</Text>
@@ -202,16 +213,17 @@ function ToggleRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -221,8 +233,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   scrollContent: {
     padding: spacing.xl,
@@ -232,33 +244,33 @@ const styles = StyleSheet.create({
   permissionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff8e1',
+    backgroundColor: 'rgba(255, 193, 7, 0.18)',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#ffe082',
+    borderColor: 'rgba(255, 193, 7, 0.40)',
   },
   permissionText: {
     flex: 1,
   },
   permissionTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   permissionBody: {
-    ...typography.caption,
-    color: colors.forest[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   section: {
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: c.surface,
     borderRadius: 8,
     overflow: 'hidden',
     ...shadows.sm,
   },
   sectionTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
@@ -270,18 +282,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: c.border,
   },
   toggleInfo: {
     flex: 1,
     gap: 2,
   },
   toggleLabel: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
   },
   toggleDesc: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
 });

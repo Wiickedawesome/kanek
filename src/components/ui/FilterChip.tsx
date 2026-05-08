@@ -1,11 +1,13 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, typography, borderRadius, spacing } from '@/theme';
+import { borderRadius, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
+import { Text } from '@/components/ui/Text';
 import { hapticSelection } from '@/lib/haptics';
 
 const SPRING_CONFIG = { damping: 14, stiffness: 300 };
@@ -18,6 +20,8 @@ interface FilterChipProps {
 }
 
 export function FilterChip({ label, selected = false, onPress, style }: FilterChipProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -47,7 +51,11 @@ export function FilterChip({ label, selected = false, onPress, style }: FilterCh
           animatedStyle,
         ]}
       >
-        <Text style={[styles.label, selected && styles.selectedLabel]}>
+        <Text
+          variant="bodySm"
+          weight={selected ? 'bold' : 'regular'}
+          style={selected ? { color: c.chipSelectedText } : undefined}
+        >
           {label}
         </Text>
       </Animated.View>
@@ -55,26 +63,21 @@ export function FilterChip({ label, selected = false, onPress, style }: FilterCh
   );
 }
 
-const styles = StyleSheet.create({
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}),
-  },
-  selected: {
-    backgroundColor: colors.forest[900],
-    borderColor: colors.forest[900],
-  },
-  label: {
-    ...typography.body2,
-    color: colors.forest[900],
-  },
-  selectedLabel: {
-    ...typography.body2Bold,
-    color: colors.neutral[0],
-  },
-});
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+    chip: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.pill,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      ...(Platform.OS === 'web'
+        ? ({ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any)
+        : {}),
+    },
+    selected: {
+      backgroundColor: c.chipSelectedBg,
+      borderColor: c.chipSelectedBg,
+    },
+  });

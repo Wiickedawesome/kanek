@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { consumeAuthRedirectUrl } from '@/lib/authRedirect';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
-import { colors, spacing, typography } from '@/theme';
+import { colors, spacing, type, useTheme } from '@/theme';
 
 type CallbackParams = Record<string, string | string[] | undefined>;
 
@@ -26,6 +26,7 @@ function buildCallbackUrl(params: CallbackParams) {
 }
 
 export default function AuthCallbackScreen() {
+  const { c } = useTheme();
   const params = useLocalSearchParams() as CallbackParams;
   const callbackUrl = useMemo(() => buildCallbackUrl(params), [params]);
   const { session, isLoading, nextAuthRoute } = useOnboardingStatus();
@@ -74,10 +75,10 @@ export default function AuthCallbackScreen() {
   }, [callbackError, hasHandledCallback, isLoading, nextAuthRoute, session]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       <ActivityIndicator size="large" color={colors.accent.green} />
-      <Text style={styles.title}>Completing sign-in</Text>
-      <Text style={styles.body}>
+      <Text style={[styles.title, { color: c.text }]}>Completing sign-in</Text>
+      <Text style={[styles.body, { color: c.textMuted }]}>
         {callbackError ?? 'Please wait while we finish connecting your account.'}
       </Text>
     </View>
@@ -90,17 +91,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.neutral[100],
   },
   title: {
-    ...typography.h2,
-    color: colors.forest[900],
+    ...type.h2.bold,
     marginTop: spacing.lg,
     textAlign: 'center',
   },
   body: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

@@ -11,12 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
-import { TextInput, Button, ScreenHeader } from '@/components/ui';
+import { TextInput, Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import { calculateRoute } from '@/lib/mapbox';
@@ -91,9 +92,12 @@ function serializeRouteStops(stops: RouteStop[]): string | null {
 }
 
 export default function RouteFormScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { type } = useLocalSearchParams<{ type: string }>();
   const postType = (type as PostType) || 'route_offer';
   const isOffer = postType === 'route_offer';
+  const tabBarPad = useFloatingTabBarPad();
 
   const dispatch = useDispatch();
 
@@ -381,8 +385,13 @@ export default function RouteFormScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={safeBack} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={safeBack}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>
           {isOffer ? 'Offer a Route' : 'Request a Ride'}
@@ -396,7 +405,7 @@ export default function RouteFormScreen() {
       >
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.formContent}
+          contentContainerStyle={[styles.formContent, { paddingBottom: tabBarPad }]}
           keyboardShouldPersistTaps="handled"
         >
           <TextInput
@@ -504,14 +513,14 @@ export default function RouteFormScreen() {
                     onPress={() => removeRouteStop(stop.id)}
                     hitSlop={8}
                   >
-                    <Icon name="x" size={18} color={colors.forest[900]} />
+                    <Icon name="x" size={18} color={c.text} />
                   </Pressable>
                 </View>
               ))}
 
               {routeStops.length < MAX_MULTI_STOPS && (
                 <Pressable style={styles.addStopButton} onPress={addRouteStop}>
-                  <Icon name="plus-circle" size={18} color={colors.forest[600]} />
+                  <Icon name="plus-circle" size={18} color={c.textMuted} />
                   <Text style={styles.addStopText}>Add another stop</Text>
                 </Pressable>
               )}
@@ -731,10 +740,11 @@ export default function RouteFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -747,8 +757,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   formContent: {
     padding: spacing.xl,
@@ -764,8 +774,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fieldLabel: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
     marginBottom: spacing.sm,
   },
   pickupSection: {
@@ -780,8 +790,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   stopCounter: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   pickupOption: {
     flex: 1,
@@ -789,21 +799,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.pill,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
   },
   pickupSelected: {
     borderColor: colors.accent.green,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   pickupText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   pickupTextSelected: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
   },
   stopRow: {
     flexDirection: 'row',
@@ -822,9 +832,9 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     marginBottom: spacing.xs,
   },
   addStopButton: {
@@ -833,18 +843,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderRadius: borderRadius.pill,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     paddingVertical: spacing.md,
     marginBottom: spacing.md,
   },
   addStopText: {
-    ...typography.body2Bold,
-    color: colors.forest[600],
+    ...type.bodySm.bold,
+    color: c.textMuted,
   },
   inlineError: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
     marginTop: spacing.xs,
   },
@@ -860,26 +870,26 @@ const styles = StyleSheet.create({
   },
   repeatToggleActive: {},
   repeatToggleText: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
   },
   checkbox: {
     width: 22,
     height: 22,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
   },
   checkboxChecked: {
     borderColor: colors.accent.green,
     backgroundColor: colors.accent.green,
   },
   checkboxTick: {
-    ...typography.caption,
-    color: colors.neutral[0],
+    ...type.caption.regular,
+    color: c.textInverse,
     fontWeight: '700',
     lineHeight: 14,
   },
@@ -892,26 +902,26 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
   },
   dayChipSelected: {
     borderColor: colors.accent.green,
     backgroundColor: colors.accent.green,
   },
   dayChipText: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   dayChipTextSelected: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '700',
-    color: colors.neutral[0],
+    color: c.textInverse,
   },
   charCount: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'right',
     marginTop: -spacing.md,
   },

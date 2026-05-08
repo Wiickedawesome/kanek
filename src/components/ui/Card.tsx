@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, StyleProp, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { borderRadius, colors, spacing, shadows } from '@/theme';
+import { borderRadius, spacing, shadows, useTheme } from '@/theme';
 import { hapticLight } from '@/lib/haptics';
 
 const SPRING_CONFIG = { damping: 15, stiffness: 300 };
@@ -14,13 +14,19 @@ interface CardProps {
 }
 
 export function Card({ children, onPress, style, padded = true }: CardProps) {
+  const { c } = useTheme();
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const themed: ViewStyle = {
+    backgroundColor: c.surface,
+    borderColor: c.border,
+  };
+
   const content = (
-    <View style={[styles.card, padded && styles.padded, style]}>
+    <View style={[styles.card, themed, padded && styles.padded, style]}>
       {children}
     </View>
   );
@@ -47,12 +53,10 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(20, 40, 0, 0.12)',
     ...shadows.sm,
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any : {}),
+    ...(Platform.OS === 'web' ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as object) : {}),
   },
   padded: {
     padding: spacing.lg,

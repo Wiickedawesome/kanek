@@ -14,7 +14,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button, TextInput, FilterChip, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';
 import type { FlagReason } from '@/types/database';
@@ -30,6 +31,8 @@ const REASONS: { value: FlagReason; label: string }[] = [
 ];
 
 export default function FlagContentModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { targetType, targetId } = useLocalSearchParams<{
     targetType: 'post' | 'user' | 'booking';
     targetId: string;
@@ -75,8 +78,13 @@ export default function FlagContentModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/explore/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Report Content</Text>
         <View style={{ width: 24 }} />
@@ -88,7 +96,7 @@ export default function FlagContentModal() {
       >
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.infoBox}>
-            <Icon name="shield-alert" size={20} color={colors.forest[900]} />
+            <Icon name="shield-alert" size={20} color={c.text} />
             <Text style={styles.infoText}>
               Reports are confidential. Our team reviews each report and takes
               appropriate action.
@@ -130,10 +138,11 @@ export default function FlagContentModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -146,8 +155,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   content: {
     padding: spacing.xl,
@@ -157,21 +166,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     padding: spacing.lg,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
   },
   infoText: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
     flex: 1,
     lineHeight: 20,
   },
   label: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   reasonGrid: {
     flexDirection: 'row',

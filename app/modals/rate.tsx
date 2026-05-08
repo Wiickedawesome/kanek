@@ -15,13 +15,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button, TextInput, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useSubmitRatingMutation, useCheckHasRatedQuery } from '@/store/api/ratingsApi';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 import { safeGoBack } from '@/lib/helpers';
 
 export default function RateModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { contractId, ratedId } = useLocalSearchParams<{
     contractId: string;
     ratedId: string;
@@ -84,8 +87,13 @@ export default function RateModal() {
     return (
       <SafeAreaView style={styles.container}>
         <ScreenHeader style={styles.header}>
-          <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-            <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          <Pressable
+            onPress={() => safeGoBack('/(tabs)/activity/')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="chevron-left" size={24} color={c.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Rate Trip</Text>
           <View style={{ width: 24 }} />
@@ -104,8 +112,13 @@ export default function RateModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/activity/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Rate Trip</Text>
         <View style={{ width: 24 }} />
@@ -212,10 +225,11 @@ export default function RateModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -228,8 +242,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   content: {
     padding: spacing.xl,
@@ -237,26 +251,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prompt: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     textAlign: 'center',
     lineHeight: 24,
   },
   boldText: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   starsRow: {
     flexDirection: 'row',
     gap: spacing.md,
   },
   starsLabel: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   label: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
     alignSelf: 'flex-start',
   },
   onTimeRow: {
@@ -270,23 +284,23 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   onTimeBtnActive: {
     borderColor: colors.accent.green,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
   onTimeBtnNegative: {
     borderColor: colors.error,
-    backgroundColor: '#ffebee',
+    backgroundColor: 'rgba(211, 47, 47, 0.22)',
   },
   onTimeBtnText: {
-    ...typography.body1Bold,
-    color: colors.neutral[400],
+    ...type.body.bold,
+    color: c.textMuted,
   },
   onTimeBtnTextActive: {
-    color: colors.forest[900],
+    color: c.text,
   },
   alreadyRated: {
     flex: 1,
@@ -296,8 +310,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   alreadyRatedText: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
   anonymousRow: {
@@ -312,11 +326,11 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   anonymousLabel: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   anonymousHint: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
 });

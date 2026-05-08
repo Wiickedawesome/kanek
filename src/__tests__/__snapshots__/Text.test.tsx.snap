@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Text layout style overrides apply but do not override colour/font 1`] = `null`;
+
+exports[`Text renders body medium muted 1`] = `null`;
+
+exports[`Text renders body/regular/text by default 1`] = `null`;
+
+exports[`Text renders danger tone 1`] = `null`;
+
+exports[`Text renders dark scheme text 1`] = `null`;
+
+exports[`Text renders h1 bold 1`] = `null`;
+
+exports[`Text renders overline uppercase 1`] = `null`;

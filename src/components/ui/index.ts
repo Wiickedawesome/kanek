@@ -1,5 +1,7 @@
 export { Button } from './Button';
 export { Card } from './Card';
+export { Text } from './Text';
+export type { TextProps } from './Text';
 export { TextInput } from './TextInput';
 export { Badge, PostTypeBadge } from './Badge';
 export { FilterChip } from './FilterChip';
@@ -8,3 +10,5 @@ export { EmptyState } from './EmptyState';
 export { TopographicBg } from './TopographicBg';
 export { ScreenHeader } from './ScreenHeader';
 export { Skeleton, FeedCardSkeleton, FeedListSkeleton, TopRouteCardSkeleton, ProfileSkeleton } from './Skeleton';
+export { FloatingTabBar, FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_BAR_MARGIN, MAP_FAB_CLEARANCE, useFloatingTabBarPad } from './FloatingTabBar';
+export { MapFab } from './MapFab';

@@ -6,9 +6,10 @@ import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack, getTimeAgo, isInBelize } from '@/lib/helpers';
 import { reverseGeocode } from '@/lib/mapbox';
-import { ScreenHeader } from '@/components/ui';
+import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPostsQuery, type PostWithAuthor } from '@/store/api/postsApi';
 import { useGetGasPricesQuery, useVerifyGasPriceMutation } from '@/store/api/reportsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -29,6 +30,9 @@ const PIN_COLORS: Record<string, string> = {
 const GAS_PIN_COLOR = colors.error;
 
 export default function ExploreMapScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const { data: posts } = useGetPostsQuery({});
   const { data: gasPrices } = useGetGasPricesQuery();
   const [verifyGasPrice] = useVerifyGasPriceMutation();
@@ -197,13 +201,14 @@ export default function ExploreMapScreen() {
     }
 
     const buttons: Parameters<typeof Alert.alert>[2] = [
+      { text: 'Cancel', style: 'cancel' },
       { text: 'Add New Report', onPress: goNew },
       { text: 'Verify', onPress: doVerify },
     ];
     if (isOwner) {
-      buttons.splice(1, 0, { text: 'Edit', onPress: goEdit });
+      buttons.splice(2, 0, { text: 'Edit', onPress: goEdit });
     }
-    Alert.alert(g.station_name, body, buttons);
+    Alert.alert(g.station_name, body, buttons, { cancelable: true });
   };
 
   const [headerHeight, setHeaderHeight] = useState(64);
@@ -276,18 +281,18 @@ export default function ExploreMapScreen() {
               onPress={() => safeGoBack('/(tabs)/explore/')}
               hitSlop={8}
             >
-              <Icon name="chevron-left" size={18} color={colors.neutral[0]} />
+              <Icon name="chevron-left" size={18} color={c.text} />
               <Text style={styles.feedButtonLabel}>Feed</Text>
             </Pressable>
             {searchOpen ? (
               <View style={styles.searchInputWrapper}>
-                <Icon name="search" size={18} color={colors.neutral[400]} />
+                <Icon name="search" size={18} color={c.textMuted} />
                 <TextInput
                   style={styles.searchInput}
                   value={searchQuery}
                   onChangeText={handleSearchChange}
                   placeholder="Search places..."
-                  placeholderTextColor={colors.neutral[400]}
+                  placeholderTextColor={c.textMuted}
                   autoFocus
                   returnKeyType="search"
                 />
@@ -296,7 +301,7 @@ export default function ExploreMapScreen() {
               <Text style={styles.headerTitle}>Map View</Text>
             )}
             <Pressable onPress={toggleSearch} hitSlop={12}>
-              <Icon name={searchOpen ? 'x' : 'search'} size={24} color={colors.neutral[0]} />
+              <Icon name={searchOpen ? 'x' : 'search'} size={24} color={c.text} />
             </Pressable>
           </View>
 
@@ -323,20 +328,32 @@ export default function ExploreMapScreen() {
         </View>
 
         {/* Legend */}
-        <View style={styles.legend}>
+        <View style={[styles.legend, { bottom: tabBarPad + spacing.md }]}>
           <LegendRow color={colors.accent.green} label="Driver Offering" />
           <LegendRow color={colors.accent.blue} label="Riders Looking" />
           <LegendRow color={colors.warning} label="Errand" />
           <LegendRow color="#9c27b0" label="Package" />
-          <LegendRow color={colors.forest[500]} label="Job" />
+          <LegendRow color={c.textMuted} label="Job" />
           <LegendRow color={GAS_PIN_COLOR} label="Gas Station" />
         </View>
+
+        {/* Gas-report FAB — bottom-right, above tab bar */}
+        <Pressable
+          style={[styles.gasFab, { bottom: tabBarPad + spacing.md }]}
+          onPress={() => router.push('/modals/report-gas')}
+          accessibilityLabel="Report gas price"
+          accessibilityRole="button"
+        >
+          <Icon name="fuel" size={20} color={colors.neutral[0]} />
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
 function LegendRow({ color, label }: { color: string; label: string }) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <View style={styles.legendRow}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -345,10 +362,11 @@ function LegendRow({ color, label }: { color: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   mapContainer: {
     flex: 1,
@@ -369,14 +387,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   searchInputWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -385,14 +403,14 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
     padding: 0,
     height: 32,
   },
   searchResults: {
     marginHorizontal: spacing.xl,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     maxHeight: 200,
     ...shadows.md,
@@ -404,42 +422,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: c.border,
   },
   searchResultPressed: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   searchResultText: {
     flex: 1,
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
   },
   legend: {
     position: 'absolute',
-    bottom: spacing.xl,
     left: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: c.border,
+    ...shadows.md,
+  },
+  gasFab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.error,
+    justifyContent: 'center',
+    alignItems: 'center',
     ...shadows.md,
   },
   feedButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: c.border,
   },
   feedButtonPressed: {
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: c.surfaceElevated,
   },
   feedButtonLabel: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '700',
-    color: colors.neutral[0],
+    color: c.text,
   },
   legendRow: {
     flexDirection: 'row',
@@ -452,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendLabel: {
-    ...typography.caption,
-    color: colors.forest[900],
+    ...type.caption.regular,
+    color: c.text,
   },
 });

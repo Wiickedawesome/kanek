@@ -20,11 +20,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { TripProgressTimeline } from '@/components/trip/TripProgressTimeline';
 import { LiveTrackingMap } from '@/components/map';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPostByIdQuery } from '@/store/api/postsApi';
 import {
   useGetPostTripContractsQuery,
@@ -46,6 +47,9 @@ interface Props {
 }
 
 export default function DriverTripManageScreen({ backFallback }: Props) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const userId = useSelector((s: RootState) => s.auth.user?.id);
 
@@ -180,7 +184,7 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
   if (!post) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Icon name="alert-triangle" size={40} color={colors.neutral[400]} />
+        <Icon name="alert-triangle" size={40} color={c.textMuted} />
         <Text style={styles.errorText}>Trip not found</Text>
         <Button title="Go Back" variant="outline" onPress={() => safeGoBack(backFallback)} />
       </SafeAreaView>
@@ -191,7 +195,7 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
     // Not the driver of a route_offer — punt to the single-contract screen.
     return (
       <SafeAreaView style={styles.centered}>
-        <Icon name="alert-triangle" size={40} color={colors.neutral[400]} />
+        <Icon name="alert-triangle" size={40} color={c.textMuted} />
         <Text style={styles.errorText}>
           This screen is only available to the driver of a route offer.
         </Text>
@@ -229,19 +233,19 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Pressable onPress={() => safeGoBack(backFallback)} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>Manage Trip</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarPad }]}>
         {/* Route summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle} numberOfLines={2}>{post.title}</Text>
           {post.origin_address && post.dest_address && (
             <View style={styles.summaryRow}>
-              <Icon name="map-pin" size={14} color={colors.forest[400]} />
+              <Icon name="map-pin" size={14} color={c.textMuted} />
               <Text style={styles.summaryText} numberOfLines={2}>
                 {post.origin_address} → {post.dest_address}
               </Text>
@@ -249,12 +253,12 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
           )}
           {post.departure_at && (
             <View style={styles.summaryRow}>
-              <Icon name="clock" size={14} color={colors.forest[400]} />
+              <Icon name="clock" size={14} color={c.textMuted} />
               <Text style={styles.summaryText}>{formatDeparture(post.departure_at)}</Text>
             </View>
           )}
           <View style={styles.summaryRow}>
-            <Icon name="user" size={14} color={colors.forest[400]} />
+            <Icon name="user" size={14} color={c.textMuted} />
             <Text style={styles.summaryText}>
               {riders.length} rider{riders.length === 1 ? '' : 's'} · {totalSeats} seat{totalSeats === 1 ? '' : 's'}
             </Text>
@@ -324,8 +328,9 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -334,8 +339,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -345,24 +350,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
     gap: spacing.md,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
   errorText: {
-    ...typography.body1,
-    color: colors.forest[400],
+    ...type.body.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
   summaryTitle: {
-    ...typography.h3,
-    color: colors.forest[900],
+    ...type.h3.bold,
+    color: c.text,
     marginBottom: spacing.xs,
   },
   summaryRow: {
@@ -371,8 +376,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   summaryText: {
-    ...typography.body2,
-    color: colors.forest[600],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     flex: 1,
   },
   mapsBtn: {
@@ -383,7 +388,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   mapsBtnText: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.accent.green,
   },
   advanceBtn: { marginBottom: spacing.lg },
@@ -392,7 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     overflow: 'hidden',
     marginBottom: spacing.lg,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   map: { flex: 1 },
 });

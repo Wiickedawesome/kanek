@@ -1,7 +1,7 @@
 import { useRef, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import { View, Modal, StyleSheet, Pressable, Text } from 'react-native';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing } from '@/theme';
 
 const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   verifyText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.forest[400],
   },
   verifiedText: {
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     width: '90%',
     height: '60%',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
   },
   closeButton: {
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   closeText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
   },
 });

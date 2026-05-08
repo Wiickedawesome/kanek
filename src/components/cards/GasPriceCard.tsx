@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '@/theme';
+import { View, StyleSheet } from 'react-native';
+import { colors, spacing, useTheme } from '@/theme';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui/Card';
+import { Text } from '@/components/ui/Text';
 import { getTimeAgo } from '@/lib/helpers';
 import { reverseGeocode } from '@/lib/mapbox';
 
@@ -30,15 +31,17 @@ function PriceCol({ label, cents }: { label: string; cents: number | null }) {
   const { value, unit } = formatPrice(cents);
   return (
     <View style={styles.priceCol}>
-      <Text style={styles.priceLabel}>{label}</Text>
-      <Text style={styles.priceValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{value}</Text>
-      {unit ? <Text style={styles.priceUnit}>{unit}</Text> : null}
+      <Text variant="caption" tone="muted" style={styles.center}>{label}</Text>
+      <Text variant="body" weight="bold" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.center}>
+        {value}
+      </Text>
+      {unit ? <Text variant="caption" tone="muted" style={styles.center}>{unit}</Text> : null}
     </View>
   );
 }
 
-
 export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress }: GasPriceCardProps) {
+  const { c } = useTheme();
   const age = getTimeAgo(gasPrice.reported_at);
   const [address, setAddress] = useState<string | null>(null);
 
@@ -60,29 +63,31 @@ export const GasPriceCard = React.memo(function GasPriceCard({ gasPrice, onPress
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.headerRow}>
-        <Icon name="fuel" size={18} color={colors.forest[600]} />
-        <Text style={styles.stationName} numberOfLines={1}>
+        <Icon name="fuel" size={18} color={colors.accent.green} />
+        <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.flex1}>
           {gasPrice.station_name}
         </Text>
-        <Text style={styles.age}>{age}</Text>
+        <Text variant="caption" tone="muted">{age}</Text>
       </View>
 
       {showAddress ? (
         <View style={styles.addressRow}>
-          <Icon name="map-pin" size={14} color={colors.neutral[500]} />
-          <Text style={styles.address} numberOfLines={2}>{address}</Text>
+          <Icon name="map-pin" size={14} color={c.textMuted} />
+          <Text variant="caption" tone="muted" numberOfLines={2} style={styles.flex1}>
+            {address}
+          </Text>
         </View>
       ) : null}
 
-      <View style={styles.pricesRow}>
+      <View style={[styles.pricesRow, { backgroundColor: c.surfaceMuted, borderColor: c.border }]}>
         <PriceCol label="Regular" cents={gasPrice.regular_cents} />
-        <View style={styles.priceDivider} />
+        <View style={[styles.priceDivider, { backgroundColor: c.border }]} />
         <PriceCol label="Premium" cents={gasPrice.premium_cents} />
-        <View style={styles.priceDivider} />
+        <View style={[styles.priceDivider, { backgroundColor: c.border }]} />
         <PriceCol label="Diesel" cents={gasPrice.diesel_cents} />
       </View>
 
-      <Text style={styles.verified}>
+      <Text variant="caption" tone="muted">
         Verified by {gasPrice.verified_count ?? 0}{' '}
         {(gasPrice.verified_count ?? 0) === 1 ? 'user' : 'users'}
       </Text>
@@ -94,19 +99,12 @@ const styles = StyleSheet.create({
   card: {
     gap: spacing.sm,
   },
+  flex1: { flex: 1 },
+  center: { textAlign: 'center' },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  stationName: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
-    flex: 1,
-  },
-  age: {
-    ...typography.caption,
-    color: colors.forest[400],
   },
   addressRow: {
     flexDirection: 'row',
@@ -114,21 +112,13 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingLeft: 26,
   },
-  address: {
-    ...typography.caption,
-    color: colors.forest[500],
-    flex: 1,
-    lineHeight: 16,
-  },
   pricesRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
-    backgroundColor: colors.neutral[100],
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(219, 218, 210, 0.6)',
   },
   priceCol: {
     flex: 1,
@@ -137,29 +127,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     gap: 2,
   },
-  priceLabel: {
-    ...typography.caption,
-    color: colors.forest[500],
-    textAlign: 'center',
-  },
-  priceValue: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
-    textAlign: 'center',
-  },
-  priceUnit: {
-    ...typography.caption,
-    color: colors.forest[500],
-    fontSize: 10,
-    textAlign: 'center',
-  },
   priceDivider: {
     width: 1,
     alignSelf: 'stretch',
-    backgroundColor: colors.neutral[200],
-  },
-  verified: {
-    ...typography.caption,
-    color: colors.forest[500],
   },
 });

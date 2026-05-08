@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { colors, typography, shadows } from '@/theme';
+import { colors, type, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -25,6 +26,8 @@ function getInitials(name?: string | null): string {
 }
 
 export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const dim = sizeMap[size];
   const ringWidth = size === 'lg' ? 2.5 : 2;
   const [imgError, setImgError] = React.useState(false);
@@ -93,7 +96,8 @@ export function Avatar({ uri, name, size = 'md', style }: AvatarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   ring: {
     borderColor: colors.neutral[0],
     alignItems: 'center',
@@ -102,7 +106,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   image: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   fallback: {
     backgroundColor: colors.forest[500],
@@ -110,11 +114,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    ...typography.body2Bold,
-    color: colors.neutral[0],
+    ...type.bodySm.bold,
+    color: c.textInverse,
   },
   initialsSmall: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '700',
   },
 });

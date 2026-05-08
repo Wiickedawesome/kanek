@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { FormField } from './FormField';
 
 interface PriceInputProps {
@@ -21,6 +22,8 @@ export function PriceInput({
   required,
   hint,
 }: PriceInputProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <FormField label={label} error={error} required={required} hint={hint}>
       <View style={styles.inputRow}>
@@ -38,19 +41,20 @@ export function PriceInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     paddingHorizontal: spacing.md,
   },
-  prefix: { ...typography.body1Bold, color: colors.forest[400] },
-  suffix: { ...typography.caption, color: colors.neutral[400] },
+  prefix: { ...type.body.bold, color: c.textMuted },
+  suffix: { ...type.caption.regular, color: c.textMuted },
   input: {
     flex: 1,
     borderWidth: 0,

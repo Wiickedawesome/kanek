@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface TrustBadgeProps {
   ratingAvg: number;
@@ -20,13 +21,15 @@ export function TrustBadge({
   onPress,
   variant = 'compact',
 }: TrustBadgeProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const content =
     variant === 'compact' ? (
       <View style={styles.compactRow}>
         <Icon name="star" size={14} color={colors.accent.green} />
         <Text style={styles.compactValue}>{ratingAvg.toFixed(1)}</Text>
         <View style={styles.compactDot} />
-        <Icon name="clock" size={14} color={colors.forest[400]} />
+        <Icon name="clock" size={14} color={c.textMuted} />
         <Text style={styles.compactValue}>{punctualityPct}%</Text>
         {totalStrikes > 0 && (
           <>
@@ -45,7 +48,7 @@ export function TrustBadge({
         </View>
         <View style={styles.divider} />
         <View style={styles.metric}>
-          <Icon name="clock" size={16} color={colors.forest[400]} />
+          <Icon name="clock" size={16} color={c.textMuted} />
           <Text style={styles.metricValue}>{punctualityPct}%</Text>
           <Text style={styles.metricLabel}>on time</Text>
         </View>
@@ -72,15 +75,16 @@ export function TrustBadge({
   return content;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   compactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
   compactValue: {
-    ...typography.caption,
-    color: colors.forest[500],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '600',
   },
   compactDot: {
@@ -96,7 +100,7 @@ const styles = StyleSheet.create({
   fullRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -109,12 +113,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metricValue: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
   },
   metricLabel: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   divider: {
     width: 1,

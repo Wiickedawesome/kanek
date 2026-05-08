@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { Icon } from '@/components/icons';
-import { colors, typography, shadows } from '@/theme';
+import { colors, type, shadows } from '@/theme';
 import type { PostType } from '@/types/database';
 
 interface PostPinProps {
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   label: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.forest[900],
     marginTop: 2,
     textAlign: 'center',

@@ -10,7 +10,8 @@ import ReAnimated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { navigateToNotification } from '@/lib/helpers';
 import { hapticLight } from '@/lib/haptics';
 import type { AppDispatch } from '@/store';
@@ -45,6 +46,8 @@ const NOTIFICATION_ICON_MAP: Record<string, IconName> = {
 };
 
 export function InAppToast() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
   const toast = useSelector(selectCurrentToast);
@@ -123,14 +126,15 @@ export function InAppToast() {
           ) : null}
         </View>
         <Pressable onPress={handleDismiss} hitSlop={8}>
-          <Icon name="x" size={16} color={colors.neutral[400]} />
+          <Icon name="x" size={16} color={c.textMuted} />
         </Pressable>
       </Pressable>
     </ReAnimated.View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     gap: spacing.sm,
@@ -164,11 +168,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   body: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
 });

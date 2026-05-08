@@ -7,7 +7,8 @@ import {
   TextInputProps as RNTextInputProps,
   ViewStyle,
 } from 'react-native';
-import { colors, typography, borderRadius, spacing } from '@/theme';
+import { colors, type, borderRadius, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 interface TextInputProps extends RNTextInputProps {
   label?: string;
@@ -22,6 +23,8 @@ export function TextInput({
   style,
   ...props
 }: TextInputProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const [focused, setFocused] = useState(false);
 
   return (
@@ -34,7 +37,7 @@ export function TextInput({
           error && styles.errorBorder,
           style,
         ]}
-        placeholderTextColor={colors.neutral[400]}
+        placeholderTextColor={c.textMuted}
         onFocus={(e) => {
           setFocused(true);
           props.onFocus?.(e);
@@ -50,18 +53,19 @@ export function TextInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   label: {
-    ...typography.body2Bold,
-    color: colors.forest[900],
+    ...type.bodySm.bold,
+    color: c.text,
     marginBottom: spacing.xs,
   },
   input: {
-    ...typography.body1,
-    color: colors.forest[900],
-    backgroundColor: colors.neutral[0],
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -78,7 +82,7 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   error: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
     marginTop: spacing.xs,
   },

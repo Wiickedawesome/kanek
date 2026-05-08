@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import type { Database } from '@/types/database';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -14,6 +15,8 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ profile, compact }: ProfileCardProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const fullName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || 'User';
 
   return (
@@ -33,7 +36,7 @@ export function ProfileCard({ profile, compact }: ProfileCardProps) {
               <Text style={styles.statText}>{(profile.rating_avg ?? 0).toFixed(1)}</Text>
             </View>
             <View style={styles.stat}>
-              <Icon name="clock" size={14} color={colors.forest[400]} />
+              <Icon name="clock" size={14} color={c.textMuted} />
               <Text style={styles.statText}>{profile.punctuality_pct}%</Text>
             </View>
           </View>
@@ -43,10 +46,11 @@ export function ProfileCard({ profile, compact }: ProfileCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   info: { flex: 1, gap: spacing.xs },
-  name: { ...typography.body1Bold, color: colors.forest[900] },
+  name: { ...type.body.bold, color: c.text },
   roleBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.sm,
@@ -54,8 +58,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.pill,
     backgroundColor: colors.forest[600],
   },
-  roleText: { ...typography.caption, color: colors.neutral[0], fontWeight: '600' },
+  roleText: { ...type.caption.regular, color: c.textInverse, fontWeight: '600' },
   statsRow: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.xs },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statText: { ...typography.caption, color: colors.forest[500] },
+  statText: { ...type.caption.regular, color: c.textMuted },
 });

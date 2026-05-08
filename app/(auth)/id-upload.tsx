@@ -13,10 +13,13 @@ import { readUploadFile } from '@/lib/uploadFile';
 import { useAuth } from '@/hooks/useAuth';
 import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import type { AppDispatch, RootState } from '@/store';
 
 export default function IdUploadScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const [idUri, setIdUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -174,8 +177,13 @@ export default function IdUploadScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => { void handleExit(); }} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => { void handleExit(); }}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Exit and sign out"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Identity Verification</Text>
         <View style={styles.headerSpacer} />
@@ -200,7 +208,7 @@ export default function IdUploadScreen() {
           </Pressable>
         ) : (
           <Pressable style={styles.captureCard} onPress={takeIdPhoto}>
-            <Icon name="receipt" size={32} color={colors.forest[400]} />
+            <Icon name="receipt" size={32} color={c.textMuted} />
             <Text style={styles.captureLabel}>Take ID Photo</Text>
           </Pressable>
         )}
@@ -214,7 +222,7 @@ export default function IdUploadScreen() {
           </Pressable>
         ) : (
           <Pressable style={styles.captureCard} onPress={takeSelfie}>
-            <Icon name="user" size={32} color={colors.forest[400]} />
+            <Icon name="user" size={32} color={c.textMuted} />
             <Text style={styles.captureLabel}>Take Selfie</Text>
           </Pressable>
         )}
@@ -244,10 +252,11 @@ export default function IdUploadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -257,8 +266,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -274,12 +283,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   title: {
-    ...typography.h1,
-    color: colors.forest[900],
+    ...type.h1.bold,
+    color: c.text,
   },
   subtitle: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
   },
@@ -287,27 +296,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   changeAccountText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
   },
   sectionLabel: {
-    ...typography.body1Bold,
-    color: colors.forest[700],
+    ...type.body.bold,
+    color: c.text,
     marginBottom: spacing.sm,
   },
   captureCard: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     borderStyle: 'dashed',
     marginBottom: spacing.xl,
   },
   captureLabel: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     marginTop: spacing.sm,
   },
   preview: {
@@ -320,7 +329,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   changeText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
     marginTop: spacing.sm,
   },
@@ -334,12 +343,12 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   buttonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: c.textInverse,
   },
   note: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'center',
     marginTop: spacing.lg,
   },

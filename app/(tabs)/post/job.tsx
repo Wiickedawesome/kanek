@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
-import { TextInput, Button, ScreenHeader } from '@/components/ui';
+import { TextInput, Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { EKYASH_COMING_SOON_MESSAGE, ENABLE_EKYASH, MAX_PRICE_CENTS, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/lib/constants';
 import { sanitizeDecimal, safeGoBack } from '@/lib/helpers';
@@ -59,9 +60,12 @@ function parseJobDateTime(date: string, time: string): Date | null {
 }
 
 export default function JobFormScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [createPost, { isLoading }] = useCreatePostMutation();
+  const tabBarPad = useFloatingTabBarPad();
 
   const handleSelectEkyash = useCallback(() => {
     showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
@@ -157,8 +161,13 @@ export default function JobFormScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={safeBack} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={safeBack}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Post a Job</Text>
         <View style={{ width: 24 }} />
@@ -170,7 +179,7 @@ export default function JobFormScreen() {
       >
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.formContent}
+          contentContainerStyle={[styles.formContent, { paddingBottom: tabBarPad }]}
           keyboardShouldPersistTaps="handled"
         >
           <TextInput
@@ -343,10 +352,11 @@ export default function JobFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -359,8 +369,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   formContent: {
     padding: spacing.xl,
@@ -368,8 +378,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   fieldLabel: {
-    ...typography.body2Bold,
-    color: colors.forest[700],
+    ...type.bodySm.bold,
+    color: c.text,
     marginBottom: spacing.sm,
   },
   row: {
@@ -386,22 +396,22 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
-    backgroundColor: colors.neutral[0],
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   chipSelected: {
-    backgroundColor: colors.forest[700],
-    borderColor: colors.forest[700],
+    backgroundColor: c.chipSelectedBg,
+    borderColor: c.chipSelectedBg,
   },
   chipText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   chipTextSelected: {
-    color: colors.neutral[0],
+    color: c.chipSelectedText,
   },
   errorText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.error,
     marginTop: spacing.xs,
   },
@@ -410,8 +420,8 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   charCount: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'right',
     marginTop: -spacing.md,
   },

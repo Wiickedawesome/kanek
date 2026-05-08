@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { getEventIcon, getEventSequence } from '@/lib/tripEvents';
 import type { ContractEvent } from '@/store/api/contractEventsApi';
 import type { PostType } from '@/types/database';
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function TripProgressTimeline({ postType, events }: Props) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const sequence = getEventSequence(postType);
   const completedTypes = new Set(events.map((e) => e.event_type));
 
@@ -79,11 +82,12 @@ export function TripProgressTimeline({ postType, events }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: { marginBottom: spacing.lg },
   title: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     marginBottom: spacing.md,
   },
   row: {
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.green,
   },
   dotPending: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   line: {
     width: 2,
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.green,
   },
   linePending: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   content: {
     flex: 1,
@@ -124,18 +128,18 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   label: {
-    ...typography.body1,
+    ...type.body.regular,
   },
   labelCompleted: {
-    color: colors.forest[900],
+    color: c.text,
     fontWeight: '600',
   },
   labelPending: {
-    color: colors.neutral[400],
+    color: c.textMuted,
   },
   timestamp: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     marginTop: 2,
   },
 });

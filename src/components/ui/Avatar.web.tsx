@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
-import { colors, typography, shadows } from '@/theme';
+import { colors, type, shadows } from '@/theme';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.neutral[0],
   },
   initialsSmall: {
-    ...typography.caption,
+    ...type.caption.regular,
     fontWeight: '700',
   },
 });

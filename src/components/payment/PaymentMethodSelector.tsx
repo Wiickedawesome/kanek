@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius } from '@/theme';
 
 type PaymentMethod = 'cash' | 'ekyash';
 
@@ -52,9 +52,9 @@ const styles = StyleSheet.create({
   },
   optionSelected: {
     borderColor: colors.accent.green,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
-  optionLabel: { ...typography.body1Bold, color: colors.neutral[500] },
+  optionLabel: { ...type.body.bold, color: colors.neutral[500] },
   optionLabelSelected: { color: colors.accent.green },
-  optionHint: { ...typography.caption, color: colors.neutral[400], textAlign: 'center' },
+  optionHint: { ...type.caption.regular, color: colors.neutral[400], textAlign: 'center' },
 });

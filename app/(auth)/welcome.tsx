@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 
 export default function WelcomeScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
@@ -34,7 +37,8 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.forest[900],
@@ -47,21 +51,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brand: {
-    ...typography.h1,
+    ...type.h1.bold,
     fontSize: 48,
     lineHeight: 56,
     color: colors.accent.green,
     textAlign: 'center',
   },
   tagline: {
-    ...typography.h2,
-    color: colors.neutral[0],
+    ...type.h2.bold,
+    color: '#ffffff',
     marginTop: spacing.sm,
     textAlign: 'center',
   },
   description: {
-    ...typography.body1,
-    color: colors.neutral[400],
+    ...type.body.regular,
+    color: 'rgba(255,255,255,0.78)',
     marginTop: spacing.lg,
     textAlign: 'center',
   },
@@ -75,8 +79,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: '#ffffff',
   },
   secondaryButton: {
     paddingVertical: spacing.lg,
@@ -84,7 +88,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   secondaryButtonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[400],
+    ...type.body.bold,
+    color: 'rgba(255,255,255,0.78)',
   },
 });

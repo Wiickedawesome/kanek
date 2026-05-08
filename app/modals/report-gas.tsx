@@ -17,7 +17,8 @@ import { safeGoBack } from '@/lib/helpers';
 import { reverseGeocode } from '@/lib/mapbox';
 import { Button, TextInput, ScreenHeader } from '@/components/ui';
 import { MapPicker } from '@/components/map/MapPicker';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useCreateGasPriceMutation,
   useUpdateGasPriceMutation,
@@ -28,6 +29,8 @@ import type { RootState } from '@/store';
 const safeBack = () => safeGoBack('/(tabs)/profile/reports');
 
 export default function ReportGasModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { id: editId } = useLocalSearchParams<{ id?: string }>();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const location = useSelector((state: RootState) => state.location);
@@ -126,8 +129,13 @@ export default function ReportGasModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={safeBack} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={safeBack}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{isEdit ? 'Edit Gas Prices' : 'Gas Prices'}</Text>
         <View style={{ width: 24 }} />
@@ -224,10 +232,11 @@ export default function ReportGasModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -240,16 +249,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   content: {
     padding: spacing.xl,
     gap: spacing.xl,
   },
   sectionLabel: {
-    ...typography.body2Bold,
-    color: colors.neutral[500],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -257,25 +266,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
   },
   locationLabel: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
     flex: 1,
   },
   locationSub: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
     marginTop: 2,
   },
   locationAction: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.accent.green,
   },
 });

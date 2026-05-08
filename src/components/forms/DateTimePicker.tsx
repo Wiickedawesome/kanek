@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { colors, spacing, borderRadius } from '@/theme';
+import { colors, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { FormField } from './FormField';
 
 interface DateTimePickerProps {
@@ -33,12 +34,14 @@ export function DateTimePicker({
   timeError,
   required,
 }: DateTimePickerProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <View style={styles.row}>
       <View style={styles.half}>
         <FormField label={dateLabel} error={dateError} required={required}>
           <View style={styles.inputRow}>
-            <Icon name="clock" size={16} color={colors.forest[400]} />
+            <Icon name="clock" size={16} color={c.textMuted} />
             <TextInput
               value={dateValue}
               onChangeText={onDateChange}
@@ -52,7 +55,7 @@ export function DateTimePicker({
       <View style={styles.half}>
         <FormField label={timeLabel} error={timeError} required={required}>
           <View style={styles.inputRow}>
-            <Icon name="clock" size={16} color={colors.forest[400]} />
+            <Icon name="clock" size={16} color={c.textMuted} />
             <TextInput
               value={timeValue}
               onChangeText={onTimeChange}
@@ -67,17 +70,18 @@ export function DateTimePicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.md },
   half: { flex: 1 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
     paddingHorizontal: spacing.md,
   },
   input: {

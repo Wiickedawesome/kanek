@@ -12,11 +12,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
-import { Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LiveTrackingMap } from '@/components/map';
 import { TripProgressTimeline, TripActionButtons } from '@/components/trip';
 import { isSequenceComplete, getEventLabel } from '@/lib/tripEvents';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useGetContractByIdQuery,
   useCompleteBookingMutation,
@@ -38,6 +39,9 @@ import type { ContractStatus } from '@/types/database';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 
 export default function ContractDetailScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const { contractId } = useLocalSearchParams<{ contractId: string }>();
   const authUser = useSelector((state: RootState) => state.auth.user);
   const userId = authUser?.id;
@@ -229,7 +233,7 @@ export default function ContractDetailScreen() {
   if (!contract) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <Icon name="alert-triangle" size={48} color={colors.neutral[400]} />
+        <Icon name="alert-triangle" size={48} color={c.textMuted} />
         <Text style={styles.errorText}>Contract not found</Text>
         <Button title="Go Back" variant="outline" onPress={() => safeGoBack('/(tabs)/activity/')} />
       </SafeAreaView>
@@ -253,8 +257,13 @@ export default function ContractDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => router.navigate('/(tabs)/activity/' as any)} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => router.navigate('/(tabs)/activity/' as any)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {contract.post?.title ?? 'Contract'}
@@ -303,7 +312,7 @@ export default function ContractDetailScreen() {
       </Pressable>
 
       {/* Main scrollable content — trip-focused */}
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+      <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingBottom: tabBarPad }]}>
         {/* Route visual */}
         {(contract.origin_address || contract.dest_address) && (
           <View style={styles.section}>
@@ -318,7 +327,7 @@ export default function ContractDetailScreen() {
                     { lat: destination[1], lng: destination[0], label: contract.dest_address ?? undefined },
                   )}
                 >
-                  <Icon name="external-link" size={14} color={colors.forest[400]} />
+                  <Icon name="external-link" size={14} color={c.textMuted} />
                   <Text style={styles.openMapsText}>Open in Maps</Text>
                 </Pressable>
               )}
@@ -340,14 +349,14 @@ export default function ContractDetailScreen() {
         {/* Info rows: departure, payment, seats */}
         {contract.departure_at && (
           <View style={styles.infoRow}>
-            <Icon name="clock" size={18} color={colors.forest[400]} />
+            <Icon name="clock" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>{formatDeparture(contract.departure_at)}</Text>
           </View>
         )}
 
         {contract.booking?.payment_method && (
           <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={colors.forest[400]} />
+            <Icon name="receipt" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               Payment: {contract.booking.payment_method === 'ekyash' ? 'E-Kyash' : 'Cash'}
             </Text>
@@ -356,7 +365,7 @@ export default function ContractDetailScreen() {
 
         {contract.post?.type === 'route_offer' && contract.booking && contract.booking.seats_booked > 0 && (
           <View style={styles.infoRow}>
-            <Icon name="user" size={18} color={colors.forest[400]} />
+            <Icon name="user" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               {contract.booking.seats_booked} seat{contract.booking.seats_booked !== 1 ? 's' : ''} booked
             </Text>
@@ -423,7 +432,7 @@ export default function ContractDetailScreen() {
                 params: { contractId: contractId! },
               })}
             >
-              <Icon name="user" size={18} color={colors.forest[400]} />
+              <Icon name="user" size={18} color={c.textMuted} />
               <Text style={styles.checkinText}>Selfie Check-in</Text>
             </Pressable>
           </View>
@@ -474,7 +483,7 @@ export default function ContractDetailScreen() {
           })}
         >
           <View style={styles.messagesStripLeft}>
-            <Icon name="message-circle" size={20} color={colors.forest[500]} />
+            <Icon name="message-circle" size={20} color={c.textMuted} />
             <Text style={styles.messagesStripTitle}>
               Messages{messages.length > 0 ? ` (${messages.length})` : ''}
             </Text>
@@ -487,7 +496,7 @@ export default function ContractDetailScreen() {
             ) : (
               <Text style={styles.messagesPreviewEmpty}>No messages yet</Text>
             )}
-            <Icon name="chevron-right" size={18} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={18} color={c.textMuted} />
           </View>
         </Pressable>
       </ScrollView>
@@ -496,23 +505,24 @@ export default function ContractDetailScreen() {
 }
 
 const STATUS_COLORS: Record<ContractStatus, { bg: string; fg: string }> = {
-  active: { bg: '#e8f5e9', fg: colors.accent.green },
-  completed: { bg: colors.neutral[100], fg: colors.forest[500] },
-  disputed: { bg: '#fff8e1', fg: colors.warning },
-  cancelled: { bg: '#ffebee', fg: colors.error },
+  active: { bg: 'rgba(81, 193, 82, 0.18)', fg: colors.accent.green },
+  completed: { bg: 'rgba(255, 255, 255, 0.06)', fg: colors.accent.green },
+  disputed: { bg: 'rgba(255, 193, 7, 0.18)', fg: colors.warning },
+  cancelled: { bg: 'rgba(211, 47, 47, 0.18)', fg: colors.error },
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   errorText: {
-    ...typography.body1,
-    color: colors.neutral[400],
+    ...type.body.regular,
+    color: c.textMuted,
     marginVertical: spacing.lg,
   },
   header: {
@@ -523,8 +533,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -535,7 +545,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: c.border,
   },
   statusBarRow: {
     flexDirection: 'row',
@@ -547,11 +557,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  statusChip: { ...typography.body2Bold },
-  priceLabel: { ...typography.body1Bold, color: colors.forest[900] },
+  statusChip: { ...type.bodySm.bold },
+  priceLabel: { ...type.body.bold, color: c.text },
   routeSummaryText: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: spacing.xs,
   },
 
@@ -562,8 +572,8 @@ const styles = StyleSheet.create({
   // Sections
   section: { marginBottom: spacing.xl },
   sectionLabel: {
-    ...typography.body2Bold,
-    color: colors.forest[400],
+    ...type.bodySm.bold,
+    color: c.textMuted,
     marginBottom: spacing.sm,
   },
   sectionHeader: {
@@ -573,8 +583,8 @@ const styles = StyleSheet.create({
   },
   openMapsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   openMapsText: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '600',
   },
 
@@ -603,14 +613,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.lg,
   },
-  address: { ...typography.body1, color: colors.forest[900] },
+  address: { ...type.body.regular, color: c.text },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  infoText: { ...typography.body1, color: colors.forest[900] },
+  infoText: { ...type.body.regular, color: c.text },
 
   // Map
   mapContainer: {
@@ -637,8 +647,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.green,
     borderColor: colors.accent.green,
   },
-  trackingToggleText: { ...typography.body1Bold, color: colors.accent.green },
-  trackingToggleTextActive: { color: colors.neutral[0] },
+  trackingToggleText: { ...type.body.bold, color: colors.accent.green },
+  trackingToggleTextActive: { color: c.textInverse },
   checkinButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -648,9 +658,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.pill,
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: c.border,
   },
-  checkinText: { ...typography.body1Bold, color: colors.forest[500] },
+  checkinText: { ...type.body.bold, color: c.textMuted },
 
   // Action buttons
   actionRow: {
@@ -667,10 +677,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
     marginTop: spacing.md,
   },
   messagesStripLeft: {
@@ -679,8 +689,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   messagesStripTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   messagesStripRight: {
     flexDirection: 'row',
@@ -690,14 +700,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   messagesPreview: {
-    ...typography.body2,
-    color: colors.forest[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     flex: 1,
     textAlign: 'right',
   },
   messagesPreviewEmpty: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     fontStyle: 'italic',
   },
 });

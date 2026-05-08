@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { getTimeAgo, safeGoBack, navigateToNotification } from '@/lib/helpers';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useGetNotificationsQuery,
   useMarkNotificationReadMutation,
@@ -51,6 +52,9 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
 };
 
 export default function NotificationsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((s: RootState) => s.auth.user?.id);
   const {
     data: notifications,
@@ -110,8 +114,13 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/activity/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>
         {unreadCount > 0 && userId ? (
@@ -132,7 +141,7 @@ export default function NotificationsScreen() {
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarPad }]}
           initialNumToRender={10}
           maxToRenderPerBatch={8}
           windowSize={5}
@@ -159,8 +168,9 @@ export default function NotificationsScreen() {
 }
 
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -169,8 +179,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0] },
-  markAllText: { ...typography.body2Bold, color: colors.accent.green },
+  headerTitle: { ...type.h3.bold, color: c.text },
+  markAllText: { ...type.bodySm.bold, color: colors.accent.green },
   list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.sm },
   notifCard: { padding: spacing.md },
@@ -180,16 +190,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconCircleUnread: { backgroundColor: '#e8f5e9' },
+  iconCircleUnread: { backgroundColor: 'rgba(81, 193, 82, 0.18)' },
   notifContent: { flex: 1, gap: 2 },
-  notifTitle: { ...typography.body2, color: colors.forest[900] },
-  notifTitleUnread: { ...typography.body2Bold },
-  notifBody: { ...typography.caption, color: colors.neutral[500] },
-  notifTime: { ...typography.caption, color: colors.neutral[400], marginTop: 2 },
+  notifTitle: { ...type.bodySm.regular, color: c.text },
+  notifTitleUnread: { ...type.bodySm.bold },
+  notifBody: { ...type.caption.regular, color: c.textMuted },
+  notifTime: { ...type.caption.regular, color: c.textMuted, marginTop: 2 },
   unreadDot: {
     width: 8,
     height: 8,

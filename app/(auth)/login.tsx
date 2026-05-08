@@ -8,10 +8,13 @@ import { Button } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
 import { ENABLE_APPLE_AUTH, ENABLE_EMAIL_AUTH, ENABLE_GOOGLE_AUTH } from '@/lib/constants';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
 
 export default function LoginScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { signup } = useLocalSearchParams<{ signup?: string }>();
   const isSignUp = signup === '1';
   const { signInWithEmail, verifyEmailOtp, signInWithProvider } = useAuth();
@@ -115,7 +118,7 @@ export default function LoginScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Icon name="chevron-left" size={24} color={colors.forest[900]} />
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
       </View>
       <View style={styles.content}>
@@ -181,7 +184,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="you@example.com"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             autoFocus
           />
         ) : showEmailAuth && isOtpStep ? (
@@ -192,7 +195,7 @@ export default function LoginScreen() {
             onChangeText={setOtp}
             keyboardType="number-pad"
             placeholder="000000"
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={c.textMuted}
             maxLength={6}
           />
         ) : null}
@@ -228,10 +231,11 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   topBar: {
     flexDirection: 'row',
@@ -252,12 +256,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
   },
   title: {
-    ...typography.h1,
-    color: colors.forest[900],
+    ...type.h1.bold,
+    color: c.text,
   },
   subtitle: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
   },
@@ -274,22 +278,22 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   divider: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
     flex: 1,
     height: 1,
   },
   dividerText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   unavailableText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginBottom: spacing.xl,
   },
   input: {
-    ...typography.h2,
-    color: colors.forest[900],
+    ...type.h2.bold,
+    color: c.text,
     borderBottomWidth: 2,
     borderBottomColor: colors.forest[600],
     paddingVertical: spacing.md,
@@ -305,15 +309,15 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: c.textInverse,
   },
   backLink: {
     marginTop: spacing.lg,
     alignItems: 'center',
   },
   backText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
   },
 });

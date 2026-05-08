@@ -12,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Button, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
@@ -29,6 +30,8 @@ import {
  * 4. Polls for payment status
  */
 export default function EkyashPayModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { contractId, payerId, payeeId, amountCents, description, payerPhone } =
     useLocalSearchParams<{
       contractId: string;
@@ -129,7 +132,7 @@ export default function EkyashPayModal() {
     if (!ENABLE_EKYASH) {
       return (
         <View style={styles.centered}>
-          <Icon name="receipt" size={48} color={colors.neutral[400]} />
+          <Icon name="receipt" size={48} color={c.textMuted} />
           <Text style={styles.loadingText}>E-Kyash is coming soon.</Text>
           <Text style={styles.errorText}>{EKYASH_COMING_SOON_MESSAGE}</Text>
           <Button title="Go Back" onPress={() => safeGoBack('/(tabs)/activity/')} variant="outline" />
@@ -232,8 +235,13 @@ export default function EkyashPayModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/activity/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>E-Kyash Payment</Text>
         <View style={{ width: 24 }} />
@@ -244,10 +252,11 @@ export default function EkyashPayModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -257,8 +266,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   centered: {
     flex: 1,
@@ -268,11 +277,11 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   loadingText: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   errorText: {
-    ...typography.body1,
+    ...type.body.regular,
     color: colors.error,
     textAlign: 'center',
   },
@@ -283,7 +292,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   qrContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginTop: spacing.lg,
@@ -293,12 +302,12 @@ const styles = StyleSheet.create({
     height: 220,
   },
   scanText: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   breakdown: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -309,26 +318,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   breakdownLabel: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   breakdownValue: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
   },
   breakdownTotal: {
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: c.border,
     paddingTop: spacing.sm,
     marginTop: spacing.xs,
   },
   breakdownTotalLabel: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   breakdownTotalValue: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   waitingRow: {
     flexDirection: 'row',
@@ -338,11 +347,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   waitingText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.green,
   },
   timeoutText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.error,
   },
 });

@@ -21,7 +21,8 @@ import {
   useGetDriverDocumentsQuery,
   useUpsertDriverDocumentMutation,
 } from '@/store/api/driverDocumentsApi';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import type { AppDispatch, RootState } from '@/store';
 import type { DriverDocumentType } from '@/types/database';
 
@@ -36,6 +37,8 @@ interface VehicleInfo {
 }
 
 export default function DriverDocsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const { signOut } = useAuth();
@@ -119,8 +122,13 @@ export default function DriverDocsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => { void handleExit(); }} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => { void handleExit(); }}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Exit and sign out"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Driver Documents</Text>
         <View style={styles.headerSpacer} />
@@ -165,7 +173,7 @@ export default function DriverDocsScreen() {
         <TextInput
           style={styles.input}
           placeholder="Make (e.g. Toyota)"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={vehicle.make}
           onChangeText={(t) => setVehicle((v) => ({ ...v, make: t }))}
           maxLength={50}
@@ -173,7 +181,7 @@ export default function DriverDocsScreen() {
         <TextInput
           style={styles.input}
           placeholder="Model (e.g. Hilux)"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={vehicle.model}
           onChangeText={(t) => setVehicle((v) => ({ ...v, model: t }))}
           maxLength={50}
@@ -181,7 +189,7 @@ export default function DriverDocsScreen() {
         <TextInput
           style={styles.input}
           placeholder="Year (e.g. 2019)"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={vehicle.year}
           onChangeText={(t) => setVehicle((v) => ({ ...v, year: t }))}
           keyboardType="number-pad"
@@ -190,7 +198,7 @@ export default function DriverDocsScreen() {
         <TextInput
           style={styles.input}
           placeholder="Color (e.g. White)"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={vehicle.color}
           onChangeText={(t) => setVehicle((v) => ({ ...v, color: t }))}
           maxLength={30}
@@ -198,7 +206,7 @@ export default function DriverDocsScreen() {
         <TextInput
           style={styles.input}
           placeholder="License Plate"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={vehicle.plate}
           onChangeText={(t) => setVehicle((v) => ({ ...v, plate: t }))}
           autoCapitalize="characters"
@@ -223,10 +231,11 @@ export default function DriverDocsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -236,8 +245,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -250,12 +259,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
   },
   title: {
-    ...typography.h1,
-    color: colors.forest[900],
+    ...type.h1.bold,
+    color: c.text,
   },
   subtitle: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
   },
@@ -263,12 +272,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   changeAccountText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
   },
   sectionLabel: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
@@ -276,12 +285,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   input: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
     marginBottom: spacing.sm,
   },
   button: {
@@ -295,12 +304,12 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   buttonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: c.textInverse,
   },
   note: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'center',
     marginTop: spacing.lg,
   },

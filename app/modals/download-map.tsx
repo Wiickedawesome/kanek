@@ -10,7 +10,8 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
 import { Button, ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { safeGoBack } from '@/lib/helpers';
 import {
   OFFLINE_REGIONS,
@@ -28,6 +29,8 @@ interface RegionItem {
 }
 
 export default function DownloadMapModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const [downloadedPacks, setDownloadedPacks] = useState<string[]>([]);
   const [activeDownload, setActiveDownload] = useState<OfflineRegionKey | null>(null);
   const [progress, setProgress] = useState(0);
@@ -95,7 +98,7 @@ export default function DownloadMapModal() {
     return (
       <View style={styles.regionRow}>
         <View style={styles.regionInfo}>
-          <Icon name="map-pin" size={20} color={colors.forest[700]} />
+          <Icon name="map-pin" size={20} color={c.text} />
           <Text style={styles.regionName}>{item.name}</Text>
         </View>
 
@@ -130,8 +133,13 @@ export default function DownloadMapModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/explore/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Offline Maps</Text>
         <View style={{ width: 24 }} />
@@ -158,10 +166,11 @@ export default function DownloadMapModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -171,8 +180,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   content: {
     flex: 1,
@@ -180,11 +189,11 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   description: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   list: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
   },
@@ -201,8 +210,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   regionName: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -213,7 +222,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -223,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.green,
     width: 36,
     textAlign: 'right',
@@ -236,16 +245,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   deleteBtnText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.error,
   },
   separator: {
     height: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   storageNote: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
 });

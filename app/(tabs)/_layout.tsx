@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
 import { Tabs, usePathname, router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Compass, PlusCircle, ClipboardList, User } from '@/components/icons';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
 import { normalizeAppPath } from '@/lib/helpers';
-import { colors } from '@/theme';
+import { FloatingTabBar } from '@/components/ui/FloatingTabBar';
 
 export default function TabLayout() {
   const { session, isLoading, isComplete, nextAuthRoute } = useOnboardingStatus();
@@ -37,49 +35,17 @@ export default function TabLayout() {
 }
 
 function TabNavigator({ userId }: { userId?: string }) {
-  const insets = useSafeAreaInsets();
   const { data: unreadCount } = useGetUnreadCountQuery(userId ?? '', {
     skip: !userId,
     pollingInterval: 60_000,
   });
   const badge = unreadCount && unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : undefined;
-  const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
-  const minimumBottomClearance = Platform.OS === 'android' ? 20 : 10;
-  const tabBarBaseHeight = Platform.OS === 'android' ? 58 : 54;
-  const tabBarHeight = tabBarBaseHeight + Math.max(bottomInset, minimumBottomClearance);
-  const tabBarPaddingBottom = Math.max(bottomInset, minimumBottomClearance);
 
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent.green,
-        tabBarInactiveTintColor: colors.forest[400],
-        tabBarStyle: Platform.select({
-          web: {
-            backgroundColor: 'rgba(246, 246, 244, 0.82)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(0, 0, 0, 0.06)',
-            height: tabBarHeight,
-            paddingBottom: 10,
-            paddingTop: 4,
-          } as any,
-          default: {
-            backgroundColor: colors.neutral[100],
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(0, 0, 0, 0.06)',
-            elevation: 0,
-            height: tabBarHeight,
-            paddingBottom: tabBarPaddingBottom,
-            paddingTop: 4,
-          },
-        }),
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: 'Manrope-Regular',
-        },
       }}
     >
       <Tabs.Screen
@@ -102,16 +68,6 @@ function TabNavigator({ userId }: { userId?: string }) {
           title: 'Activity',
           tabBarIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
           tabBarBadge: badge,
-          tabBarBadgeStyle: {
-            backgroundColor: '#d32f2f',
-            color: '#fff',
-            fontSize: 10,
-            fontFamily: 'Manrope-Bold',
-            minWidth: 18,
-            height: 18,
-            borderRadius: 9,
-            lineHeight: 18,
-          },
         }}
       />
       <Tabs.Screen

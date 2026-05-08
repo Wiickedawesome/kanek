@@ -11,10 +11,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector , useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/icons';
-import { Button, Card, ScreenHeader } from '@/components/ui';
+import { Button, Card, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
-import { colors, typography, spacing
-} from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import { safeGoBack } from '@/lib/helpers';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
@@ -54,6 +54,9 @@ function getGovIdStatusColor(status: ReviewStatus | 'not_uploaded'): string {
 }
 
 export default function DocumentsScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const dispatch = useDispatch<AppDispatch>();
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
@@ -162,14 +165,19 @@ export default function DocumentsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/profile/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/profile/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>My Documents</Text>
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         <Text style={styles.subtitle}>
           Keep your verification documents up to date here. Replacing a rejected document automatically sends it back for review.
         </Text>
@@ -240,8 +248,9 @@ export default function DocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -250,18 +259,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: { ...type.h3.bold, color: c.text, flex: 1, textAlign: 'center' },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.lg },
-  subtitle: { ...typography.body2, color: colors.forest[400], marginBottom: spacing.sm },
+  subtitle: { ...type.bodySm.regular, color: c.textMuted, marginBottom: spacing.sm },
 
   govIdCard: { padding: spacing.lg, gap: spacing.md },
   govIdInfo: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  docName: { ...typography.body1Bold, color: colors.forest[900] },
-  statusText: { ...typography.caption, marginTop: 2 },
-  rejectionText: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
+  docName: { ...type.body.bold, color: c.text },
+  statusText: { ...type.caption.regular, marginTop: 2 },
+  rejectionText: { ...type.caption.regular, color: colors.error, marginTop: spacing.xs },
   uploadBtn: { alignSelf: 'flex-start' },
 
   sectionHeader: { gap: spacing.xs, marginTop: spacing.sm },
-  sectionTitle: { ...typography.h3, color: colors.forest[900] },
-  sectionSubtitle: { ...typography.body2, color: colors.forest[400] },
+  sectionTitle: { ...type.h3.bold, color: c.text },
+  sectionSubtitle: { ...type.bodySm.regular, color: c.textMuted },
 });

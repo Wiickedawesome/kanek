@@ -9,19 +9,27 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui';
-import { colors, typography, spacing } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { safeGoBack } from '@/lib/helpers';
 import { useSOS } from '@/hooks/useSOS';
 
 export default function SOSModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { triggerSOS, isSending } = useSOS();
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Close */}
       <View style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/activity/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/activity/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
+          <Icon name="chevron-left" size={24} color="#fff" />
         </Pressable>
         <Text style={styles.headerTitle}>Emergency</Text>
         <View style={{ width: 24 }} />
@@ -58,7 +66,8 @@ export default function SOSModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.error,
@@ -71,8 +80,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: '#fff',
   },
   content: {
     flex: 1,
@@ -85,24 +94,23 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    ...typography.h1,
-    color: colors.neutral[0],
+    ...type.h1.bold,
+    color: '#fff',
     textAlign: 'center',
   },
   description: {
-    ...typography.body1,
+    ...type.body.regular,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
     lineHeight: 24,
   },
   sosButton: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   callRow: {
     flexDirection: 'row',
@@ -111,8 +119,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   callText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: '#fff',
     textDecorationLine: 'underline',
   },
 });

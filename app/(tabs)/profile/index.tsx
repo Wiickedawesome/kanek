@@ -13,11 +13,12 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader, Card } from '@/components/ui';
+import { ScreenHeader, Card, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { VerificationStatus } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, typography, spacing, borderRadius, shadows } from '@/theme';
+import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,9 @@ import Constants from 'expo-constants';
 import type { AccountStatus } from '@/types/database';
 
 export default function ProfileScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { signOut } = useAuth();
   const { triggerSOS } = useSOS();
@@ -171,7 +175,7 @@ export default function ProfileScreen() {
         <Text style={styles.headerTitle}>Profile</Text>
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         {/* Profile card */}
         <Card style={styles.profileCard}>
           <View style={styles.avatarColumn}>
@@ -227,7 +231,7 @@ export default function ProfileScreen() {
 
           <View style={styles.statBox}>
             <View style={styles.statIconRow}>
-              <Icon name="clock" size={20} color={colors.forest[400]} />
+              <Icon name="clock" size={20} color={c.textMuted} />
               <Text style={styles.statValue}>
                 {profile?.punctuality_pct ?? '—'}%
               </Text>
@@ -383,9 +387,11 @@ function MenuItem({
   badge?: string;
   onPress: () => void;
 }) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
-      <Icon name={icon} size={20} color={colors.forest[400]} />
+      <Icon name={icon} size={20} color={c.textMuted} />
       <View style={styles.menuItemContent}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Text style={styles.menuLabel}>{label}</Text>
@@ -397,21 +403,22 @@ function MenuItem({
         </View>
         {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
-      <Icon name="chevron-right" size={16} color={colors.neutral[400]} />
+      <Icon name="chevron-right" size={16} color={c.textMuted} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     paddingHorizontal: spacing.xl,
@@ -419,8 +426,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   headerTitle: {
-    ...typography.h2,
-    color: colors.neutral[0],
+    ...type.h2.bold,
+    color: c.text,
   },
   scrollContent: {
     paddingHorizontal: spacing.sm,
@@ -448,14 +455,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
   },
   avatarHint: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.accent.green,
     fontWeight: '600',
   },
@@ -464,8 +471,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   name: {
-    ...typography.h3,
-    color: colors.forest[900],
+    ...type.h3.bold,
+    color: c.text,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -481,17 +488,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.forest[600],
   },
   roleText: {
-    ...typography.caption,
-    color: colors.neutral[0],
+    ...type.caption.regular,
+    color: c.textInverse,
     fontWeight: '600',
   },
   statusHint: {
-    ...typography.caption,
-    color: colors.forest[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: c.surface,
     borderRadius: 8,
     paddingVertical: spacing.lg,
     ...shadows.sm,
@@ -507,32 +514,32 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   statValue: {
-    ...typography.h3,
-    color: colors.forest[900],
+    ...type.h3.bold,
+    color: c.text,
   },
   statLabel: {
-    ...typography.caption,
-    color: colors.forest[500],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   reviewsSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: c.surface,
     borderRadius: 8,
     padding: spacing.lg,
     ...shadows.sm,
   },
   reviewsSectionTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
     marginBottom: spacing.md,
   },
   reviewItem: {
     paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
+    borderTopColor: c.border,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -544,8 +551,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   reviewerName: {
-    ...typography.body2,
-    color: colors.forest[900],
+    ...type.bodySm.regular,
+    color: c.text,
     fontWeight: '600',
   },
   reviewStars: {
@@ -560,16 +567,16 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   onTimeText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.accent.green,
   },
   reviewDate: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
   },
   reviewComment: {
-    ...typography.body2,
-    color: colors.forest[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: spacing.xs,
     marginLeft: 40 + spacing.sm,
   },
@@ -580,14 +587,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
+    borderTopColor: c.border,
   },
   showAllText: {
-    ...typography.body2Bold,
+    ...type.bodySm.bold,
     color: colors.accent.green,
   },
   menuSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: c.surface,
     borderRadius: 8,
     overflow: 'hidden',
     ...shadows.sm,
@@ -598,18 +605,18 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: c.border,
   },
   menuItemContent: {
     flex: 1,
   },
   menuLabel: {
-    ...typography.body1,
-    color: colors.forest[900],
+    ...type.body.regular,
+    color: c.text,
   },
   menuSubtitle: {
-    ...typography.caption,
-    color: colors.neutral[500],
+    ...type.caption.regular,
+    color: c.textMuted,
     marginTop: 2,
   },
   badge: {
@@ -621,7 +628,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.green + '40',
   },
   badgeText: {
-    ...typography.caption,
+    ...type.caption.regular,
     color: colors.accent.green,
     fontFamily: 'Manrope_700Bold',
     fontSize: 10,
@@ -634,12 +641,12 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   signOutText: {
-    ...typography.body1Bold,
+    ...type.body.bold,
     color: colors.error,
   },
   version: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     textAlign: 'center',
   },
 });

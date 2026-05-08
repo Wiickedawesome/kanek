@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icons';
-import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing } from '@/theme';
+import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { colors, type, spacing, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { safeGoBack } from '@/lib/helpers';
 
 interface LegalScreenProps {
@@ -19,6 +20,9 @@ interface LegalScreenProps {
  * Thin route wrappers pass content via props.
  */
 export function LegalScreen({ backFallback, title, sections, lastUpdated, contactEmail }: LegalScreenProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
@@ -29,7 +33,7 @@ export function LegalScreen({ backFallback, title, sections, lastUpdated, contac
         <View style={{ width: 24 }} />
       </ScreenHeader>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         <Text style={styles.lastUpdated}>Last updated: {lastUpdated}</Text>
 
         {sections.map((section, i) => (
@@ -55,8 +59,9 @@ export function LegalScreen({ backFallback, title, sections, lastUpdated, contac
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -64,12 +69,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerTitle: { ...typography.h3, color: colors.neutral[0], flex: 1, textAlign: 'center' },
+  headerTitle: { ...type.h3.bold, color: c.text, flex: 1, textAlign: 'center' },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl },
-  lastUpdated: { ...typography.caption, color: colors.neutral[400] },
+  lastUpdated: { ...type.caption.regular, color: c.textMuted },
   section: { gap: spacing.xs },
-  sectionHeading: { ...typography.body1Bold, color: colors.forest[900] },
-  sectionBody: { ...typography.body2, color: colors.neutral[500], lineHeight: 22 },
-  emailLink: { ...typography.body2Bold, color: colors.accent.blue },
+  sectionHeading: { ...type.body.bold, color: c.text },
+  sectionBody: { ...type.bodySm.regular, color: c.textMuted, lineHeight: 22 },
+  emailLink: { ...type.bodySm.bold, color: colors.accent.blue },
 });
 

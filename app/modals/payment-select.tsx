@@ -9,7 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
 import { showAlert } from '@/lib/alert';
 import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
@@ -19,6 +20,8 @@ import { ENABLE_EKYASH, EKYASH_COMING_SOON_MESSAGE } from '@/lib/constants';
  * "Cash is always the answer. E-Kyash is optional."
  */
 export default function PaymentSelectModal() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const { contractId, payerId, payeeId, amountCents, description, payerPhone } =
     useLocalSearchParams<{
       contractId: string;
@@ -50,8 +53,13 @@ export default function PaymentSelectModal() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')} hitSlop={12}>
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+        <Pressable
+          onPress={() => safeGoBack('/(tabs)/explore/')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Pay</Text>
         <View style={{ width: 24 }} />
@@ -65,7 +73,7 @@ export default function PaymentSelectModal() {
           {/* Cash option */}
           <Pressable style={styles.option} onPress={handleCash}>
             <View style={styles.optionIcon}>
-              <Icon name="receipt" size={32} color={colors.forest[900]} />
+              <Icon name="receipt" size={32} color={c.text} />
             </View>
             <View style={styles.optionText}>
               <Text style={styles.optionTitle}>Cash</Text>
@@ -73,7 +81,7 @@ export default function PaymentSelectModal() {
                 Pay the driver directly in person.
               </Text>
             </View>
-            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={20} color={c.textMuted} />
           </Pressable>
 
           {/* E-Kyash option */}
@@ -87,7 +95,7 @@ export default function PaymentSelectModal() {
                 {ENABLE_EKYASH ? 'Pay instantly via QR code or deep link.' : 'Coming soon for a later launch.'}
               </Text>
             </View>
-            <Icon name="chevron-right" size={20} color={colors.neutral[400]} />
+            <Icon name="chevron-right" size={20} color={c.textMuted} />
           </Pressable>
         </View>
 
@@ -99,10 +107,11 @@ export default function PaymentSelectModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -112,8 +121,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
   },
   content: {
     flex: 1,
@@ -122,13 +131,13 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   amount: {
-    ...typography.h1,
-    color: colors.forest[900],
+    ...type.h1.bold,
+    color: c.text,
     marginTop: spacing.xxl,
   },
   subtitle: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
   },
   options: {
     width: '100%',
@@ -138,7 +147,7 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     gap: spacing.lg,
@@ -147,28 +156,28 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   optionIconEkyash: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
   optionText: {
     flex: 1,
     gap: spacing.xs,
   },
   optionTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   optionDesc: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
   },
   note: {
-    ...typography.body2,
-    color: colors.neutral[400],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     textAlign: 'center',
     marginTop: 'auto' as unknown as number,
     paddingBottom: spacing.xl,

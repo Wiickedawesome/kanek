@@ -6,13 +6,16 @@ import { router } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { supabase } from '@/lib/supabase';
 import { Icon } from '@/components/icons';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { profilesApi, useSetInitialRoleMutation } from '@/store/api/profilesApi';
 import type { RootState, AppDispatch } from '@/store';
 
 type RoleChoice = 'rider' | 'driver';
 
 export default function RoleSelectScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const [selected, setSelected] = useState<RoleChoice | null>(null);
@@ -77,7 +80,7 @@ export default function RoleSelectScreen() {
         <TextInput
           style={styles.input}
           placeholder="First name"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={firstName}
           onChangeText={setFirstName}
           maxLength={50}
@@ -86,7 +89,7 @@ export default function RoleSelectScreen() {
         <TextInput
           style={styles.input}
           placeholder="Last name"
-          placeholderTextColor={colors.neutral[400]}
+          placeholderTextColor={c.textMuted}
           value={lastName}
           onChangeText={setLastName}
           maxLength={50}
@@ -130,10 +133,11 @@ export default function RoleSelectScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -141,19 +145,19 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxxl,
   },
   title: {
-    ...typography.h1,
-    color: colors.forest[900],
+    ...type.h1.bold,
+    color: c.text,
   },
   subtitle: {
-    ...typography.body1,
-    color: colors.neutral[500],
+    ...type.body.regular,
+    color: c.textMuted,
     marginTop: spacing.sm,
     marginBottom: spacing.xxl,
   },
   input: {
-    ...typography.body1,
-    color: colors.forest[900],
-    backgroundColor: colors.neutral[100],
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -162,7 +166,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: c.bg,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -171,22 +175,22 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     borderColor: colors.accent.green,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: c.surface,
   },
   cardText: {
     marginLeft: spacing.lg,
     flex: 1,
   },
   cardTitle: {
-    ...typography.body1Bold,
-    color: colors.forest[900],
+    ...type.body.bold,
+    color: c.text,
   },
   cardTitleSelected: {
     color: colors.accent.green,
   },
   cardDesc: {
-    ...typography.body2,
-    color: colors.neutral[500],
+    ...type.bodySm.regular,
+    color: c.textMuted,
     marginTop: 2,
   },
   button: {
@@ -200,14 +204,14 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   buttonText: {
-    ...typography.body1Bold,
-    color: colors.neutral[0],
+    ...type.body.bold,
+    color: c.textInverse,
   },
   notYou: {
     marginBottom: spacing.lg,
   },
   notYouText: {
-    ...typography.body2,
+    ...type.bodySm.regular,
     color: colors.accent.blue,
   },
 });

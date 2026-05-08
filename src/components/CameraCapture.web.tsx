@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { showAlert } from '@/lib/alert';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius } from '@/theme';
 
 export type CameraFacing = 'front' | 'back';
 
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    ...typography.body1,
+    ...type.body.regular,
     color: '#fff',
   },
   controls: {
@@ -155,14 +155,14 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
   },
   btnCancelText: {
-    ...typography.body1Bold,
+    ...type.body.bold,
     color: '#fff',
   },
   btnCapture: {
     backgroundColor: colors.accent.green,
   },
   btnCaptureText: {
-    ...typography.body1Bold,
+    ...type.body.bold,
     color: colors.forest[900],
   },
   btnDisabled: {

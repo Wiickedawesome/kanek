@@ -13,8 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { ScreenHeader } from '@/components/ui';
-import { colors, typography, spacing, borderRadius } from '@/theme';
+import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetContractByIdQuery } from '@/store/api/bookingsApi';
 import { useGetMessagesQuery, useSendMessageMutation } from '@/store/api/messagesApi';
 import type { MessageWithSender } from '@/store/api/messagesApi';
@@ -26,6 +27,9 @@ import type { RootState } from '@/store';
 const MESSAGING_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export default function MessagesScreen() {
+  const { c } = useTheme();
+  const styles = createStyles(c);
+  const tabBarPad = useFloatingTabBarPad();
   const { contractId } = useLocalSearchParams<{ contractId: string }>();
   const authUser = useSelector((state: RootState) => state.auth.user);
   const userId = authUser?.id;
@@ -104,7 +108,7 @@ export default function MessagesScreen() {
           onPress={() => safeGoBack(`/(tabs)/activity/${contractId}`)}
           hitSlop={12}
         >
-          <Icon name="chevron-left" size={24} color={colors.neutral[0]} />
+          <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
@@ -129,7 +133,7 @@ export default function MessagesScreen() {
           windowSize={7}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
-              <Icon name="message-circle" size={48} color={colors.neutral[300]} />
+              <Icon name="message-circle" size={48} color={c.textMuted} />
               <Text style={styles.emptyChatText}>No messages yet</Text>
               <Text style={styles.emptyChatSubText}>
                 Start a conversation with the other party
@@ -140,18 +144,18 @@ export default function MessagesScreen() {
 
         {/* Input bar */}
         {messagingExpired ? (
-          <View style={styles.expiredBar}>
-            <Icon name="lock" size={16} color={colors.neutral[400]} />
+          <View style={[styles.expiredBar, { paddingBottom: spacing.md + tabBarPad }]}>
+            <Icon name="lock" size={16} color={c.textMuted} />
             <Text style={styles.expiredText}>
               Messaging disabled — this job ended more than 24 hours ago
             </Text>
           </View>
         ) : (
-          <View style={styles.inputBar}>
+          <View style={[styles.inputBar, { paddingBottom: spacing.sm + tabBarPad }]}>
             <TextInput
               style={styles.textInput}
               placeholder="Type a message..."
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={c.textMuted}
               value={messageText}
               onChangeText={setMessageText}
               multiline
@@ -182,8 +186,9 @@ export default function MessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.neutral[100] },
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,8 +197,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: {
-    ...typography.h3,
-    color: colors.neutral[0],
+    ...type.h3.bold,
+    color: c.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -213,8 +218,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.xxl,
   },
-  emptyChatText: { ...typography.body1Bold, color: colors.neutral[400] },
-  emptyChatSubText: { ...typography.body2, color: colors.neutral[400] },
+  emptyChatText: { ...type.body.bold, color: c.textMuted },
+  emptyChatSubText: { ...type.bodySm.regular, color: c.textMuted },
 
   messageBubble: {
     maxWidth: '75%',
@@ -230,22 +235,22 @@ const styles = StyleSheet.create({
   },
   theirBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: c.surface,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: c.border,
   },
   senderName: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     fontWeight: '600',
     marginBottom: 2,
   },
-  messageText: { ...typography.body1, color: colors.forest[900] },
-  myMessageText: { color: colors.neutral[0] },
+  messageText: { ...type.body.regular, color: c.text },
+  myMessageText: { color: c.textInverse },
   messageTime: {
-    ...typography.caption,
-    color: colors.forest[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     marginTop: 2,
     alignSelf: 'flex-end',
   },
@@ -257,15 +262,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
-    backgroundColor: colors.neutral[0],
+    borderTopColor: c.border,
+    backgroundColor: c.surface,
     gap: spacing.sm,
   },
   textInput: {
     flex: 1,
-    ...typography.body1,
-    color: colors.forest[900],
-    backgroundColor: colors.neutral[100],
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.bg,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -280,7 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.neutral[200],
+    backgroundColor: c.border,
   },
   expiredBar: {
     flexDirection: 'row',
@@ -290,12 +295,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
-    backgroundColor: colors.neutral[100],
+    borderTopColor: c.border,
+    backgroundColor: c.bg,
   },
   expiredText: {
-    ...typography.caption,
-    color: colors.neutral[400],
+    ...type.caption.regular,
+    color: c.textMuted,
     flexShrink: 1,
   },
 });
