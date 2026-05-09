@@ -127,7 +127,7 @@ export const postsApi = createApi({
           'departure_at', 'expires_at', 'price_cents', 'seats_total',
           'payment_method', 'pickup_notes', 'pickup_style',
           'is_round_trip', 'vehicle_description', 'min_riders',
-          'return_time', 'repeat_days',
+          'return_time', 'repeat_days', 'repeat_until', 'last_confirmed_at',
           'route_geometry', 'route_distance_km', 'route_duration_min',
           'route_fuel_cost_cents',
           'errand_category', 'errand_fee_cents', 'item_cost_cents',
@@ -267,6 +267,19 @@ export const postsApi = createApi({
         { type: 'Post', id: 'MY_LIST' },
       ],
     }),
+
+    confirmRecurringRoute: builder.mutation<null, string>({
+      queryFn: async (postId) => {
+        const { error } = await supabase.rpc('confirm_recurring_route', { p_post_id: postId });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Post', id },
+        { type: 'Post', id: 'LIST' },
+        { type: 'Post', id: 'MY_LIST' },
+      ],
+    }),
   }),
 });
 
@@ -278,4 +291,5 @@ export const {
   useDeletePostMutation,
   useProceedRouteMutation,
   useCancelRouteShortMutation,
+  useConfirmRecurringRouteMutation,
 } = postsApi;

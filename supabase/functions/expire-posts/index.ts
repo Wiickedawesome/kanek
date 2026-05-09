@@ -21,6 +21,8 @@ const UPCOMING_REMINDER_MINUTES = 30;
 const DEFAULT_TRIP_DURATION_MINUTES = 120;
 const DEFAULT_ERRAND_DURATION_MINUTES = 90;
 const INACTIVITY_GRACE_MINUTES = 180;
+const RECURRING_CONFIRM_INTERVAL_DAYS = 15;
+const RECURRING_CONFIRM_INTERVAL_MS = RECURRING_CONFIRM_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
 
 type TimedPost = {
   id: string;
@@ -30,7 +32,17 @@ type TimedPost = {
   type: string;
   departure_at: string | null;
   expires_at: string | null;
+  last_confirmed_at: string | null;
+  repeat_days: number[] | null;
+  repeat_until: string | null;
+  return_time: string | null;
   route_duration_min: number | null;
+};
+
+type RecurringAdvancePlan = {
+  post: TimedPost;
+  nextDepartureAt: string;
+  nextReturnTime: string | null;
 };
 
 type BookingRecipient = {
@@ -88,6 +100,90 @@ function getStaleInProgressDeadlineMs(post: TimedPost): number | null {
   return departureMs + (durationMinutes + INACTIVITY_GRACE_MINUTES) * 60_000;
 }
 
+function normalizeRepeatDay(day: number): number | null {
+  if (day === 0) return 7;
+  if (day >= 1 && day <= 7) return day;
+  return null;
+}
+
+function getRecurringDays(days: number[] | null | undefined): number[] {
+  if (!days || days.length === 0) return [];
+  return Array.from(new Set(days.map((day) => normalizeRepeatDay(day)).filter((day): day is number => day != null)));
+}
+
+function getNextRecurringDeparture(post: TimedPost): Date | null {
+  if (!post.departure_at) return null;
+
+  const repeatDays = getRecurringDays(post.repeat_days);
+  if (repeatDays.length === 0) return null;
+
+  const departure = new Date(post.departure_at);
+  if (Number.isNaN(departure.getTime())) return null;
+
+  const year = departure.getUTCFullYear();
+  const month = departure.getUTCMonth();
+  const date = departure.getUTCDate();
+  const hours = departure.getUTCHours();
+  const minutes = departure.getUTCMinutes();
+  const seconds = departure.getUTCSeconds();
+  const millis = departure.getUTCMilliseconds();
+
+  for (let offset = 1; offset <= 14; offset += 1) {
+    const candidate = new Date(Date.UTC(year, month, date + offset, hours, minutes, seconds, millis));
+    const weekday = candidate.getUTCDay() === 0 ? 7 : candidate.getUTCDay();
+    if (!repeatDays.includes(weekday)) continue;
+
+    if (post.repeat_until && candidate.toISOString().slice(0, 10) > post.repeat_until) {
+      return null;
+    }
+
+    return candidate;
+  }
+
+  return null;
+}
+
+function getShiftedReturnTime(post: TimedPost, nextDeparture: Date): string | null {
+  if (!post.departure_at || !post.return_time) return null;
+
+  const departure = new Date(post.departure_at);
+  const returnTime = new Date(post.return_time);
+  if (Number.isNaN(departure.getTime()) || Number.isNaN(returnTime.getTime())) {
+    return null;
+  }
+
+  const durationMs = returnTime.getTime() - departure.getTime();
+  if (durationMs <= 0) return null;
+
+  return new Date(nextDeparture.getTime() + durationMs).toISOString();
+}
+
+function shouldSendRecurringKeepaliveReminder(post: TimedPost, nowMs: number, todayDate: string): boolean {
+  if (getRecurringDays(post.repeat_days).length === 0) return false;
+  if (post.repeat_until && post.repeat_until < todayDate) return false;
+
+  if (!post.last_confirmed_at) return true;
+
+  const lastConfirmedMs = new Date(post.last_confirmed_at).getTime();
+  if (Number.isNaN(lastConfirmedMs)) return true;
+
+  return nowMs - lastConfirmedMs >= RECURRING_CONFIRM_INTERVAL_MS;
+}
+
+function formatNotificationDate(isoDate: string): string {
+  const value = new Date(isoDate);
+  if (Number.isNaN(value.getTime())) return isoDate;
+
+  return value.toLocaleString('en-BZ', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 async function sendInternalNotification(payload: NotifyPayload) {
   try {
     const res = await fetch(NOTIFY_USER_URL, {
@@ -126,13 +222,18 @@ Deno.serve(async (req) => {
     const nowMs = Date.now();
     const now = new Date(nowMs).toISOString();
     const reminderCutoff = new Date(nowMs + UPCOMING_REMINDER_MINUTES * 60_000).toISOString();
+    const recurringConfirmCutoff = new Date(nowMs - RECURRING_CONFIRM_INTERVAL_MS).toISOString();
+    const recurringReminderBucket = Math.floor(nowMs / RECURRING_CONFIRM_INTERVAL_MS);
+    const todayDate = now.slice(0, 10);
 
-    const postFields = 'id, author_id, title, status, type, departure_at, expires_at, route_duration_min';
+    const postFields = 'id, author_id, title, status, type, departure_at, expires_at, route_duration_min, repeat_days, repeat_until, return_time, last_confirmed_at';
 
     const [
       dueByExpiryResult,
       dueByDepartureResult,
       reminderPostsResult,
+      advanceRecurringPostsResult,
+      recurringKeepalivePostsResult,
     ] = await Promise.all([
       supabase
         .from('posts')
@@ -153,6 +254,21 @@ Deno.serve(async (req) => {
         .gte('departure_at', now)
         .lt('departure_at', reminderCutoff)
         .not('departure_at', 'is', null),
+      supabase
+        .from('posts')
+        .select(postFields)
+        .in('type', ['route_offer', 'route_request'])
+        .in('status', ['open', 'activated', 'expired', 'cancelled', 'completed'])
+        .lt('departure_at', now)
+        .not('departure_at', 'is', null)
+        .not('repeat_days', 'is', null),
+      supabase
+        .from('posts')
+        .select(postFields)
+        .in('type', ['route_offer', 'route_request'])
+        .in('status', ['open', 'activated'])
+        .not('repeat_days', 'is', null)
+        .or(`last_confirmed_at.is.null,last_confirmed_at.lte.${recurringConfirmCutoff}`),
     ]);
 
     if (dueByExpiryResult.error) {
@@ -164,11 +280,36 @@ Deno.serve(async (req) => {
     if (reminderPostsResult.error) {
       return errorResponse(`Posts reminder error: ${reminderPostsResult.error.message}`, 500);
     }
+    if (advanceRecurringPostsResult.error) {
+      return errorResponse(`Recurring advance error: ${advanceRecurringPostsResult.error.message}`, 500);
+    }
+    if (recurringKeepalivePostsResult.error) {
+      return errorResponse(`Recurring keepalive error: ${recurringKeepalivePostsResult.error.message}`, 500);
+    }
+
+    const advancePlans = dedupePosts((advanceRecurringPostsResult.data ?? []) as TimedPost[])
+      .reduce<RecurringAdvancePlan[]>((plans, post) => {
+        const nextDeparture = getNextRecurringDeparture(post);
+        if (!nextDeparture) return plans;
+
+        plans.push({
+          post,
+          nextDepartureAt: nextDeparture.toISOString(),
+          nextReturnTime: getShiftedReturnTime(post, nextDeparture),
+        });
+        return plans;
+      }, []);
+
+    const advancedIds = advancePlans.map((plan) => plan.post.id);
+    const advancedIdSet = new Set(advancedIds);
 
     const duePosts = dedupePosts([
       ...((dueByExpiryResult.data ?? []) as TimedPost[]),
       ...((dueByDepartureResult.data ?? []) as TimedPost[]),
-    ]);
+    ]).filter((post) => !advancedIdSet.has(post.id));
+
+    const recurringKeepalivePosts = ((recurringKeepalivePostsResult.data ?? []) as TimedPost[])
+      .filter((post) => shouldSendRecurringKeepaliveReminder(post, nowMs, todayDate));
 
     const expiredPosts: TimedPost[] = [];
     const cancelledPosts: TimedPost[] = [];
@@ -194,7 +335,7 @@ Deno.serve(async (req) => {
 
     const expiredIds = expiredPosts.map((post) => post.id);
     const cancelledIds = cancelledPosts.map((post) => post.id);
-    const affectedIds = [...new Set([...expiredIds, ...cancelledIds])];
+    const affectedIds = [...new Set([...expiredIds, ...cancelledIds, ...advancedIds])];
 
     const [affectedBookingsResult, reminderBookingsResult] = await Promise.all([
       affectedIds.length > 0
@@ -299,6 +440,51 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (advancedIds.length > 0) {
+      const [{ error: bookingError }, { error: contractError }] = await Promise.all([
+        supabase
+          .from('bookings')
+          .update({
+            status: 'cancelled',
+            cancel_reason: 'Recurring route moved to its next scheduled occurrence',
+            cancelled_at: now,
+            updated_at: now,
+          })
+          .in('post_id', advancedIds)
+          .in('status', ['pending', 'confirmed']),
+        supabase
+          .from('contracts')
+          .update({ status: 'cancelled' })
+          .in('post_id', advancedIds)
+          .eq('status', 'active'),
+      ]);
+
+      if (bookingError) {
+        return errorResponse(`Advance recurring bookings error: ${bookingError.message}`, 500);
+      }
+      if (contractError) {
+        return errorResponse(`Advance recurring contracts error: ${contractError.message}`, 500);
+      }
+
+      for (const plan of advancePlans) {
+        const { error } = await supabase
+          .from('posts')
+          .update({
+            departure_at: plan.nextDepartureAt,
+            return_time: plan.nextReturnTime,
+            expires_at: null,
+            seats_filled: 0,
+            status: 'open',
+            updated_at: now,
+          })
+          .eq('id', plan.post.id);
+
+        if (error) {
+          return errorResponse(`Advance recurring routes error: ${error.message}`, 500);
+        }
+      }
+    }
+
     const notifications: Promise<void>[] = [];
 
     for (const post of reminderPostsResult.data ?? []) {
@@ -367,6 +553,51 @@ Deno.serve(async (req) => {
       }
     }
 
+    for (const plan of advancePlans) {
+      const scheduleLabel = formatNotificationDate(plan.nextDepartureAt);
+
+      notifications.push(sendInternalNotification({
+        userId: plan.post.author_id,
+        type: 'recurring_route_advanced',
+        title: 'Recurring route rescheduled',
+        body: `Your recurring route "${plan.post.title}" was moved to ${scheduleLabel}.`,
+        data: { postId: plan.post.id, departureAt: plan.nextDepartureAt },
+        dedupe: { postId: plan.post.id, reason: 'recurring_advanced', departureAt: plan.nextDepartureAt },
+      }));
+
+      for (const booking of bookingsByPost.get(plan.post.id) ?? []) {
+        notifications.push(sendInternalNotification({
+          userId: booking.user_id,
+          type: 'recurring_route_advanced',
+          title: 'Recurring route moved forward',
+          body: `"${plan.post.title}" was moved to its next occurrence on ${scheduleLabel}. Please rebook if you still need this ride.`,
+          data: { postId: plan.post.id, departureAt: plan.nextDepartureAt },
+          dedupe: { postId: plan.post.id, reason: 'recurring_advanced', departureAt: plan.nextDepartureAt },
+        }));
+      }
+    }
+
+    for (const post of recurringKeepalivePosts) {
+      notifications.push(sendInternalNotification({
+        userId: post.author_id,
+        type: 'route_reconfirm_reminder',
+        title: 'Still offering this recurring route?',
+        body: post.repeat_until
+          ? `Confirm to keep "${post.title}" posted through ${post.repeat_until}.`
+          : `Confirm to keep "${post.title}" posted as a recurring route.`,
+        data: {
+          postId: post.id,
+          repeatUntil: post.repeat_until,
+          reminderWindowDays: RECURRING_CONFIRM_INTERVAL_DAYS,
+        },
+        dedupe: {
+          postId: post.id,
+          reminder: 'recurring_keepalive',
+          bucket: recurringReminderBucket,
+        },
+      }));
+    }
+
     await Promise.allSettled(notifications);
 
     // Delete expired road reports (they auto-expire after 2 hours)
@@ -378,6 +609,8 @@ Deno.serve(async (req) => {
     return jsonResponse({
       expiredPosts: expiredIds.length,
       cancelledPosts: cancelledIds.length,
+      advancedRecurringPosts: advancedIds.length,
+      recurringKeepalivePosts: recurringKeepalivePosts.length,
       remindedPosts: reminderPostsResult.data?.length ?? 0,
       deletedRoadReports: deletedReports ?? 0,
     });

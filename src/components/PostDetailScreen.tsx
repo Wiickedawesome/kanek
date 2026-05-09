@@ -17,11 +17,11 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
-import { useGetPostByIdQuery, useDeletePostMutation, useProceedRouteMutation, useCancelRouteShortMutation } from '@/store/api/postsApi';
+import { useGetPostByIdQuery, useDeletePostMutation, useProceedRouteMutation, useCancelRouteShortMutation, useConfirmRecurringRouteMutation } from '@/store/api/postsApi';
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { buildPointMapUrl, buildRouteMapUrl } from '@/lib/mapbox';
-import { formatBZD, formatDeparture, getEffectivePostStatus, getTimeAgo, isInBelize, openInMaps, safeGoBack } from '@/lib/helpers';
+import { formatBZD, formatDate, formatDeparture, getEffectivePostStatus, getTimeAgo, isInBelize, openInMaps, safeGoBack } from '@/lib/helpers';
 import { showAlert, showConfirm } from '@/lib/alert';
 import type { RootState } from '@/store';
 import type { PostType } from '@/types/database';
@@ -50,14 +50,38 @@ const JOB_CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const REPEAT_DAY_ORDER: { value: number; label: string }[] = [
+  { value: 7, label: 'Sun' },
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+];
+
+function normalizeRepeatDay(day: number): number | null {
+  if (day === 0) return 7;
+  if (day >= 1 && day <= 7) return day;
+  return null;
+}
 
 function formatRepeatDays(days: number[] | null | undefined): string | null {
   if (!days || days.length === 0) return null;
-  return days
-    .map((day) => DAY_LABELS[day] ?? null)
-    .filter((label): label is string => Boolean(label))
-    .join(', ');
+  const normalized = new Set(days.map((day) => normalizeRepeatDay(day)).filter((day): day is number => day != null));
+  const labels = REPEAT_DAY_ORDER.filter(({ value }) => normalized.has(value)).map(({ label }) => label);
+  return labels.length > 0 ? labels.join(', ') : null;
+}
+
+function formatRepeatUntil(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parsed = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString('en-BZ', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 interface Props {
@@ -97,6 +121,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const [deletePost] = useDeletePostMutation();
   const [proceedRoute] = useProceedRouteMutation();
   const [cancelRouteShort] = useCancelRouteShortMutation();
+  const [confirmRecurringRoute, { isLoading: isConfirmingRecurringRoute }] = useConfirmRecurringRouteMutation();
   const [createBooking] = useCreateBookingMutation();
   const [fetchConflicts] = useLazyGetMyConflictingContractsQuery();
   const [fetchApplicantConflicts] = useLazyGetApplicantConflictsQuery();
@@ -222,6 +247,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const jobTimeline = post.type === 'job' ? post.job_timeline : null;
   const jobCategory = post.type === 'job' ? post.job_category : null;
   const repeatDaysLabel = formatRepeatDays(post.repeat_days);
+  const repeatUntilLabel = formatRepeatUntil(post.repeat_until);
+  const isRecurringRoute = isRoute && !!repeatDaysLabel;
   const showOwnerDeleteBar = isOwner && isPostOpen;
   const ownerContractId = isOwner && (effectiveStatus === 'filled' || effectiveStatus === 'in_progress')
     ? (postBookings ?? []).find(b => b.status === 'confirmed' && b.contract?.[0]?.id)?.contract?.[0]?.id ?? null
@@ -805,6 +832,39 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </View>
         )}
 
+        {repeatUntilLabel && (
+          <View style={styles.infoRow}>
+            <Icon name="clock" size={18} color={c.textMuted} />
+            <Text style={styles.infoText}>Until: {repeatUntilLabel}</Text>
+          </View>
+        )}
+
+        {isOwner && isRecurringRoute && (
+          <View style={styles.recurringOwnerSection}>
+            <Text style={styles.infoMuted}>
+              {post.last_confirmed_at
+                ? `Last confirmed: ${formatDate(post.last_confirmed_at)}`
+                : 'This recurring route has not been reconfirmed yet.'}
+            </Text>
+            <Button
+              title="Still offering this route"
+              variant="outline"
+              size="sm"
+              loading={isConfirmingRecurringRoute}
+              onPress={async () => {
+                try {
+                  await confirmRecurringRoute(post.id).unwrap();
+                  showAlert('Route confirmed', 'We updated the recurring route confirmation timestamp.');
+                } catch (e: any) {
+                  const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to confirm recurring route.';
+                  showAlert('Error', msg);
+                }
+              }}
+              style={styles.recurringConfirmButton}
+            />
+          </View>
+        )}
+
         {/* Errand-specific */}
         {isErrand && (
           <>
@@ -1189,6 +1249,13 @@ const createStyles = (c: SemanticColors) =>
   infoMuted: {
     ...type.bodySm.regular,
     color: c.textMuted,
+  },
+  recurringOwnerSection: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  recurringConfirmButton: {
+    alignSelf: 'flex-start',
   },
   descSection: {
     gap: spacing.sm,

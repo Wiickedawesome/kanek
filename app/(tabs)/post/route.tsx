@@ -31,7 +31,15 @@ import { Text } from '@/components/ui/Text';
 
 const safeBack = () => safeGoBack('/(tabs)/post/');
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const REPEAT_DAY_OPTIONS = [
+  { label: 'Sun', value: 7 },
+  { label: 'Mon', value: 1 },
+  { label: 'Tue', value: 2 },
+  { label: 'Wed', value: 3 },
+  { label: 'Thu', value: 4 },
+  { label: 'Fri', value: 5 },
+  { label: 'Sat', value: 6 },
+];
 const MAX_MULTI_STOPS = 5;
 
 interface RouteStop {
@@ -125,6 +133,7 @@ export default function RouteFormScreen() {
   const [returnTime, setReturnTime] = useState('');
   const [repeatEnabled, setRepeatEnabled] = useState(false);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
+  const [repeatUntilDate, setRepeatUntilDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
   // Auto-fill vehicle description from driver_details
@@ -268,6 +277,15 @@ export default function RouteFormScreen() {
       if (repeatEnabled && repeatDays.length === 0) {
         newErrors.repeatDays = 'Select at least one day';
       }
+
+      if (repeatEnabled && repeatUntilDate.trim()) {
+        const repeatUntil = new Date(`${repeatUntilDate}T00:00:00`);
+        if (Number.isNaN(repeatUntil.getTime())) {
+          newErrors.repeatUntilDate = 'Enter a valid end date';
+        } else if (departureDate.trim() && repeatUntilDate < departureDate) {
+          newErrors.repeatUntilDate = 'End date must be on or after departure';
+        }
+      }
     }
 
     if (pickupStyle === 'multi_stop') {
@@ -316,7 +334,7 @@ export default function RouteFormScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime, pickupStyle, routeStops, repeatEnabled, repeatDays]);
+  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime, pickupStyle, routeStops, repeatEnabled, repeatDays, repeatUntilDate]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -361,6 +379,8 @@ export default function RouteFormScreen() {
         is_round_trip: isOffer ? isRoundTrip : false,
         return_time: returnAt ? returnAt.toISOString() : null,
         repeat_days: isOffer && repeatEnabled && repeatDays.length > 0 ? repeatDays : null,
+        repeat_until: isOffer && repeatEnabled && repeatUntilDate.trim() ? repeatUntilDate : null,
+        last_confirmed_at: isOffer && repeatEnabled && repeatDays.length > 0 ? new Date().toISOString() : null,
         payment_method: paymentMethod,
         route_geometry: routeInfo?.geometry ?? null,
         route_distance_km: routeInfo?.distance_km ?? null,
@@ -676,6 +696,7 @@ export default function RouteFormScreen() {
                     setRepeatEnabled((prev) => {
                       if (prev) {
                         setRepeatDays([]);
+                        setRepeatUntilDate('');
                         return false;
                       }
                       return true;
@@ -692,19 +713,28 @@ export default function RouteFormScreen() {
                 {repeatEnabled ? (
                   <>
                     <View style={styles.daysRow}>
-                      {DAY_LABELS.map((label, idx) => (
+                      {REPEAT_DAY_OPTIONS.map(({ label, value }) => (
                         <Pressable
-                          key={idx}
-                          style={[styles.dayChip, repeatDays.includes(idx) && styles.dayChipSelected]}
-                          onPress={() => toggleRepeatDay(idx)}
+                          key={value}
+                          style={[styles.dayChip, repeatDays.includes(value) && styles.dayChipSelected]}
+                          onPress={() => toggleRepeatDay(value)}
                         >
-                          <Text style={[styles.dayChipText, repeatDays.includes(idx) && styles.dayChipTextSelected]}>
+                          <Text style={[styles.dayChipText, repeatDays.includes(value) && styles.dayChipTextSelected]}>
                             {label}
                           </Text>
                         </Pressable>
                       ))}
                     </View>
                     {errors.repeatDays ? <Text style={styles.inlineError}>{errors.repeatDays}</Text> : null}
+                    <DateInput
+                      label="Repeat until (optional)"
+                      value={repeatUntilDate}
+                      onChangeText={setRepeatUntilDate}
+                      error={errors.repeatUntilDate}
+                    />
+                    <Text style={styles.helperText}>
+                      Leave blank to keep the route repeating until you pause or delete it.
+                    </Text>
                   </>
                 ) : null}
               </View>
@@ -857,6 +887,12 @@ const createStyles = (c: SemanticColors) =>
     ...type.caption.regular,
     color: colors.error,
     marginTop: spacing.xs,
+  },
+  helperText: {
+    ...type.caption.regular,
+    color: c.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   textArea: {
     minHeight: 80,

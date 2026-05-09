@@ -1024,6 +1024,7 @@ export type Database = {
           item_cost_cents: number | null
           job_category: Database["public"]["Enums"]["job_category"] | null
           job_timeline: Database["public"]["Enums"]["job_timeline"] | null
+          last_confirmed_at: string | null
           min_riders: number | null
           origin_address: string | null
           origin_lat: number | null
@@ -1035,6 +1036,7 @@ export type Database = {
           pickup_style: Database["public"]["Enums"]["pickup_style"] | null
           price_cents: number | null
           repeat_days: number[] | null
+          repeat_until: string | null
           return_time: string | null
           route_distance_km: number | null
           route_duration_min: number | null
@@ -1066,6 +1068,7 @@ export type Database = {
           item_cost_cents?: number | null
           job_category?: Database["public"]["Enums"]["job_category"] | null
           job_timeline?: Database["public"]["Enums"]["job_timeline"] | null
+          last_confirmed_at?: string | null
           min_riders?: number | null
           origin_address?: string | null
           origin_lat?: number | null
@@ -1077,6 +1080,7 @@ export type Database = {
           pickup_style?: Database["public"]["Enums"]["pickup_style"] | null
           price_cents?: number | null
           repeat_days?: number[] | null
+          repeat_until?: string | null
           return_time?: string | null
           route_distance_km?: number | null
           route_duration_min?: number | null
@@ -1108,6 +1112,7 @@ export type Database = {
           item_cost_cents?: number | null
           job_category?: Database["public"]["Enums"]["job_category"] | null
           job_timeline?: Database["public"]["Enums"]["job_timeline"] | null
+          last_confirmed_at?: string | null
           min_riders?: number | null
           origin_address?: string | null
           origin_lat?: number | null
@@ -1119,6 +1124,7 @@ export type Database = {
           pickup_style?: Database["public"]["Enums"]["pickup_style"] | null
           price_cents?: number | null
           repeat_days?: number[] | null
+          repeat_until?: string | null
           return_time?: string | null
           route_distance_km?: number | null
           route_duration_min?: number | null
@@ -2018,6 +2024,10 @@ export type Database = {
         }[]
       }
       compute_rating_avg: { Args: { p_user_id: string }; Returns: Json }
+      confirm_recurring_route: {
+        Args: { p_post_id: string }
+        Returns: undefined
+      }
       is_active_account: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       proceed_route: { Args: { p_post_id: string }; Returns: undefined }
