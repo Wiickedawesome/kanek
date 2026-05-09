@@ -52,7 +52,8 @@ type BookingRecipient = {
 };
 
 type NotifyPayload = {
-  userId: string;
+  userId?: string;
+  userIds?: string[];
   type: string;
   title: string;
   body: string;
@@ -497,9 +498,10 @@ Deno.serve(async (req) => {
         dedupe: { postId: post.id, reminder: 'departure_window' },
       }));
 
-      for (const booking of reminderBookingsByPost.get(post.id) ?? []) {
+      const reminderRiderIds = (reminderBookingsByPost.get(post.id) ?? []).map((b) => b.user_id);
+      if (reminderRiderIds.length > 0) {
         notifications.push(sendInternalNotification({
-          userId: booking.user_id,
+          userIds: reminderRiderIds,
           type: 'trip_reminder',
           title: 'Trip starting soon',
           body: `"${post.title}" starts within ${UPCOMING_REMINDER_MINUTES} minutes.`,
@@ -519,9 +521,10 @@ Deno.serve(async (req) => {
         dedupe: { postId: post.id, reason: 'deadline_expired' },
       }));
 
-      for (const booking of bookingsByPost.get(post.id) ?? []) {
+      const expiredRiderIds = (bookingsByPost.get(post.id) ?? []).map((b) => b.user_id);
+      if (expiredRiderIds.length > 0) {
         notifications.push(sendInternalNotification({
-          userId: booking.user_id,
+          userIds: expiredRiderIds,
           type: 'post_expired',
           title: 'Post Expired',
           body: `"${post.title}" passed its scheduled deadline and is no longer active.`,
@@ -541,9 +544,10 @@ Deno.serve(async (req) => {
         dedupe: { postId: post.id, reason: 'inactivity_cancelled' },
       }));
 
-      for (const booking of bookingsByPost.get(post.id) ?? []) {
+      const cancelledRiderIds = (bookingsByPost.get(post.id) ?? []).map((b) => b.user_id);
+      if (cancelledRiderIds.length > 0) {
         notifications.push(sendInternalNotification({
-          userId: booking.user_id,
+          userIds: cancelledRiderIds,
           type: 'post_cancelled',
           title: 'Post Cancelled',
           body: `"${post.title}" was cancelled automatically after its deadline due to inactivity.`,
@@ -565,9 +569,10 @@ Deno.serve(async (req) => {
         dedupe: { postId: plan.post.id, reason: 'recurring_advanced', departureAt: plan.nextDepartureAt },
       }));
 
-      for (const booking of bookingsByPost.get(plan.post.id) ?? []) {
+      const advanceRiderIds = (bookingsByPost.get(plan.post.id) ?? []).map((b) => b.user_id);
+      if (advanceRiderIds.length > 0) {
         notifications.push(sendInternalNotification({
-          userId: booking.user_id,
+          userIds: advanceRiderIds,
           type: 'recurring_route_advanced',
           title: 'Recurring route moved forward',
           body: `"${plan.post.title}" was moved to its next occurrence on ${scheduleLabel}. Please rebook if you still need this ride.`,

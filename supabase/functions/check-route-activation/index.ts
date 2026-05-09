@@ -19,7 +19,8 @@ const NOTIFY_USER_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-use
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 type NotifyPayload = {
-  userId: string;
+  userId?: string;
+  userIds?: string[];
   type: string;
   title: string;
   body: string;
@@ -113,25 +114,21 @@ Deno.serve(async (req) => {
           data: { postId: route.id },
         });
 
-        // Notify all booked riders
+        // Notify all booked riders in a single batched push
         const { data: bookings } = await supabase
           .from('bookings')
           .select('user_id')
           .eq('post_id', route.id)
           .eq('status', 'confirmed');
 
-        if (bookings) {
-          await Promise.all(
-            bookings.map((b) =>
-              sendInternalNotification({
-                userId: b.user_id,
-                type: 'route_activated',
-                title: 'Ride Confirmed!',
-                body: `The ride "${route.title}" is confirmed and will depart as scheduled.`,
-                data: { postId: route.id },
-              }),
-            ),
-          );
+        if (bookings && bookings.length > 0) {
+          await sendInternalNotification({
+            userIds: bookings.map((b) => b.user_id),
+            type: 'route_activated',
+            title: 'Ride Confirmed!',
+            body: `The ride "${route.title}" is confirmed and will depart as scheduled.`,
+            data: { postId: route.id },
+          });
         }
 
         activatedCount++;
