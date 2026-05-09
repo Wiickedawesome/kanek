@@ -211,7 +211,7 @@ kanek/
 │       └── helpers.test.ts
 ├── supabase/
 │   ├── config.toml
-│   ├── migrations/                    # 14 SQL files (verified)
+│   ├── migrations/                    # 17 SQL files (verified)
 │   ├── functions/                     # 16 Deno edge functions
 │   └── templates/                     # email templates
 ├── android/                           # native Android (managed by Expo prebuild)
@@ -374,9 +374,9 @@ auth: {
 - **OAuth callback:** `kanek://auth/callback` — handled by `app/auth/callback.tsx` which calls `consumeAuthRedirectUrl(url)` from `src/lib/authRedirect.ts`. The consumer is **idempotent** — it dedupes redirects via a `handledRedirects` Map and exchanges the code via `supabase.auth.exchangeCodeForSession(authCode)`.
 - **SMTP:** Resend (`smtp.resend.com:465`), sender `support@belizechain.org`. Configured in Supabase dashboard, not in code.
 
-### Schema migrations (verified 2026-04-28)
+### Schema migrations (verified 2026-05-09)
 
-There are **14 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
+There are **17 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
 
 | # | File | Purpose (from filename + brief) |
 |---|---|---|
@@ -394,6 +394,9 @@ There are **14 migration files** under `supabase/migrations/`. Each is run seque
 | 00012 | `00012_add_suspended_pending_deletion_status.sql` | New profile statuses |
 | 00013 | `00013_fix_switch_to_driver_role.sql` | Role-change RPC fix |
 | 00014 | `00014_check_user_availability_rpc.sql` | Availability RPC |
+| 00015 | `00015_scrub_invalid_coords.sql` | Clean stored coords outside Belize bbox |
+| 00016 | `00016_route_proceed_cancel_rpcs.sql` | Route proceed/cancel RPCs |
+| 00017 | `00017_recurring_route_until_confirm.sql` | Recurring route until-confirm logic |
 
 For the full table catalogue see `docs/database-schema.md`. The most-touched tables are listed in §25.
 
@@ -777,7 +780,7 @@ wrappers add gestures, district overlays, and the markers needed by the feed.
 - **Library:** `expo-notifications@~55.0.20`
 - **Android:** FCM via `google-services.json` at the repo root and under `android/app/`. Both files must match the production Firebase project.
 - **iOS:** APNs key uploaded to Expo (managed credentials). Apple push key + Team ID match `eas.json` submit config (`6VR44TAYT7`).
-- **Token registration:** `src/hooks/useNotifications.ts`. Stored on `profiles.expo_push_token`.
+- **Token registration:** `src/hooks/useNotifications.ts`. Stored on `profiles.push_token` (text). Stale tokens are cleared by `send-push` and `notify-user` when Expo returns `DeviceNotRegistered` / `InvalidCredentials`.
 - **Sender:** Edge function `send-push` calls `https://exp.host/--/api/v2/push/send`.
 
 ---

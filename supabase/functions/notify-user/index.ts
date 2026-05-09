@@ -123,6 +123,21 @@ Deno.serve(async (req) => {
         });
 
         pushed = pushRes.ok;
+
+        // Strip stale tokens on Expo DeviceNotRegistered / InvalidCredentials.
+        try {
+          const pushBody = await pushRes.json();
+          const ticket = Array.isArray(pushBody?.data) ? pushBody.data[0] : pushBody?.data;
+          const errorCode = ticket?.details?.error;
+          if (
+            ticket?.status === 'error' &&
+            (errorCode === 'DeviceNotRegistered' || errorCode === 'InvalidCredentials')
+          ) {
+            await supabase.from('profiles').update({ push_token: null }).eq('id', userId);
+          }
+        } catch {
+          // Non-JSON response: ignore; pushed flag already reflects HTTP status.
+        }
       }
     }
 

@@ -43,16 +43,20 @@ export function useNotifications() {
 
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     await registerToken({ userId, token: tokenData.data });
-
-    if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.HIGH,
-      });
-    }
   }, [userId, registerToken]);
 
-  // Register token on mount
+  // Create Android notification channel on first render (independent of
+  // auth/permission state). Without a registered channel, FCM-delivered
+  // pushes on Android 8+ are silently dropped.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.HIGH,
+    });
+  }, []);
+
+  // Register token on mount / when user changes
   useEffect(() => {
     registerPushToken();
   }, [registerPushToken]);

@@ -85,6 +85,22 @@ Deno.serve(async (req) => {
 
     const pushData = await pushRes.json();
 
+    // Strip stale tokens: if Expo reports the device is no longer registered,
+    // clear push_token so future sends short-circuit and the next app launch
+    // re-registers a fresh token.
+    const ticket = Array.isArray(pushData?.data) ? pushData.data[0] : pushData?.data;
+    const errorCode = ticket?.details?.error;
+    if (
+      ticket?.status === 'error' &&
+      (errorCode === 'DeviceNotRegistered' || errorCode === 'InvalidCredentials')
+    ) {
+      await supabase
+        .from('profiles')
+        .update({ push_token: null })
+        .eq('id', userId);
+      return jsonResponse({ sent: false, reason: errorCode, cleared: true });
+    }
+
     return jsonResponse({ sent: pushRes.ok, ticket: pushData });
   } catch (error) {
     return errorResponse(
