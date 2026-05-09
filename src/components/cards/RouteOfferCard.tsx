@@ -31,6 +31,7 @@ export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress
     <HeroMap
       origin={{ lat: post.origin_lat as number, lng: post.origin_lng as number }}
       destination={hasDest ? { lat: post.dest_lat as number, lng: post.dest_lng as number } : null}
+      routeGeometry={post.route_geometry as { type: string; coordinates: [number, number][] } | null}
       fallbackType="route_offer"
     />
   ) : (

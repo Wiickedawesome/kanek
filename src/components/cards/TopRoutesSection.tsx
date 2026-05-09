@@ -1,17 +1,16 @@
-import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import React from 'react';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { Icon } from '@/components/icons';
 import { Text } from '@/components/ui/Text';
-import { buildRouteMapUrl } from '@/lib/mapbox';
+import { HeroMap } from './HeroMap';
+import { HeroGradient } from './HeroGradient';
 import { formatBZD, formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 const CARD_WIDTH = 280;
 const IMAGE_HEIGHT = 150;
-const IMAGE_PIXEL_WIDTH = CARD_WIDTH * 2; // retina
-const IMAGE_PIXEL_HEIGHT = IMAGE_HEIGHT * 2;
 
 interface TopRoutesSectionProps {
   routes: PostWithAuthor[];
@@ -71,35 +70,28 @@ function RouteCardCompact({
     route.dest_lat != null &&
     route.dest_lng != null;
 
-  const mapUri = useMemo(() => {
-    if (!hasCoords) return null;
-    const geo = route.route_geometry as { type: string; coordinates: [number, number][] } | null;
-    return buildRouteMapUrl(
-      route.origin_lat!,
-      route.origin_lng!,
-      route.dest_lat!,
-      route.dest_lng!,
-      { width: IMAGE_PIXEL_WIDTH, height: IMAGE_PIXEL_HEIGHT, routeGeometry: geo, padding: 40 },
-    );
-  }, [hasCoords, route.origin_lat, route.origin_lng, route.dest_lat, route.dest_lng, route.route_geometry]);
-
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      {/* Map image showing the route */}
-      {mapUri ? (
-        <Image
-          source={{ uri: mapUri }}
-          style={styles.mapImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.mapImage, styles.mapFallback]}>
-          <Icon name="navigation" size={40} color="rgba(255,255,255,0.15)" />
-        </View>
-      )}
+      {/* Map hero — uses the shared HeroMap so the in-card route preview
+       *  matches the main feed card visuals (real driving geometry when
+       *  available, straight-line fallback, gradient placeholder). */}
+      <View style={styles.mapWrap}>
+        {hasCoords ? (
+          <HeroMap
+            origin={{ lat: route.origin_lat as number, lng: route.origin_lng as number }}
+            destination={{ lat: route.dest_lat as number, lng: route.dest_lng as number }}
+            routeGeometry={route.route_geometry as { type: string; coordinates: [number, number][] } | null}
+            fallbackType={isOffer ? 'route_offer' : 'route_request'}
+            height={IMAGE_HEIGHT}
+            width={CARD_WIDTH}
+          />
+        ) : (
+          <HeroGradient type={isOffer ? 'route_offer' : 'route_request'} height={IMAGE_HEIGHT} />
+        )}
+      </View>
 
       {/* Type badge overlaid on map */}
       <View style={styles.typeBadge}>
@@ -167,14 +159,9 @@ const createStyles = (c: SemanticColors) =>
     cardPressed: {
       opacity: 0.92,
     },
-    mapImage: {
+    mapWrap: {
       width: CARD_WIDTH,
       height: IMAGE_HEIGHT,
-    },
-    mapFallback: {
-      backgroundColor: colors.forest[700],
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     typeBadge: {
       position: 'absolute',
