@@ -53,10 +53,10 @@ const postTypeBadgeConfig: Record<PostType, PostTypePalette> = {
   errand: {
     label: 'Errand',
     icon: 'package',
-    lightFg: '#7b5e00',
-    lightBg: '#fff8e1',
-    darkFg: '#ffd76d',
-    darkBg: 'rgba(255, 193, 7, 0.18)',
+    lightFg: '#a14a00',
+    lightBg: '#ffe0b2',
+    darkFg: '#ffb074',
+    darkBg: 'rgba(251, 140, 0, 0.22)',
   },
   package: {
     label: 'Package',
@@ -69,10 +69,10 @@ const postTypeBadgeConfig: Record<PostType, PostTypePalette> = {
   job: {
     label: 'Job',
     icon: 'clipboard-list',
-    lightFg: colors.forest[700],
-    lightBg: colors.neutral[100],
-    darkFg: '#e0e0e0',
-    darkBg: 'rgba(255, 255, 255, 0.08)',
+    lightFg: '#5c4400',
+    lightBg: '#fff59d',
+    darkFg: colors.accent.yellow,
+    darkBg: 'rgba(253, 216, 53, 0.18)',
   },
 };
 

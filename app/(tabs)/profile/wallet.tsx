@@ -3,13 +3,11 @@ import {
   View,
   StyleSheet,
   FlatList,
-  Pressable,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPaymentHistoryQuery } from '@/store/api/ekyashApi';
@@ -78,18 +76,7 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/profile/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>E-Kyash Wallet</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="E-Kyash Wallet" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       {/* Summary card */}
       <View style={styles.summaryCard}>
@@ -110,7 +97,7 @@ export default function WalletScreen() {
         </View>
       ) : isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
+          <ScreenLoader />
         </View>
       ) : (
         <FlatList
@@ -170,7 +157,7 @@ const createStyles = (c: SemanticColors) =>
     backgroundColor: colors.forest[600],
   },
   summaryLabel: { ...type.caption.regular, color: colors.neutral[200] },
-  summaryValue: { ...type.h2.bold, color: c.textInverse },
+  summaryValue: { ...type.h2.bold, color: '#ffffff' },
 
   list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.md },

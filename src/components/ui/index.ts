@@ -7,6 +7,7 @@ export { Badge, PostTypeBadge } from './Badge';
 export { FilterChip } from './FilterChip';
 export { Avatar } from './Avatar';
 export { EmptyState } from './EmptyState';
+export { ScreenLoader } from './ScreenLoader';
 export { TopographicBg } from './TopographicBg';
 export { ScreenHeader } from './ScreenHeader';
 export { Skeleton, FeedCardSkeleton, FeedListSkeleton, TopRouteCardSkeleton, ProfileSkeleton } from './Skeleton';

@@ -17,9 +17,9 @@ interface PostPinProps {
 const PIN_CONFIG: Record<PostType, { icon: React.ComponentProps<typeof Icon>['name']; color: string }> = {
   route_offer: { icon: 'navigation', color: colors.accent.green },
   route_request: { icon: 'compass', color: colors.forest[500] },
-  errand: { icon: 'package', color: colors.warning },
+  errand: { icon: 'package', color: colors.accent.orange },
   package: { icon: 'package', color: colors.forest[400] },
-  job: { icon: 'construction', color: colors.forest[600] },
+  job: { icon: 'construction', color: colors.accent.yellow },
 };
 
 export function PostPin({ id, coordinate, type, title, onPress }: PostPinProps) {

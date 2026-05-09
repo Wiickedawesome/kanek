@@ -9,6 +9,8 @@ import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
 import { formatBZD } from '@/lib/helpers';
+import { PriceBadge } from './PriceBadge';
+import { MetaItem } from './MetaItem';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 const ACCENT_BG: Record<string, string> = {
@@ -66,25 +68,14 @@ export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: Erra
 
       <View style={styles.metaRow}>
         {post.author?.rating_avg != null && (
-          <View style={styles.metaItem}>
-            <Icon name="star" size={12} color={colors.accent.green} />
-            <Text variant="bodySm" tone="muted">
-              {post.author.rating_avg.toFixed(1)}
-            </Text>
-          </View>
+          <MetaItem iconName="star" iconColor={colors.accent.green}>
+            {post.author.rating_avg.toFixed(1)}
+          </MetaItem>
         )}
         {post.type === 'package' && post.price_cents != null ? (
-          <View style={[styles.priceBadge, { backgroundColor: accent }]}>
-            <Text variant="caption" weight="semibold" tone="inverse">
-              Delivery {formatBZD(post.price_cents)}
-            </Text>
-          </View>
+          <PriceBadge cents={post.price_cents} color={accent} prefix="Delivery" />
         ) : post.errand_fee_cents != null ? (
-          <View style={[styles.priceBadge, { backgroundColor: accent }]}>
-            <Text variant="caption" weight="semibold" tone="inverse">
-              Fee {formatBZD(post.errand_fee_cents)}
-            </Text>
-          </View>
+          <PriceBadge cents={post.errand_fee_cents} color={accent} prefix="Fee" />
         ) : null}
       </View>
 
@@ -119,17 +110,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     marginTop: 2,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  priceBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.pill,
-    marginLeft: 'auto',
   },
   footer: {
     flexDirection: 'row',

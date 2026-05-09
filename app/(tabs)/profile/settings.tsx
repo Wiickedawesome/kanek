@@ -5,13 +5,11 @@ import {
   ScrollView,
   TextInput,
   Pressable,
-  ActivityIndicator,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import { Icon } from '@/components/icons';
-import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Button, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput } from '@/components/forms/LocationInput';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -149,7 +147,7 @@ export default function SettingsScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -158,18 +156,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/profile/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Account Settings</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Account Settings" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         <View style={styles.field}>
@@ -640,5 +627,5 @@ const createStyles = (c: SemanticColors) =>
   deleteConfirmBtnDisabled: {
     backgroundColor: c.border,
   },
-  deleteConfirmBtnText: { ...type.bodySm.bold, color: c.textInverse },
+  deleteConfirmBtnText: { ...type.bodySm.bold, color: '#ffffff' },
 });

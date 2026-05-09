@@ -278,6 +278,7 @@ the security boundary.
 | `EXPO_PUBLIC_ENABLE_GOOGLE_AUTH` | feature flag | only `'true'` enables it | no |
 | `EXPO_PUBLIC_ENABLE_APPLE_AUTH` | feature flag | only `'true'` enables it | no |
 | `EXPO_PUBLIC_HCAPTCHA_SITE_KEY` | hCaptcha account | captcha site key | **see §37** |
+| `EXPO_PUBLIC_SENTRY_DSN` | Sentry project | runtime SDK init; without it `initSentry()` no-ops | yes for crash reporting |
 
 > The hCaptcha site key is currently **empty**. The captcha components in
 > `src/components/HCaptcha.tsx` and `HCaptcha.web.tsx` early-return `null` when
@@ -315,9 +316,10 @@ EXPO_PUBLIC_ENABLE_EMAIL_AUTH=true
 EXPO_PUBLIC_ENABLE_GOOGLE_AUTH=true
 EXPO_PUBLIC_ENABLE_APPLE_AUTH=true
 EXPO_PUBLIC_HCAPTCHA_SITE_KEY=     # empty until §37 is resolved
+EXPO_PUBLIC_SENTRY_DSN=https://...@oNNN.ingest.us.sentry.io/NNN
 ```
 
-### EAS env state (verified 2026-04-28)
+### EAS env state (verified 2026-05-09)
 
 | Variable | production | preview | development |
 |---|:-:|:-:|:-:|
@@ -328,6 +330,7 @@ EXPO_PUBLIC_HCAPTCHA_SITE_KEY=     # empty until §37 is resolved
 | `EXPO_PUBLIC_ENABLE_GOOGLE_AUTH=true` | ✅ | ✅ | ✅ |
 | `EXPO_PUBLIC_ENABLE_APPLE_AUTH=true` | ✅ | ✅ | ✅ |
 | `EXPO_PUBLIC_HCAPTCHA_SITE_KEY` | ❌ missing (§37) | ❌ missing (§37) | ❌ missing (§37) |
+| `EXPO_PUBLIC_SENTRY_DSN` | ✅ | ✅ | ✅ |
 | `SENTRY_AUTH_TOKEN` (sensitive) | ✅ | ✅ | ✅ |
 
 The current build profiles read runtime vars from `preview` for `deviceTest`
@@ -782,10 +785,11 @@ wrappers add gestures, district overlays, and the markers needed by the feed.
 ## 15. Sentry — crash reporting & source maps
 
 - **Org slug:** `kanekbz`
-- **Project slug:** `react-native` (verified in `app.json` and Sentry dashboard — yes, this **is** the real project name even though it looks like a wizard placeholder)
+- **Project slug:** `kanek` (renamed from `react-native` on 2026-05-09; matched in `app.json` Sentry plugin config)
 - **Plan:** Free Developer plan (5 K errors/mo). The Business/Team trial ended 2026-04. Do not assume paid features.
 - **Build-time uploader:** `@sentry/cli` bundled inside `node_modules/@sentry/react-native`. Runs automatically during the iOS Xcode build phase and Android Gradle phase.
-- **Auth token:** `SENTRY_AUTH_TOKEN` (sensitive) — set on production / preview / development EAS env.
+- **Auth token:** `SENTRY_AUTH_TOKEN` (sensitive) — set on production / preview / development EAS env. Verified valid against renamed project slug on 2026-05-09.
+- **Runtime DSN:** `EXPO_PUBLIC_SENTRY_DSN` — set on all three EAS envs on 2026-05-09. Without it, `initSentry()` in `src/lib/sentry.ts` early-returns and the SDK never initializes (no events sent). Builds before this date had no runtime SDK, only build-time source-map upload.
 
 ### Skip flags (emergency only)
 
@@ -801,7 +805,7 @@ once the auth token was set. Do not re-add as a workaround for missing tokens.
 
 ```bash
 SENTRY_AUTH_TOKEN=<token> npx @sentry/cli releases list \
-  --org kanekbz --project react-native | head -5
+  --org kanekbz --project kanek | head -5
 ```
 
 Empty output with exit 0 means the token + project are valid. Anything else
@@ -987,7 +991,7 @@ npx eas-cli submit --platform ios --profile storeTest --latest
       "expo-image",
       ["@sentry/react-native/expo", {
         "url": "https://sentry.io/",
-        "project": "react-native",
+        "project": "kanek",
         "organization": "kanekbz"
       }],
       "expo-web-browser"
@@ -1453,7 +1457,7 @@ supabase functions list
 
 ```bash
 SENTRY_AUTH_TOKEN=<token> npx @sentry/cli releases list \
-  --org kanekbz --project react-native | head -5
+  --org kanekbz --project kanek | head -5
 ```
 
 ### Before claiming the Apple JWT is valid
@@ -1629,6 +1633,7 @@ relevant doc before answering:
 | Date | Change |
 |---|---|
 | 2026-04-28 | Rewritten from scratch: factual repo guide only, behavioral rules moved to `AGENTS.md`. Verified package versions, migration count (14), edge function inventory (16), EAS profile distribution settings, ASC App ID, hCaptcha bypass status, E-Kyash gating, sibling repo facts. |
+| 2026-05-09 | Sentry project renamed `react-native` → `kanek`; `EXPO_PUBLIC_SENTRY_DSN` added to all EAS envs and to env tables; `app.json` plugin config updated; verification commands updated. Back-button bug fixed in `app/(tabs)/activity/[contractId].tsx` (was hard-coded `router.navigate` to activity root, now uses `safeGoBack`). Google OAuth consent branding configured (App name `Kanek`, authorized domains `kanek.bz` + Supabase host, home/privacy/terms URLs). |
 
 ---
 

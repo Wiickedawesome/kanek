@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { profilesApi } from '@/store/api/profilesApi';
 import { Icon } from '@/components/icons';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
-import { ScreenHeader } from '@/components/ui';
+import { ScreenHeader, Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useGetDriverDocumentsQuery,
@@ -213,15 +213,12 @@ export default function DriverDocsScreen() {
           maxLength={20}
         />
 
-        <Pressable
-          style={[styles.button, (!isFormValid || isSubmitting) && styles.buttonDisabled]}
+        <Button
+          title={isSubmitting ? 'Submitting...' : 'Continue'}
           onPress={handleSubmit}
+          loading={isSubmitting}
           disabled={!isFormValid || isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Submitting...' : 'Continue'}
-          </Text>
-        </Pressable>
+        />
 
         <Text style={styles.note}>
           You can upload remaining documents (vehicle registration) later from My Documents in your profile.
@@ -292,20 +289,6 @@ const createStyles = (c: SemanticColors) =>
     ...type.body.regular,
     color: c.text,
     marginBottom: spacing.sm,
-  },
-  button: {
-    backgroundColor: colors.forest[600],
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.pill,
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  buttonText: {
-    ...type.body.bold,
-    color: c.textInverse,
   },
   note: {
     ...type.caption.regular,

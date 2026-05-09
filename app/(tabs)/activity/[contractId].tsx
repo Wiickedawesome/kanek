@@ -4,14 +4,13 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
-import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Button, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { LiveTrackingMap } from '@/components/map';
 import { TripProgressTimeline, TripActionButtons } from '@/components/trip';
 import { isSequenceComplete, getEventLabel } from '@/lib/tripEvents';
@@ -225,7 +224,7 @@ export default function ContractDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -258,7 +257,7 @@ export default function ContractDetailScreen() {
       {/* Header */}
       <ScreenHeader style={styles.header}>
         <Pressable
-          onPress={() => router.navigate('/(tabs)/activity/' as any)}
+          onPress={() => safeGoBack('/(tabs)/activity/')}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Go back"

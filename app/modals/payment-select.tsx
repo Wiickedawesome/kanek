@@ -52,18 +52,7 @@ export default function PaymentSelectModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/explore/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Pay</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Pay" onBack={() => safeGoBack('/(tabs)/explore/')} />
 
       <View style={styles.content}>
         <Text style={styles.amount}>{formatBZD(amount)}</Text>

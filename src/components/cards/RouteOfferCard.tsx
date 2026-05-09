@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { spacing, borderRadius, colors, useTheme } from '@/theme';
-import { Icon } from '@/components/icons';
 import { PostCardShell } from './PostCardShell';
 import { HeroMap } from './HeroMap';
 import { HeroGradient } from './HeroGradient';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
-import { formatBZD, formatDeparture } from '@/lib/helpers';
+import { formatDeparture } from '@/lib/helpers';
+import { PriceBadge } from './PriceBadge';
+import { MetaItem } from './MetaItem';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 interface RouteOfferCardProps {
@@ -49,26 +50,14 @@ export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress
       </Text>
 
       <View style={styles.metaRow}>
-        {departure && (
-          <View style={styles.metaItem}>
-            <Icon name="clock" size={12} color={c.textMuted} />
-            <Text variant="bodySm" tone="muted">{departure}</Text>
-          </View>
-        )}
+        {departure && <MetaItem iconName="clock">{departure}</MetaItem>}
         {post.author?.rating_avg != null && (
-          <View style={styles.metaItem}>
-            <Icon name="star" size={12} color={colors.accent.green} />
-            <Text variant="bodySm" tone="muted">
-              {post.author.rating_avg.toFixed(1)}
-            </Text>
-          </View>
+          <MetaItem iconName="star" iconColor={colors.accent.green}>
+            {post.author.rating_avg.toFixed(1)}
+          </MetaItem>
         )}
         {post.price_cents != null && (
-          <View style={styles.priceBadge}>
-            <Text variant="caption" weight="semibold" tone="inverse">
-              {formatBZD(post.price_cents)}/seat
-            </Text>
-          </View>
+          <PriceBadge cents={post.price_cents} suffix="/seat" />
         )}
       </View>
 
@@ -98,18 +87,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     marginTop: 2,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  priceBadge: {
-    backgroundColor: colors.accent.green,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.pill,
-    marginLeft: 'auto',
   },
   footer: {
     flexDirection: 'row',

@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,9 +11,9 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader, Card, useFloatingTabBarPad } from '@/components/ui';
+import { ScreenHeader, ScreenLoader, Card, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { VerificationStatus } from '@/components/profile';
+import { VerificationStatus, RoleBadge } from '@/components/profile';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -110,7 +109,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -200,11 +199,7 @@ export default function ProfileScreen() {
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{fullName || 'Set your name'}</Text>
             <View style={styles.badgesRow}>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>
-                  {profile?.role === 'driver' ? 'Driver' : 'Rider'}
-                </Text>
-              </View>
+              <RoleBadge role={profile?.role} />
               {profile?.account_status && (
                 <VerificationStatus status={profile.account_status} />
               )}
@@ -479,18 +474,6 @@ const createStyles = (c: SemanticColors) =>
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 2,
-    borderRadius: borderRadius.pill,
-    backgroundColor: colors.forest[600],
-  },
-  roleText: {
-    ...type.caption.regular,
-    color: c.textInverse,
-    fontWeight: '600',
   },
   statusHint: {
     ...type.caption.regular,

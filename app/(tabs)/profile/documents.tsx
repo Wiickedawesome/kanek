@@ -3,14 +3,12 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Pressable,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector , useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/icons';
-import { Button, Card, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Button, Card, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -156,7 +154,7 @@ export default function DocumentsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
+          <ScreenLoader />
         </View>
       </SafeAreaView>
     );
@@ -164,18 +162,7 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/profile/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>My Documents</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="My Documents" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         <Text style={styles.subtitle}>

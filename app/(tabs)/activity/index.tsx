@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,6 +34,14 @@ const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
 const HISTORY_CONTRACT_STATUSES: ContractStatus[] = ['completed', 'cancelled'];
 const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
 const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
+
+// Reanimated's FadeInUp uses CSS animations on web that can get stuck at
+// intermediate opacity when the parent re-renders (e.g. on theme change),
+// producing a translucent "white film" over the cards. Skip on web.
+const cardEntering = (index: number) =>
+  Platform.OS === 'web' || index >= 8
+    ? undefined
+    : FadeInUp.duration(350).delay(index * 60);
 
 export default function ActivityScreen() {
   const { c } = useTheme();
@@ -161,7 +170,7 @@ export default function ActivityScreen() {
       };
 
       return (
-        <Animated.View entering={(index ?? 0) < 8 ? FadeInUp.duration(350).delay((index ?? 0) * 60) : undefined}>
+        <Animated.View entering={cardEntering(index ?? 0)}>
           <Pressable onPress={handlePress}>
             <Card style={styles.bookingCard}>
               <View style={styles.cardHeader}>
@@ -219,7 +228,7 @@ export default function ActivityScreen() {
 
   const renderContract = useCallback(
     ({ item, index }: { item: ContractWithDetails; index?: number }) => (
-      <Animated.View entering={(index ?? 0) < 8 ? FadeInUp.duration(350).delay((index ?? 0) * 60) : undefined}>
+      <Animated.View entering={cardEntering(index ?? 0)}>
         <Pressable onPress={() => router.push(`/(tabs)/activity/${item.id}`)}>
           <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
@@ -328,7 +337,7 @@ export default function ActivityScreen() {
       };
 
       return (
-        <Animated.View entering={index < 8 ? FadeInUp.duration(350).delay(index * 60) : undefined}>
+        <Animated.View entering={cardEntering(index)}>
           <Pressable onPress={handlePress}>
             <Card style={styles.bookingCard}>
             <View style={styles.cardHeader}>
@@ -908,7 +917,7 @@ const createStyles = (c: SemanticColors) =>
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: c.textInverse,
+    color: '#ffffff',
     fontSize: 10,
     fontWeight: '700',
   },

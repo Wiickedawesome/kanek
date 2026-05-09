@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { ScreenHeader } from '@/components/ui';
+import { ScreenHeader, Button } from '@/components/ui';
 import { readUploadFile } from '@/lib/uploadFile';
 import { useAuth } from '@/hooks/useAuth';
 import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
@@ -228,15 +228,12 @@ export default function IdUploadScreen() {
           </Pressable>
         )}
 
-        <Pressable
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+        <Button
+          title={isUploading ? 'Uploading...' : 'Submit for Review'}
           onPress={handleSubmit}
+          loading={isUploading}
           disabled={!canSubmit}
-        >
-          <Text style={styles.buttonText}>
-            {isUploading ? 'Uploading...' : 'Submit for Review'}
-          </Text>
-        </Pressable>
+        />
 
         <Text style={styles.note}>
           Your documents have been submitted for review. You can keep using kanek while we verify them.
@@ -333,19 +330,6 @@ const createStyles = (c: SemanticColors) =>
     ...type.bodySm.regular,
     color: colors.accent.blue,
     marginTop: spacing.sm,
-  },
-  button: {
-    backgroundColor: colors.forest[600],
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.pill,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  buttonText: {
-    ...type.body.bold,
-    color: c.textInverse,
   },
   note: {
     ...type.caption.regular,

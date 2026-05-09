@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Icon } from '@/components/icons';
 import { Card } from '@/components/ui';
-import { colors, type, spacing, borderRadius } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import type { SemanticColors } from '@/theme/semanticColors';
 import { formatBZD, formatDate } from '@/lib/helpers';
 import type { Database } from '@/types/database';
 import { Text } from '@/components/ui/Text';
@@ -16,12 +17,14 @@ interface TransactionReceiptProps {
 }
 
 export function TransactionReceipt({ transaction, isSender }: TransactionReceiptProps) {
+  const { c } = useTheme();
+  const styles = createStyles(c);
   const statusColor = STATUS_COLORS[transaction.status] ?? colors.neutral[400];
 
   return (
     <Card style={styles.container}>
       <View style={styles.header}>
-        <Icon name="receipt" size={24} color={colors.forest[400]} />
+        <Icon name="receipt" size={24} color={c.textMuted} />
         <Text style={styles.headerTitle}>Transaction Receipt</Text>
       </View>
 
@@ -86,23 +89,24 @@ const STATUS_COLORS: Record<string, string> = {
   refunded: colors.forest[400],
 };
 
-const styles = StyleSheet.create({
-  container: { padding: spacing.lg, gap: spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerTitle: { ...type.body.bold, color: colors.forest[900] },
-  divider: { height: 1, backgroundColor: colors.neutral[200] },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: { ...type.bodySm.regular, color: colors.forest[400] },
-  value: { ...type.bodySm.regular, color: colors.forest[900], maxWidth: '50%' },
-  amount: { ...type.h3.bold, color: colors.forest[900] },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.pill,
-  },
-  statusText: { ...type.caption.regular, fontWeight: '600' },
-});
+const createStyles = (c: SemanticColors) =>
+  StyleSheet.create({
+    container: { padding: spacing.lg, gap: spacing.md },
+    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    headerTitle: { ...type.body.bold, color: c.text },
+    divider: { height: 1, backgroundColor: c.border },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    label: { ...type.bodySm.regular, color: c.textMuted },
+    value: { ...type.bodySm.regular, color: c.text, maxWidth: '50%' },
+    amount: { ...type.h3.bold, color: c.text },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: borderRadius.pill,
+    },
+    statusText: { ...type.caption.regular, fontWeight: '600' },
+  });

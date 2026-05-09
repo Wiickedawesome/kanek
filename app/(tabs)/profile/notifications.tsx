@@ -5,7 +5,6 @@ import {
   ScrollView,
   Switch,
   Pressable,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +15,7 @@ import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme'
 import type { SemanticColors } from '@/theme/semanticColors';
 import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
-import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { Text } from '@/components/ui/Text';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
@@ -81,7 +80,7 @@ export default function NotificationSettingsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -90,18 +89,7 @@ export default function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/profile/')}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Notifications" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         {/* System permission banner */}

@@ -86,18 +86,7 @@ export default function RateModal() {
   if (alreadyRated) {
     return (
       <SafeAreaView style={styles.container}>
-        <ScreenHeader style={styles.header}>
-          <Pressable
-            onPress={() => safeGoBack('/(tabs)/activity/')}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Icon name="chevron-left" size={24} color={c.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Rate Trip</Text>
-          <View style={{ width: 24 }} />
-        </ScreenHeader>
+        <ScreenHeader title="Rate Trip" onBack={() => safeGoBack('/(tabs)/activity/')} />
         <View style={styles.alreadyRated}>
           <Icon name="star" size={48} color={colors.accent.green} />
           <Text style={styles.alreadyRatedText}>
@@ -111,18 +100,7 @@ export default function RateModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/activity/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Rate Trip</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Rate Trip" onBack={() => safeGoBack('/(tabs)/activity/')} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

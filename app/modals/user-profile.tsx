@@ -10,8 +10,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
-import { RatingBreakdown } from '@/components/profile';
-import { ScreenHeader } from '@/components/ui';
+import { RatingBreakdown, RoleBadge } from '@/components/profile';
+import { ScreenHeader, ScreenLoader } from '@/components/ui';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
@@ -40,7 +40,7 @@ export default function UserProfileModal() {
   if (profileLoading) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -64,29 +64,14 @@ export default function UserProfileModal() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/explore/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Trust Profile</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Trust Profile" onBack={() => safeGoBack('/(tabs)/explore/')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User identity */}
         <View style={styles.identitySection}>
           <Avatar uri={profile.avatar_url} name={fullName} size="lg" />
           <Text style={styles.name}>{fullName}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>
-              {profile.role === 'driver' ? 'Driver' : 'Rider'}
-            </Text>
-          </View>
+          <RoleBadge role={profile.role} />
           <Text style={styles.memberSince}>Member since {memberSince}</Text>
         </View>
 
@@ -217,17 +202,6 @@ const createStyles = (c: SemanticColors) =>
   name: {
     ...type.h2.bold,
     color: c.text,
-  },
-  roleBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 2,
-    borderRadius: borderRadius.pill,
-    backgroundColor: colors.forest[600],
-  },
-  roleText: {
-    ...type.caption.regular,
-    color: c.textInverse,
-    fontWeight: '600',
   },
   memberSince: {
     ...type.caption.regular,

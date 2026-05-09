@@ -20,7 +20,7 @@ const TYPE_PRESETS: Record<PostType, { colors: [string, string, string]; icon: I
     icon: 'map-pin',
   },
   errand: {
-    colors: ['#5b3a06', '#a36a0a', '#f9a825'],
+    colors: ['#5b2e06', '#a35a0a', '#fb8c00'],
     icon: 'clipboard-list',
   },
   package: {
@@ -28,7 +28,7 @@ const TYPE_PRESETS: Record<PostType, { colors: [string, string, string]; icon: I
     icon: 'package',
   },
   job: {
-    colors: ['#1a2a36', '#2c4759', '#4a7090'],
+    colors: ['#3a2f00', '#7a6300', colors.accent.yellow],
     icon: 'construction',
   },
 };

@@ -5,12 +5,11 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { getTimeAgo, safeGoBack, navigateToNotification } from '@/lib/helpers';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -113,28 +112,23 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/activity/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 && userId ? (
-          <Pressable onPress={() => markAllRead(userId)} hitSlop={12}>
-            <Text style={styles.markAllText}>Read all</Text>
-          </Pressable>
-        ) : (
-          <View style={{ width: 60 }} />
-        )}
-      </ScreenHeader>
+      <ScreenHeader
+        title="Notifications"
+        onBack={() => safeGoBack('/(tabs)/activity/')}
+        right={
+          unreadCount > 0 && userId ? (
+            <Pressable onPress={() => markAllRead(userId)} hitSlop={12}>
+              <Text style={styles.markAllText}>Read all</Text>
+            </Pressable>
+          ) : (
+            <View style={{ width: 60 }} />
+          )
+        }
+      />
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
+          <ScreenLoader />
         </View>
       ) : (
         <FlatList

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { safeGoBack } from '@/lib/helpers';
 import { ENABLE_APPLE_AUTH, ENABLE_EMAIL_AUTH, ENABLE_GOOGLE_AUTH } from '@/lib/constants';
-import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
 import { Text } from '@/components/ui/Text';
@@ -211,15 +211,12 @@ export default function LoginScreen() {
         {showEmailAuth && isInputStep && <HCaptcha ref={captchaRef} />}
 
         {showEmailAuth && (
-          <Pressable
-            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+          <Button
+            title={isSubmitting ? 'Please wait...' : isInputStep ? 'Send Code' : 'Verify'}
             onPress={isInputStep ? handleSendOtp : handleVerifyOtp}
+            loading={isSubmitting}
             disabled={isSubmitting}
-          >
-            <Text style={styles.buttonText}>
-              {isSubmitting ? 'Please wait...' : isInputStep ? 'Send Code' : 'Verify'}
-            </Text>
-          </Pressable>
+          />
         )}
 
         {showEmailAuth && isOtpStep && (
@@ -299,19 +296,6 @@ const createStyles = (c: SemanticColors) =>
     borderBottomColor: colors.forest[600],
     paddingVertical: spacing.md,
     marginBottom: spacing.xl,
-  },
-  button: {
-    backgroundColor: colors.forest[600],
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.pill,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    ...type.body.bold,
-    color: c.textInverse,
   },
   backLink: {
     marginTop: spacing.lg,

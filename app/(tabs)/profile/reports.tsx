@@ -3,14 +3,12 @@ import {
   View,
   StyleSheet,
   SectionList,
-  Pressable,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
-import { Card, EmptyState, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Card, EmptyState, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { getTimeAgo, safeGoBack } from '@/lib/helpers';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -77,22 +75,11 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/profile/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>My Fuel Reports</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="My Fuel Reports" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
+          <ScreenLoader />
         </View>
       ) : sections.length === 0 ? (
         <View style={styles.centered}>

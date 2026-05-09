@@ -128,18 +128,7 @@ export default function ReportGasModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={safeBack}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{isEdit ? 'Edit Gas Prices' : 'Gas Prices'}</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title={isEdit ? 'Edit Gas Prices' : 'Gas Prices'} onBack={safeBack} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

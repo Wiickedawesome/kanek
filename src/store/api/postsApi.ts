@@ -89,6 +89,19 @@ export const postsApi = createApi({
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: (data as unknown as PostWithAuthor[]) ?? [] };
       },
+      // Pre-populate by-id cache so feed → post detail navigation renders
+      // instantly. The list selects a subset of columns; the detail screen
+      // refetches on mount to fill in the rest.
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          for (const post of data) {
+            dispatch(postsApi.util.upsertQueryData('getPostById', post.id, post));
+          }
+        } catch {
+          /* best-effort */
+        }
+      },
       providesTags: (result) =>
         result
           ? [

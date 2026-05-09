@@ -11,6 +11,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { profilesApi, useSetInitialRoleMutation } from '@/store/api/profilesApi';
 import type { RootState, AppDispatch } from '@/store';
 import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui';
 
 type RoleChoice = 'rider' | 'driver';
 
@@ -122,13 +123,12 @@ export default function RoleSelectScreen() {
           </View>
         </Pressable>
 
-        <Pressable
-          style={[styles.button, (!isFormValid || isSaving) && styles.buttonDisabled]}
+        <Button
+          title={isSaving ? 'Saving...' : 'Continue'}
           onPress={handleContinue}
+          loading={isSaving}
           disabled={!isFormValid || isSaving}
-        >
-          <Text style={styles.buttonText}>{isSaving ? 'Saving...' : 'Continue'}</Text>
-        </Pressable>
+        />
       </View>
     </SafeAreaView>
   );
@@ -193,20 +193,6 @@ const createStyles = (c: SemanticColors) =>
     ...type.bodySm.regular,
     color: c.textMuted,
     marginTop: 2,
-  },
-  button: {
-    backgroundColor: colors.forest[600],
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.pill,
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  buttonText: {
-    ...type.body.bold,
-    color: c.textInverse,
   },
   notYou: {
     marginBottom: spacing.lg,

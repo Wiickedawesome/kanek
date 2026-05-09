@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
-import { colors, spacing, borderRadius, shadows, useTheme } from '@/theme';
+import { colors, spacing, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { Icon } from '@/components/icons';
 import { Text } from '@/components/ui/Text';
+import { PostTypeBadge } from '@/components/ui/Badge';
 import { HeroMap } from './HeroMap';
 import { HeroGradient } from './HeroGradient';
-import { formatBZD, formatDeparture } from '@/lib/helpers';
+import { PriceBadge } from './PriceBadge';
+import { formatDeparture } from '@/lib/helpers';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 const CARD_WIDTH = 280;
@@ -93,11 +95,9 @@ function RouteCardCompact({
         )}
       </View>
 
-      {/* Type badge overlaid on map */}
-      <View style={styles.typeBadge}>
-        <Text variant="caption" weight="semibold" tone="inverse">
-          {isOffer ? 'Ride offered' : 'Ride wanted'}
-        </Text>
+      {/* Type badge overlaid on map — shared component for consistency */}
+      <View style={styles.typeBadgeWrap}>
+        <PostTypeBadge type={isOffer ? 'route_offer' : 'route_request'} variant="overlay" />
       </View>
 
       {/* Info area below — white, like AllTrails */}
@@ -111,11 +111,7 @@ function RouteCardCompact({
 
         <View style={styles.statsRow}>
           {route.price_cents != null && (
-            <View style={styles.priceBadge}>
-              <Text variant="caption" weight="semibold" tone="inverse">
-                {formatBZD(route.price_cents)}
-              </Text>
-            </View>
+            <PriceBadge cents={route.price_cents} style={styles.priceBadgeReset} />
           )}
 
           {rating > 0 && (
@@ -163,14 +159,10 @@ const createStyles = (c: SemanticColors) =>
       width: CARD_WIDTH,
       height: IMAGE_HEIGHT,
     },
-    typeBadge: {
+    typeBadgeWrap: {
       position: 'absolute',
       top: spacing.sm,
       left: spacing.sm,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 3,
-      borderRadius: borderRadius.sm,
     },
     infoArea: {
       padding: spacing.md,
@@ -186,11 +178,8 @@ const createStyles = (c: SemanticColors) =>
       alignItems: 'center',
       gap: spacing.sm,
     },
-    priceBadge: {
-      backgroundColor: colors.accent.green,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 2,
-      borderRadius: borderRadius.sm,
+    priceBadgeReset: {
+      marginLeft: 0,
     },
     ratingRow: {
       flexDirection: 'row',

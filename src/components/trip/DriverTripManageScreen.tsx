@@ -14,12 +14,11 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Button, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { TripProgressTimeline } from '@/components/trip/TripProgressTimeline';
 import { LiveTrackingMap } from '@/components/map';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
@@ -176,7 +175,7 @@ export default function DriverTripManageScreen({ backFallback }: Props) {
   if (postLoading || contractsLoading) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }

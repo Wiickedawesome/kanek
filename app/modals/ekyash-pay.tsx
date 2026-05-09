@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  Pressable,
   Image,
   Linking,
   ActivityIndicator,
@@ -10,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
-import { Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader, ScreenLoader } from '@/components/ui';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { formatBZD, safeGoBack } from '@/lib/helpers';
@@ -143,7 +142,7 @@ export default function EkyashPayModal() {
     if (isLoading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent.green} />
+          <ScreenLoader />
           <Text style={styles.loadingText}>Creating invoice…</Text>
         </View>
       );
@@ -234,18 +233,7 @@ export default function EkyashPayModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/activity/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>E-Kyash Payment</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="E-Kyash Payment" onBack={() => safeGoBack('/(tabs)/activity/')} />
 
       {renderContent()}
     </SafeAreaView>

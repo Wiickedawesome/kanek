@@ -7,6 +7,8 @@ import {
   RefreshControl,
   ScrollView,
   Pressable,
+  Modal,
+  Platform,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +26,7 @@ import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
 import { openInMaps } from '@/lib/helpers';
-import { selectFeedItems, selectTopRoutes, type FeedFilter, type FeedItem } from '@/store/selectors/feedSelectors';
+import { selectFeedItems, selectTopRoutes, getDefaultSortForFilter, getSortOptionsForFilter, FEED_SORT_LABEL, type FeedFilter, type FeedItem, type FeedSort } from '@/store/selectors/feedSelectors';
 import { Text } from '@/components/ui/Text';
 
 const FILTER_OPTIONS: { label: string; value: FeedFilter }[] = [
@@ -52,6 +54,15 @@ export default function ExploreScreen() {
   const [typeFilter, setTypeFilter] = useState<FeedFilter>(null);
   const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
   const [showDistance, setShowDistance] = useState(false);
+  const [sort, setSort] = useState<FeedSort>(() => getDefaultSortForFilter(null));
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const onSelectFilter = useCallback((value: FeedFilter) => {
+    setTypeFilter(value);
+    setSort(getDefaultSortForFilter(value));
+  }, []);
+
+  const sortOptions = useMemo(() => getSortOptionsForFilter(typeFilter), [typeFilter]);
 
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const userLatRaw = useSelector((state: RootState) => state.location.latitude);
@@ -85,7 +96,7 @@ export default function ExploreScreen() {
   }, [subscribeToGasPrices]);
 
   const feedItems = selectFeedItems({
-    posts, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict,
+    posts, gasPrices, typeFilter, distanceFilter, userLat, userLng, userDistrict, sort,
   });
 
   const isLoading = postsLoading || gasLoading;
@@ -144,7 +155,7 @@ export default function ExploreScreen() {
     if (index >= 8) return <View>{content}</View>;
 
     return (
-      <Animated.View entering={FadeInUp.duration(350).delay(index * 60)}>
+      <Animated.View entering={Platform.OS === 'web' ? undefined : FadeInUp.duration(350).delay(index * 60)}>
         {content}
       </Animated.View>
     );
@@ -169,7 +180,7 @@ export default function ExploreScreen() {
               value={search}
               onChangeText={setSearch}
               placeholder="Search rides, errands..."
-              placeholderTextColor={colors.forest[400]}
+              placeholderTextColor={c.textMuted}
               returnKeyType="search"
             />
           </View>
@@ -190,27 +201,28 @@ export default function ExploreScreen() {
         style={styles.filterScroll}
         contentContainerStyle={styles.filters}
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Toggle distance filters"
-          onPress={() => setShowDistance((v) => !v)}
-          style={({ pressed }) => [
-            styles.allChip,
-            { backgroundColor: c.chipBg, borderColor: c.chipBorder },
-            showDistance && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          <Icon name="filter" size={14} color={showDistance ? c.chipSelectedText : c.chipText} />
-          <Text style={[styles.allChipLabel, { color: showDistance ? c.chipSelectedText : c.chipText }]}>All</Text>
-        </Pressable>
+        {hasGPS && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Toggle distance filters"
+            onPress={() => setShowDistance((v) => !v)}
+            style={({ pressed }) => [
+              styles.allChip,
+              { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+              showDistance && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Icon name="filter" size={14} color={showDistance ? c.chipSelectedText : c.chipText} />
+          </Pressable>
+        )}
 
         {FILTER_OPTIONS.map((opt) => (
           <FilterChip
             key={opt.label}
             label={opt.label}
             selected={typeFilter === opt.value}
-            onPress={() => setTypeFilter(opt.value)}
+            onPress={() => onSelectFilter(opt.value)}
           />
         ))}
       </ScrollView>
@@ -244,11 +256,42 @@ export default function ExploreScreen() {
         <Text style={[styles.countText, { color: c.text }]}>
           {feedItems.length} {feedItems.length === 1 ? 'post' : 'posts'}
         </Text>
-        <Pressable hitSlop={8} style={styles.sortPill}>
-          <Text style={[styles.sortText, { color: c.textMuted }]}>Kanek sort</Text>
+        <Pressable hitSlop={8} style={styles.sortPill} onPress={() => setSortOpen(true)} accessibilityRole="button" accessibilityLabel="Change sort order">
+          <Text style={[styles.sortText, { color: c.textMuted }]}>{FEED_SORT_LABEL[sort]}</Text>
           <Icon name="chevron-down" size={14} color={c.textMuted} />
         </Pressable>
       </View>
+
+      <Modal
+        visible={sortOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSortOpen(false)}
+      >
+        <Pressable style={styles.sortBackdrop} onPress={() => setSortOpen(false)}>
+          <Pressable style={[styles.sortSheet, { backgroundColor: c.surface, borderColor: c.border }]} onPress={() => {}}>
+            <Text style={[styles.sortSheetTitle, { color: c.textMuted }]}>Sort by</Text>
+            {sortOptions.map((opt) => {
+              const selected = opt === sort;
+              return (
+                <Pressable
+                  key={opt}
+                  onPress={() => { setSort(opt); setSortOpen(false); }}
+                  style={({ pressed }) => [
+                    styles.sortOption,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Text style={[styles.sortOptionText, { color: c.text, fontFamily: selected ? 'Manrope-Bold' : 'Manrope-Regular' }]}>
+                    {FEED_SORT_LABEL[opt]}
+                  </Text>
+                  {selected && <Icon name="chevron-right" size={16} color={c.text} />}
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <FlatList
         data={feedItems}
@@ -389,6 +432,38 @@ const createStyles = (c: SemanticColors) =>
   sortText: {
     ...type.bodySm.regular,
     fontSize: 13,
+  },
+  sortBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  sortSheet: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+  },
+  sortSheetTitle: {
+    ...type.bodySm.regular,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+  },
+  sortOptionText: {
+    ...type.body.regular,
+    fontSize: 15,
   },
   list: {
     flex: 1,

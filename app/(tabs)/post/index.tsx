@@ -19,6 +19,9 @@ interface PostTypeOption {
   description: string;
   icon: IconName;
   color: string;
+  /** Optional override used in dark mode when `color` is too dark on the
+   *  elevated dark surface. */
+  darkColor?: string;
   bgColor: string;
   route: '/(tabs)/post/route' | '/(tabs)/post/errand' | '/(tabs)/post/package' | '/(tabs)/post/job';
   driverOnly?: boolean;
@@ -31,6 +34,7 @@ const POST_OPTIONS: PostTypeOption[] = [
     description: 'Share your trip and earn per seat',
     icon: 'navigation',
     color: colors.forest[700],
+    darkColor: colors.accent.green,
     bgColor: colors.neutral[100],
     route: '/(tabs)/post/route',
     driverOnly: true,
@@ -49,8 +53,9 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Post an Errand',
     description: 'Need something picked up or done?',
     icon: 'package',
-    color: colors.warning,
-    bgColor: '#fff8e1',
+    color: '#a14a00',
+    darkColor: '#ffb074',
+    bgColor: '#ffe0b2',
     route: '/(tabs)/post/errand',
   },
   {
@@ -67,8 +72,9 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Post a Job',
     description: 'Hire someone for a task',
     icon: 'clipboard-list',
-    color: colors.forest[500],
-    bgColor: colors.neutral[100],
+    color: '#5c4400',
+    darkColor: colors.accent.yellow,
+    bgColor: '#fff59d',
     route: '/(tabs)/post/job',
   },
 ];
@@ -120,7 +126,7 @@ export default function PostScreen() {
               }}
             >
               <View style={[styles.iconContainer, { backgroundColor: isDark ? c.surfaceElevated : option.bgColor }]}>
-                <Icon name={option.icon} size={28} color={option.color} />
+                <Icon name={option.icon} size={28} color={isDark ? (option.darkColor ?? option.color) : option.color} />
               </View>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{option.label}</Text>

@@ -192,7 +192,9 @@ const createStyles = (c: SemanticColors) =>
     flex: 1,
   },
   toggleSegActive: {
-    backgroundColor: colors.forest[900],
+    // Bright accent green so the active segment is visible on both light
+    // and dark tracks. Paired with a fixed-dark text colour below.
+    backgroundColor: colors.accent.green,
   },
   toggleText: {
     ...type.caption.regular,
@@ -200,7 +202,8 @@ const createStyles = (c: SemanticColors) =>
     color: c.textMuted,
   },
   toggleTextActive: {
-    color: c.textInverse,
+    // Always dark — sits on the always-bright green active pill.
+    color: colors.forest[900],
   },
   error: {
     ...type.caption.regular,

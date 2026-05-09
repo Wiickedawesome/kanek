@@ -116,7 +116,7 @@ const createStyles = (c: SemanticColors) =>
   },
   initials: {
     ...type.bodySm.bold,
-    color: c.textInverse,
+    color: '#ffffff',
   },
   initialsSmall: {
     ...type.caption.regular,

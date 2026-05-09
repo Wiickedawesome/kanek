@@ -23,9 +23,9 @@ import { Text } from '@/components/ui/Text';
 const PIN_COLORS: Record<string, string> = {
   route_offer: colors.accent.green,
   route_request: colors.accent.blue,
-  errand: colors.warning,
+  errand: colors.accent.orange,
   package: '#9c27b0',
-  job: colors.forest[500],
+  job: colors.accent.yellow,
 };
 
 const GAS_PIN_COLOR = colors.error;

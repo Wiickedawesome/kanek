@@ -332,6 +332,6 @@ const createStyles = (c: SemanticColors) =>
   },
   confirmText: {
     ...type.body.bold,
-    color: c.textInverse,
+    color: '#ffffff',
   },
 });

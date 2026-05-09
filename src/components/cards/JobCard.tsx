@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { spacing, borderRadius, colors, useTheme } from '@/theme';
+import { spacing, colors, useTheme } from '@/theme';
 import { Icon } from '@/components/icons';
 import { PostCardShell } from './PostCardShell';
 import { HeroGradient } from './HeroGradient';
@@ -8,7 +8,8 @@ import { HeroMap } from './HeroMap';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
-import { formatBZD } from '@/lib/helpers';
+import { PriceBadge } from './PriceBadge';
+import { MetaItem } from './MetaItem';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 interface JobCardProps {
@@ -51,19 +52,17 @@ export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardPro
 
       <View style={styles.metaRow}>
         {post.author?.rating_avg != null && (
-          <View style={styles.metaItem}>
-            <Icon name="star" size={12} color={colors.accent.green} />
-            <Text variant="bodySm" tone="muted">
-              {post.author.rating_avg.toFixed(1)}
-            </Text>
-          </View>
+          <MetaItem iconName="star" iconColor={colors.accent.green}>
+            {post.author.rating_avg.toFixed(1)}
+          </MetaItem>
         )}
-        {post.price_cents != null && (
-          <View style={styles.priceBadge}>
-            <Text variant="caption" weight="semibold" tone="inverse">
-              {formatBZD(post.price_cents)}
-            </Text>
-          </View>
+        {post.pay_rate_cents != null && (
+          <PriceBadge
+            cents={post.pay_rate_cents}
+            color={colors.accent.yellow}
+            textColor={'#3a2f00'}
+            suffix={post.pay_type === 'hourly' ? '/hr' : ''}
+          />
         )}
       </View>
 
@@ -93,18 +92,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     marginTop: 2,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  priceBadge: {
-    backgroundColor: colors.forest[700],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.pill,
-    marginLeft: 'auto',
   },
   footer: {
     flexDirection: 'row',

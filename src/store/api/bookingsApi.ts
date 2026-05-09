@@ -503,6 +503,20 @@ export const bookingsApi = createApi({
           return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
         return { data: (data as unknown as ContractWithDetails[]) ?? [] };
       },
+      // Pre-populate the by-id cache so navigating from list → detail is
+      // instant (no loading spinner, no flash of empty state).
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          for (const contract of data) {
+            dispatch(
+              bookingsApi.util.upsertQueryData('getContractById', contract.id, contract),
+            );
+          }
+        } catch {
+          /* swallow — cache pre-pop is best-effort */
+        }
+      },
       providesTags: (result) =>
         result
           ? [

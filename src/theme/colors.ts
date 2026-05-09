@@ -26,6 +26,8 @@ export const colors = {
     neonGreen: '#65f67b',
     neonTeal: '#49de61',
     blue: '#4967f6',
+    yellow: '#fdd835',
+    orange: '#fb8c00',
   },
 
   // Semantic

@@ -4,13 +4,12 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
+import { Button, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -117,6 +116,9 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const isAccountActive = myProfile?.account_status === 'active';
   const { data: post, isLoading, error } = useGetPostByIdQuery(postId ?? '', {
     skip: !postId,
+    // List query upserts a partial record into this cache; force a background
+    // refetch on mount so the full record (extra fields) gets filled in.
+    refetchOnMountOrArgChange: true,
   });
   const [deletePost] = useDeletePostMutation();
   const [proceedRoute] = useProceedRouteMutation();
@@ -211,7 +213,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accent.green} />
+        <ScreenLoader />
       </SafeAreaView>
     );
   }
@@ -1416,7 +1418,9 @@ const createStyles = (c: SemanticColors) =>
   },
   openMapsText: {
     ...type.caption.regular,
-    color: c.textInverse,
+    // The pill behind this text is rgba(0,0,0,0.6) in both themes,
+    // so the label must always be light, not theme-inverted.
+    color: '#ffffff',
     fontWeight: '600',
   },
   openMapsLink: {

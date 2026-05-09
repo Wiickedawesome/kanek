@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { consumeAuthRedirectUrl } from '@/lib/authRedirect';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
-import { colors, spacing, type, useTheme } from '@/theme';
+import { spacing, type, useTheme } from '@/theme';
 import { Text } from '@/components/ui/Text';
+import { ScreenLoader } from '@/components/ui';
 
 type CallbackParams = Record<string, string | string[] | undefined>;
 
@@ -77,7 +78,7 @@ export default function AuthCallbackScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <ActivityIndicator size="large" color={colors.accent.green} />
+      <ScreenLoader />
       <Text style={[styles.title, { color: c.text }]}>Completing sign-in</Text>
       <Text style={[styles.body, { color: c.textMuted }]}>
         {callbackError ?? 'Please wait while we finish connecting your account.'}

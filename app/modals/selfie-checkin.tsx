@@ -115,18 +115,7 @@ export default function SelfieCheckinModal() {
   if (!isLoading && existingCheckin) {
     return (
       <SafeAreaView style={styles.container}>
-        <ScreenHeader style={styles.header}>
-          <Pressable
-            onPress={() => safeGoBack('/(tabs)/activity/')}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Icon name="chevron-left" size={24} color={c.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Check-In</Text>
-          <View style={{ width: 24 }} />
-        </ScreenHeader>
+        <ScreenHeader title="Check-In" onBack={() => safeGoBack('/(tabs)/activity/')} />
         <View style={styles.doneContainer}>
           <Icon name="shield-alert" size={48} color={colors.accent.green} />
           <Text style={styles.doneTitle}>Already Checked In</Text>
@@ -149,18 +138,7 @@ export default function SelfieCheckinModal() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader style={styles.header}>
-        <Pressable
-          onPress={() => safeGoBack('/(tabs)/activity/')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="chevron-left" size={24} color={c.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Selfie Check-In</Text>
-        <View style={{ width: 24 }} />
-      </ScreenHeader>
+      <ScreenHeader title="Selfie Check-In" onBack={() => safeGoBack('/(tabs)/activity/')} />
 
       <ScrollView
         style={styles.flex}
