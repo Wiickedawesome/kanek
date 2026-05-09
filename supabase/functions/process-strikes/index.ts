@@ -20,9 +20,38 @@ import {
  * - 3 soft strikes = account restricted
  * - 1 hard strike = account suspended (pending review)
  */
+const NOTIFY_USER_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-user`;
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
 const LATE_CANCEL_WINDOW_MINUTES = 60;
 const NO_START_GRACE_MINUTES = 30;
 const SCHEDULED_LOOKBACK_HOURS = 48;
+
+type NotifyPayload = {
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+};
+
+async function sendInternalNotification(payload: NotifyPayload) {
+  try {
+    const res = await fetch(NOTIFY_USER_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error('notify-user failed', await res.text());
+    }
+  } catch (error) {
+    console.error('notify-user request failed', error);
+  }
+}
 
 type StrikeReason = 'late_cancel' | 'no_show' | 'early_leave' | 'driver_no_show' | 'report';
 type StrikeType = 'soft' | 'hard';
@@ -145,15 +174,13 @@ async function processStrike(
 
   if (profileError) throw new Error(profileError.message);
 
-  const { error: notificationError } = await supabase.from('notifications').insert({
-    user_id: userId,
+  await sendInternalNotification({
+    userId,
     type: 'strike_received',
     title: `${strikeType === 'hard' ? 'Hard' : 'Soft'} Strike`,
     body: getStrikeMessage(reason),
     data: { strikeType, reason, contractId: contractId ?? null },
   });
-
-  if (notificationError) throw new Error(notificationError.message);
 
   return {
     created: true,

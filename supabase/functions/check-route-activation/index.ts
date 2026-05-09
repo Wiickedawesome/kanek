@@ -15,6 +15,35 @@ import {
  * If seats_filled >= min_riders, activate the route.
  * Called via pg_cron or Supabase scheduled function.
  */
+const NOTIFY_USER_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-user`;
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+type NotifyPayload = {
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+};
+
+async function sendInternalNotification(payload: NotifyPayload) {
+  try {
+    const res = await fetch(NOTIFY_USER_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error('notify-user failed', await res.text());
+    }
+  } catch (error) {
+    console.error('notify-user request failed', error);
+  }
+}
+
 function hasValidCronSecret(req: Request): boolean {
   const cronSecret = Deno.env.get('CRON_SECRET');
   const authHeader = req.headers.get('Authorization');
@@ -75,9 +104,9 @@ Deno.serve(async (req) => {
           })
           .eq('id', route.id);
 
-        // Notify the author
-        await supabase.from('notifications').insert({
-          user_id: route.author_id,
+        // Notify the author (in-app row + push)
+        await sendInternalNotification({
+          userId: route.author_id,
           type: 'route_activated',
           title: 'Ride Activated!',
           body: `Your ride "${route.title}" has reached the minimum riders and is now active.`,
@@ -92,16 +121,17 @@ Deno.serve(async (req) => {
           .eq('status', 'confirmed');
 
         if (bookings) {
-          const notifications = bookings.map((b) => ({
-            user_id: b.user_id,
-            type: 'route_activated',
-            title: 'Ride Confirmed!',
-            body: `The ride "${route.title}" is confirmed and will depart as scheduled.`,
-            data: { postId: route.id },
-          }));
-          if (notifications.length > 0) {
-            await supabase.from('notifications').insert(notifications);
-          }
+          await Promise.all(
+            bookings.map((b) =>
+              sendInternalNotification({
+                userId: b.user_id,
+                type: 'route_activated',
+                title: 'Ride Confirmed!',
+                body: `The ride "${route.title}" is confirmed and will depart as scheduled.`,
+                data: { postId: route.id },
+              }),
+            ),
+          );
         }
 
         activatedCount++;

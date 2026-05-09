@@ -24,16 +24,40 @@ Deno.serve(async (req) => {
 
   const authResult = await verifyAuthOrInternal(req);
   if ('error' in authResult) return authResult.error;
-  // Internal-only: reject user-initiated requests
-  if (authResult.userId !== null) {
-    return errorResponse('Forbidden: internal-only endpoint', 403);
-  }
 
   try {
     const { userId, title, body, data } = (await req.json()) as PushPayload;
     if (!userId || !title) return errorResponse('Missing userId or title');
 
     const supabase = createServiceClient();
+    const callerId = authResult.userId;
+
+    // For user-initiated calls: enforce a booking relationship between caller
+    // and recipient. Internal (service-role) calls bypass this check.
+    // A relationship exists when there is any bookings row where
+    //   (booker = caller AND post.author = recipient)
+    //   OR (booker = recipient AND post.author = caller).
+    // This covers every legitimate notification path: post bookings, accept/
+    // reject, contract events, and chat — all derive from a booking. Self-push
+    // is allowed (e.g. test harnesses).
+    if (callerId !== null && callerId !== userId) {
+      const [{ count: callerBookedRecipient }, { count: recipientBookedCaller }] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('id, post:posts!inner(author_id)', { count: 'exact', head: true })
+          .eq('user_id', callerId)
+          .eq('post.author_id', userId),
+        supabase
+          .from('bookings')
+          .select('id, post:posts!inner(author_id)', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('post.author_id', callerId),
+      ]);
+
+      if ((callerBookedRecipient ?? 0) === 0 && (recipientBookedCaller ?? 0) === 0) {
+        return errorResponse('Forbidden: no relationship with recipient', 403);
+      }
+    }
 
     // Get user's push token
     const { data: profile, error } = await supabase
