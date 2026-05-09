@@ -74,6 +74,7 @@ export const messagesApi = createApi({
                   userId: recipientId,
                   title: `${senderName} sent you a message`,
                   body: trimmedBody.length > 100 ? trimmedBody.slice(0, 100) + '…' : trimmedBody,
+                  type: 'new_message',
                   data: { contract_id: contractId },
                 },
               });

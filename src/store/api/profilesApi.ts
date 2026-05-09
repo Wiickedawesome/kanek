@@ -83,6 +83,7 @@ export const profilesApi = createApi({
         const ALLOWED_FIELDS = [
           'first_name', 'last_name', 'avatar_url', 'email',
           'push_token', 'district', 'address_line', 'emergency_contact',
+          'notification_preferences',
         ] as const;
         const safeUpdates: Record<string, unknown> = {};
         for (const key of ALLOWED_FIELDS) {

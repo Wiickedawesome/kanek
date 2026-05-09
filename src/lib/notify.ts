@@ -52,6 +52,10 @@ export interface SendPushOnlyPayload {
   userId: string;
   title: string;
   body: string;
+  /** Optional notification type. When provided, send-push honors the
+   *  recipient's per-type notification_preferences. Critical types are
+   *  always sent regardless. */
+  type?: string;
   data?: Record<string, unknown>;
 }
 

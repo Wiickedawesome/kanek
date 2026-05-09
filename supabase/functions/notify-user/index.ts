@@ -12,6 +12,26 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 // Expo accepts up to 100 messages per push request; chunk above that.
 const EXPO_BATCH_SIZE = 100;
 
+// Critical notification types that always send regardless of the user's
+// per-type notification_preferences map. Safety- and account-impacting
+// notifications must not be muteable.
+const CRITICAL_TYPES = new Set<string>([
+  'sos',
+  'strike_received',
+  'account_suspended',
+  'account_pending_deletion',
+  'payment_received',
+  'payment_failed',
+  'payment_refunded',
+]);
+
+function isMuted(prefs: unknown, type: string): boolean {
+  if (CRITICAL_TYPES.has(type)) return false;
+  if (!prefs || typeof prefs !== 'object') return false;
+  const map = prefs as Record<string, unknown>;
+  return map[type] === false;
+}
+
 interface NotifyUserPayload {
   userId?: string;
   userIds?: string[];
@@ -153,13 +173,44 @@ Deno.serve(async (req) => {
       ...(dedupe ?? {}),
     };
 
-    // Resolve which recipients still need an in-app row, honoring dedupe.
-    let recipientsNeedingInsert = recipientList;
+    // Filter recipients by per-type notification preference. Critical types
+    // bypass this check (see CRITICAL_TYPES above). We fetch profiles once
+    // and reuse the rows for both the mute check and (later) push tokens.
+    const { data: recipientProfiles, error: recipientProfilesError } = await supabase
+      .from('profiles')
+      .select('id, push_token, notification_preferences')
+      .in('id', recipientList);
+
+    if (recipientProfilesError) {
+      return errorResponse(recipientProfilesError.message, 500);
+    }
+
+    const profilesById = new Map(
+      (recipientProfiles ?? []).map((p) => [p.id, p] as const),
+    );
+    const allowedRecipients = recipientList.filter((uid) => {
+      const profile = profilesById.get(uid);
+      // Unknown profile (shouldn't happen) — be conservative and skip.
+      if (!profile) return false;
+      return !isMuted(profile.notification_preferences, type);
+    });
+
+    if (allowedRecipients.length === 0) {
+      return jsonResponse({
+        recipients: recipientList.length,
+        inserted: 0,
+        pushed: 0,
+        muted: recipientList.length,
+      });
+    }
+
+    // Resolve which allowed recipients still need an in-app row, honoring dedupe.
+    let recipientsNeedingInsert = allowedRecipients;
     if (dedupe && Object.keys(dedupe).length > 0) {
       const { data: existing, error: existingError } = await supabase
         .from('notifications')
         .select('user_id')
-        .in('user_id', recipientList)
+        .in('user_id', allowedRecipients)
         .eq('type', type)
         .contains('data', dedupe);
 
@@ -168,7 +219,7 @@ Deno.serve(async (req) => {
       }
 
       const dedupedSet = new Set((existing ?? []).map((r) => r.user_id));
-      recipientsNeedingInsert = recipientList.filter((u) => !dedupedSet.has(u));
+      recipientsNeedingInsert = allowedRecipients.filter((u) => !dedupedSet.has(u));
     }
 
     let inserted = 0;
@@ -190,17 +241,13 @@ Deno.serve(async (req) => {
 
     let pushed = 0;
     if (sendPush) {
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, push_token')
-        .in('id', recipientList);
-
-      if (!profileError && profiles) {
-        const recipients = profiles
-          .filter((p): p is { id: string; push_token: string } => !!p.push_token)
-          .map((p) => ({ userId: p.id, token: p.push_token }));
-        pushed = await pushBatch(supabase, recipients, title, body, notificationData);
-      }
+      const recipients = allowedRecipients
+        .map((uid) => profilesById.get(uid))
+        .filter((p): p is { id: string; push_token: string; notification_preferences: unknown } =>
+          !!p && typeof p.push_token === 'string' && p.push_token.length > 0,
+        )
+        .map((p) => ({ userId: p.id, token: p.push_token }));
+      pushed = await pushBatch(supabase, recipients, title, body, notificationData);
     }
 
     // Back-compat shape: single-recipient callers expect inserted: boolean,
@@ -208,7 +255,12 @@ Deno.serve(async (req) => {
     if (recipientList.length === 1) {
       return jsonResponse({ inserted: inserted > 0, pushed: pushed > 0 });
     }
-    return jsonResponse({ recipients: recipientList.length, inserted, pushed });
+    return jsonResponse({
+      recipients: recipientList.length,
+      inserted,
+      pushed,
+      muted: recipientList.length - allowedRecipients.length,
+    });
   } catch (error) {
     return errorResponse(
       error instanceof Error ? error.message : 'Notification send failed',

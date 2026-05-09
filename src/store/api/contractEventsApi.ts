@@ -87,6 +87,7 @@ export const contractEventsApi = createApi({
                 userId: recipientId,
                 title: actor?.name ?? 'Trip Update',
                 body: label,
+                type: 'contract_event',
                 data: { contractId, eventType },
               });
             }
@@ -233,6 +234,7 @@ export const contractEventsApi = createApi({
                 userId: recipientId,
                 title: actor?.name ?? 'Trip Update',
                 body: label,
+                type: 'contract_event',
                 data: { contractId: c.id, eventType },
               });
             }),

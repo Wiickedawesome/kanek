@@ -1177,6 +1177,7 @@ export type Database = {
           id: string
           last_active_at: string | null
           last_name: string | null
+          notification_preferences: Json
           phone: string | null
           phone_changed_at: string | null
           punctuality_pct: number | null
@@ -1201,6 +1202,7 @@ export type Database = {
           id: string
           last_active_at?: string | null
           last_name?: string | null
+          notification_preferences?: Json
           phone?: string | null
           phone_changed_at?: string | null
           punctuality_pct?: number | null
@@ -1225,6 +1227,7 @@ export type Database = {
           id?: string
           last_active_at?: string | null
           last_name?: string | null
+          notification_preferences?: Json
           phone?: string | null
           phone_changed_at?: string | null
           punctuality_pct?: number | null

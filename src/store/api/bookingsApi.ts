@@ -342,6 +342,7 @@ export const bookingsApi = createApi({
             userId: post.author_id,
             title: notification.title,
             body: notification.body ?? '',
+            type: 'booking_request',
           });
         } catch { /* booking failed, no need to invalidate */ }
       },
@@ -406,6 +407,7 @@ export const bookingsApi = createApi({
             userId: arg.applicantId,
             title: push.title,
             body: push.body,
+            type: 'booking_accepted',
           });
         } catch { /* mutation failed */ }
       },
@@ -434,6 +436,7 @@ export const bookingsApi = createApi({
             userId: arg.applicantId,
             title: push.title,
             body: push.body,
+            type: 'booking_rejected',
           });
         } catch { /* mutation failed */ }
       },

@@ -10,10 +10,34 @@ import {
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
+// Critical types always send regardless of recipient preferences. Mirrors
+// notify-user/index.ts. Safety- and account-impacting notifications must
+// not be muteable.
+const CRITICAL_TYPES = new Set<string>([
+  'sos',
+  'strike_received',
+  'account_suspended',
+  'account_pending_deletion',
+  'payment_received',
+  'payment_failed',
+  'payment_refunded',
+]);
+
+function isMuted(prefs: unknown, type: string | undefined): boolean {
+  if (!type) return false;
+  if (CRITICAL_TYPES.has(type)) return false;
+  if (!prefs || typeof prefs !== 'object') return false;
+  const map = prefs as Record<string, unknown>;
+  return map[type] === false;
+}
+
 interface PushPayload {
   userId: string;
   title: string;
   body: string;
+  /** Optional notification type. When provided, recipient's
+   *  notification_preferences are honored. Critical types bypass. */
+  type?: string;
   data?: Record<string, unknown>;
 }
 
@@ -26,7 +50,7 @@ Deno.serve(async (req) => {
   if ('error' in authResult) return authResult.error;
 
   try {
-    const { userId, title, body, data } = (await req.json()) as PushPayload;
+    const { userId, title, body, type, data } = (await req.json()) as PushPayload;
     if (!userId || !title) return errorResponse('Missing userId or title');
 
     const supabase = createServiceClient();
@@ -59,15 +83,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get user's push token
+    // Get user's push token + per-type preferences
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('push_token')
+      .select('push_token, notification_preferences')
       .eq('id', userId)
       .single();
 
     if (error || !profile?.push_token) {
       return jsonResponse({ sent: false, reason: 'No push token' });
+    }
+
+    if (isMuted(profile.notification_preferences, type)) {
+      return jsonResponse({ sent: false, reason: 'Muted by recipient preference' });
     }
 
     // Send via Expo Push API
