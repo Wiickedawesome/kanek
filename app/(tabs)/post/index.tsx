@@ -19,7 +19,6 @@ interface PostTypeOption {
   description: string;
   icon: IconName;
   color: string;
-  bgColor: string;
   route: '/(tabs)/post/route' | '/(tabs)/post/errand' | '/(tabs)/post/package' | '/(tabs)/post/job';
   driverOnly?: boolean;
 }
@@ -30,8 +29,7 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Offer a Route',
     description: 'Share your trip and earn per seat',
     icon: 'navigation',
-    color: colors.accent.green,
-    bgColor: '#e8f5e9',
+    color: colors.forest[700],
     route: '/(tabs)/post/route',
     driverOnly: true,
   },
@@ -40,8 +38,7 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Request a Ride',
     description: 'Find or request a ride somewhere',
     icon: 'compass',
-    color: colors.accent.blue,
-    bgColor: '#e3f2fd',
+    color: colors.forest[700],
     route: '/(tabs)/post/route',
   },
   {
@@ -49,8 +46,7 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Post an Errand',
     description: 'Need something picked up or done?',
     icon: 'package',
-    color: colors.warning,
-    bgColor: '#fff8e1',
+    color: colors.forest[700],
     route: '/(tabs)/post/errand',
   },
   {
@@ -58,8 +54,7 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Send a Package',
     description: 'Ship something with a traveler',
     icon: 'package',
-    color: '#9c27b0',
-    bgColor: '#f3e5f5',
+    color: colors.forest[700],
     route: '/(tabs)/post/package',
   },
   {
@@ -67,14 +62,13 @@ const POST_OPTIONS: PostTypeOption[] = [
     label: 'Post a Job',
     description: 'Hire someone for a task',
     icon: 'clipboard-list',
-    color: colors.forest[500],
-    bgColor: colors.neutral[100],
+    color: colors.forest[700],
     route: '/(tabs)/post/job',
   },
 ];
 
 export default function PostScreen() {
-  const { c, isDark } = useTheme();
+  const { c } = useTheme();
   const styles = createStyles(c);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
@@ -119,7 +113,7 @@ export default function PostScreen() {
                 });
               }}
             >
-              <View style={[styles.iconContainer, { backgroundColor: isDark ? c.surfaceElevated : option.bgColor }]}>
+              <View style={[styles.iconContainer, { backgroundColor: c.surfaceMuted }]}>
                 <Icon name={option.icon} size={28} color={option.color} />
               </View>
               <View style={styles.cardText}>
