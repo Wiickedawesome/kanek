@@ -279,28 +279,28 @@ export function buildRouteMapUrl(
             type: 'Feature',
             geometry: { type: 'LineString', coordinates: coords },
             properties: {
-              stroke: '#65f67b',
-              'stroke-width': 5,
-              'stroke-opacity': 1.0,
+              stroke: '#51c152',
+              'stroke-width': 4,
+              'stroke-opacity': 0.9,
             },
           },
           {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [originLng, originLat] },
-            properties: { 'marker-size': 'medium', 'marker-color': '#51c152', 'marker-symbol': 'a' },
+            properties: { 'marker-size': 'small', 'marker-color': '#51c152' },
           },
           {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [destLng, destLat] },
-            properties: { 'marker-size': 'medium', 'marker-color': '#d32f2f', 'marker-symbol': 'b' },
+            properties: { 'marker-size': 'small', 'marker-color': '#ffffff' },
           },
         ],
       }),
     );
 
     return (
-      `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/geojson(${geojson})` +
-      `/auto/${width}x${height}?padding=${padding}&access_token=${MAPBOX_ACCESS_TOKEN}&logo=false&attribution=false`
+      `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/geojson(${geojson})` +
+      `/auto/${width}x${height}?padding=${padding}&access_token=${MAPBOX_ACCESS_TOKEN}`
     );
   };
 

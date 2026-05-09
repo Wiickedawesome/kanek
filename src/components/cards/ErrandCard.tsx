@@ -35,6 +35,7 @@ export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: Erra
       <HeroMap
         origin={{ lat: post.origin_lat, lng: post.origin_lng }}
         destination={post.dest_lat != null && post.dest_lng != null ? { lat: post.dest_lat, lng: post.dest_lng } : null}
+        routeGeometry={post.route_geometry as { type: string; coordinates: [number, number][] } | null}
         fallbackType={badgeType}
       />
     )
