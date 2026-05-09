@@ -1999,6 +1999,10 @@ export type Database = {
         }
         Returns: string
       }
+      cancel_route_short: {
+        Args: { p_post_id: string; p_reason?: string }
+        Returns: undefined
+      }
       check_driver_documents_complete: {
         Args: { p_profile_id: string }
         Returns: boolean
@@ -2016,6 +2020,7 @@ export type Database = {
       compute_rating_avg: { Args: { p_user_id: string }; Returns: Json }
       is_active_account: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      proceed_route: { Args: { p_post_id: string }; Returns: undefined }
       process_ekyash_payment: {
         Args: {
           p_callback_payload: Json
@@ -2427,7 +2432,7 @@ export const Constants = {
     },
   },
 } as const
-// Convenience type aliases for enums
+
 export type AccountStatus = Enums<'account_status'>
 export type BelizeDistrict = Enums<'belize_district'>
 export type BookingStatus = Enums<'booking_status'>

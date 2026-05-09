@@ -238,6 +238,35 @@ export const postsApi = createApi({
         { type: 'Post', id: 'MY_LIST' },
       ],
     }),
+
+    proceedRoute: builder.mutation<null, string>({
+      queryFn: async (postId) => {
+        const { error } = await supabase.rpc('proceed_route', { p_post_id: postId });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Post', id },
+        { type: 'Post', id: 'LIST' },
+        { type: 'Post', id: 'MY_LIST' },
+      ],
+    }),
+
+    cancelRouteShort: builder.mutation<null, { postId: string; reason?: string }>({
+      queryFn: async ({ postId, reason }) => {
+        const { error } = await supabase.rpc('cancel_route_short', {
+          p_post_id: postId,
+          p_reason: reason,
+        });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: (_result, _error, { postId }) => [
+        { type: 'Post', id: postId },
+        { type: 'Post', id: 'LIST' },
+        { type: 'Post', id: 'MY_LIST' },
+      ],
+    }),
   }),
 });
 
@@ -247,4 +276,6 @@ export const {
   useCreatePostMutation,
   useGetMyPostsQuery,
   useDeletePostMutation,
+  useProceedRouteMutation,
+  useCancelRouteShortMutation,
 } = postsApi;

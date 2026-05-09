@@ -17,7 +17,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
-import { useGetPostByIdQuery, useDeletePostMutation } from '@/store/api/postsApi';
+import { useGetPostByIdQuery, useDeletePostMutation, useProceedRouteMutation, useCancelRouteShortMutation } from '@/store/api/postsApi';
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { buildPointMapUrl, buildRouteMapUrl } from '@/lib/mapbox';
@@ -95,6 +95,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
     skip: !postId,
   });
   const [deletePost] = useDeletePostMutation();
+  const [proceedRoute] = useProceedRouteMutation();
+  const [cancelRouteShort] = useCancelRouteShortMutation();
   const [createBooking] = useCreateBookingMutation();
   const [fetchConflicts] = useLazyGetMyConflictingContractsQuery();
   const [fetchApplicantConflicts] = useLazyGetApplicantConflictsQuery();
@@ -379,38 +381,85 @@ export default function PostDetailScreen({ backFallback }: Props) {
 
   if (showOwnerDeleteBar) {
     const showManageTripOnOpen = isRouteOffer && confirmedCount > 0;
+    const showStartTripNow = isRouteOffer && confirmedCount > 0;
+    const showCancelTrip = isRouteOffer && confirmedCount > 0;
     bottomAction = (
       <View style={styles.bottomBar}>
-        {showManageTripOnOpen && (
+        {showStartTripNow && (
           <Button
-            title="Manage Trip"
-            onPress={() => router.push(`/(tabs)/activity/trip/${post.id}`)}
+            title="Start trip now"
+            onPress={async () => {
+              const ok = await showConfirm(
+                'Start trip now',
+                `Start "${post.title}" with ${confirmedCount} confirmed rider(s)?`,
+              );
+              if (!ok) return;
+              try {
+                await proceedRoute(post.id).unwrap();
+                router.push(`/(tabs)/activity/trip/${post.id}`);
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to start trip.';
+                showAlert('Error', msg);
+              }
+            }}
             size="lg"
             style={styles.actionButton}
           />
         )}
-        <Button
-          title="Delete Post"
-          variant="outline"
-          onPress={async () => {
-            const confirmed = await showConfirm(
-              'Delete Post',
-              `Are you sure you want to delete "${post.title}"?`,
-            );
+        {showManageTripOnOpen && (
+          <Button
+            title="Manage Trip"
+            variant="outline"
+            onPress={() => router.push(`/(tabs)/activity/trip/${post.id}`)}
+            size="lg"
+            style={styles.actionButtonBelow}
+          />
+        )}
+        {showCancelTrip ? (
+          <Button
+            title="Cancel trip"
+            variant="outline"
+            onPress={async () => {
+              const ok = await showConfirm(
+                'Cancel trip',
+                `Cancel "${post.title}"? All ${confirmedCount} confirmed rider(s) will be notified.`,
+              );
+              if (!ok) return;
+              try {
+                await cancelRouteShort({ postId: post.id }).unwrap();
+                safeGoBack(backFallback);
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to cancel trip.';
+                showAlert('Error', msg);
+              }
+            }}
+            size="lg"
+            style={styles.actionButtonBelow}
+          />
+        ) : (
+          <Button
+            title="Delete Post"
+            variant="outline"
+            onPress={async () => {
+              const confirmed = await showConfirm(
+                'Delete Post',
+                `Are you sure you want to delete "${post.title}"?`,
+              );
 
-            if (!confirmed) return;
+              if (!confirmed) return;
 
-            try {
-              await deletePost(post.id).unwrap();
-              safeGoBack(backFallback);
-            } catch (e: any) {
-              const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
-              showAlert('Error', msg);
-            }
-          }}
-          size="lg"
-          style={showManageTripOnOpen ? styles.actionButtonBelow : styles.actionButton}
-        />
+              try {
+                await deletePost(post.id).unwrap();
+                safeGoBack(backFallback);
+              } catch (e: any) {
+                const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to delete post.';
+                showAlert('Error', msg);
+              }
+            }}
+            size="lg"
+            style={showManageTripOnOpen ? styles.actionButtonBelow : styles.actionButton}
+          />
+        )}
       </View>
     );
   } else if (showExistingBookingBar) {
