@@ -74,10 +74,16 @@ export function Button({
       backgroundColor: c.surfaceElevated,
       ...shadows.sm,
     },
+    // `outline` is kept for backward-compat at call sites but renders
+    // identically to `primary` so every action button reads as the same
+    // solid pill across the app.
     outline: {
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: accentFg,
+      backgroundColor: primaryBg,
+      shadowColor: colors.forest[900],
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.4 : 0.25,
+      shadowRadius: 8,
+      elevation: 4,
     },
     ghost: { backgroundColor: 'transparent' },
   };
@@ -85,7 +91,7 @@ export function Button({
   const variantFg: Record<ButtonVariant, TextStyle> = {
     primary: { color: primaryFg },
     secondary: { color: c.text },
-    outline: { color: accentFg },
+    outline: { color: primaryFg },
     ghost: { color: accentFg },
   };
 
@@ -113,7 +119,7 @@ export function Button({
         {loading ? (
           <ActivityIndicator
             size="small"
-            color={variant === 'primary' ? primaryFg : accentFg}
+            color={variant === 'primary' || variant === 'outline' ? primaryFg : accentFg}
           />
         ) : (
           <>

@@ -419,8 +419,8 @@ const createStyles = (c: SemanticColors) =>
     backgroundColor: c.surface,
   },
   categoryChipSelected: {
-    borderColor: colors.accent.green,
-    backgroundColor: colors.accent.green,
+    borderColor: c.chipSelectedBg,
+    backgroundColor: c.chipSelectedBg,
   },
   categoryText: {
     ...type.bodySm.regular,
@@ -428,7 +428,7 @@ const createStyles = (c: SemanticColors) =>
   },
   categoryTextSelected: {
     ...type.bodySm.bold,
-    color: c.textInverse,
+    color: c.chipSelectedText,
   },
   row: {
     flexDirection: 'row',

@@ -12,7 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Button, TextInput, FilterChip, ScreenHeader } from '@/components/ui';
-import { colors, type, spacing, useTheme } from '@/theme';
+import { type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import type { RootState } from '@/store';

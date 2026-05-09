@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme, type TextStyle } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { darkColors, lightColors, type SemanticColors } from './semanticColors';
 import { type TypographyVariant, type TypographyWeight, resolveTextStyle } from './typography';
 
@@ -37,11 +38,15 @@ export type TFn = <V extends TypographyVariant>(
   tone?: TextTone,
 ) => TextStyle;
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
 interface ThemeContextValue {
   c: SemanticColors;
   t: TFn;
   isDark: boolean;
   scheme: 'light' | 'dark';
+  preference: ThemePreference;
+  setPreference: (pref: ThemePreference) => void;
 }
 
 function makeT(c: SemanticColors): TFn {
@@ -58,6 +63,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   t: defaultT,
   isDark: false,
   scheme: 'light',
+  preference: 'system',
+  setPreference: () => {},
 });
 
 interface ThemeProviderProps {
@@ -66,9 +73,41 @@ interface ThemeProviderProps {
   forceScheme?: 'light' | 'dark';
 }
 
+const STORAGE_KEY = '@kanek/theme-preference';
+
 export function ThemeProvider({ children, forceScheme }: ThemeProviderProps) {
   const systemScheme = useColorScheme();
-  const scheme = forceScheme ?? (systemScheme === 'dark' ? 'dark' : 'light');
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+
+  // Hydrate preference from storage once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((stored) => {
+        if (cancelled) return;
+        if (stored === 'light' || stored === 'dark' || stored === 'system') {
+          setPreferenceState(stored);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setPreference = useMemo(
+    () => (pref: ThemePreference) => {
+      setPreferenceState(pref);
+      AsyncStorage.setItem(STORAGE_KEY, pref).catch(() => {});
+    },
+    [],
+  );
+
+  const scheme: 'light' | 'dark' =
+    forceScheme ??
+    (preference === 'system'
+      ? systemScheme === 'dark' ? 'dark' : 'light'
+      : preference);
 
   const value = useMemo<ThemeContextValue>(() => {
     const c = scheme === 'dark' ? darkColors : lightColors;
@@ -77,8 +116,10 @@ export function ThemeProvider({ children, forceScheme }: ThemeProviderProps) {
       t: makeT(c),
       isDark: scheme === 'dark',
       scheme,
+      preference,
+      setPreference,
     };
-  }, [scheme]);
+  }, [scheme, preference, setPreference]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

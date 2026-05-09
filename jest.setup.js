@@ -6,3 +6,7 @@ if (typeof globalThis.structuredClone === 'undefined') {
 if (typeof globalThis.__ExpoImportMetaRegistry === 'undefined') {
   globalThis.__ExpoImportMetaRegistry = {};
 }
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);

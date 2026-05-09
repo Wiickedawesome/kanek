@@ -14,7 +14,7 @@ import { LocationInput, DateInput, TimeInput } from '@/components/forms';
 import type { LocationCoords } from '@/components/forms';
 import { Icon } from '@/components/icons';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
-import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import { type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { useCreatePostMutation } from '@/store/api/postsApi';
 import { calculateRoute } from '@/lib/mapbox';

@@ -834,8 +834,8 @@ const createStyles = (c: SemanticColors) =>
     backgroundColor: c.surface,
   },
   pickupSelected: {
-    borderColor: colors.accent.green,
-    backgroundColor: c.bg,
+    borderColor: c.chipSelectedBg,
+    backgroundColor: c.chipSelectedBg,
   },
   pickupText: {
     ...type.bodySm.regular,
@@ -843,7 +843,7 @@ const createStyles = (c: SemanticColors) =>
   },
   pickupTextSelected: {
     ...type.bodySm.bold,
-    color: c.text,
+    color: c.chipSelectedText,
   },
   stopRow: {
     flexDirection: 'row',
