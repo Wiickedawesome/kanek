@@ -38,6 +38,8 @@ export interface ExploreMapContentProps {
   highlightDistrict?: BelizeDistrict | null;
   /** Pixel offset from top of MapView to clear the header overlay */
   compassTopOffset?: number;
+  /** Pixel offset from bottom for the recenter (compass) button */
+  recenterBottomOffset?: number;
 }
 
 export function ExploreMapContent({
@@ -53,6 +55,7 @@ export function ExploreMapContent({
   showUserLocation = false,
   highlightDistrict,
   compassTopOffset = 64,
+  recenterBottomOffset = 100,
 }: ExploreMapContentProps) {
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const center = initialCenter ?? BELIZE_CENTER;
@@ -278,7 +281,7 @@ export function ExploreMapContent({
       </MapboxGL.MapView>
 
       {/* Recenter button */}
-      <Pressable style={s.recenterBtn} onPress={recenter}>
+      <Pressable style={[s.recenterBtn, { bottom: recenterBottomOffset }]} onPress={recenter}>
         <Icon name="compass" size={22} color={colors.forest[900]} />
       </Pressable>
     </>
@@ -289,7 +292,6 @@ const s = StyleSheet.create({
   map: { flex: 1 },
   recenterBtn: {
     position: 'absolute',
-    bottom: 100,
     right: spacing.lg,
     width: 44,
     height: 44,

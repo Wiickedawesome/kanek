@@ -153,10 +153,10 @@ const styles = StyleSheet.create({
     ...type.body.bold,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   disabledText: {
-    opacity: 0.7,
+    opacity: 0.85,
   },
 });
 

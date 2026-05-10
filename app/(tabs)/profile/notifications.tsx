@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Icon } from '@/components/icons';
@@ -17,34 +18,48 @@ import { showAlert } from '@/lib/alert';
 import { safeGoBack } from '@/lib/helpers';
 import { ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { Text } from '@/components/ui/Text';
+import {
+  useGetMyProfileQuery,
+  useUpdateProfileMutation,
+} from '@/store/api/profilesApi';
+import type { RootState } from '@/store';
 
 const STORAGE_KEY = 'kanek_notification_prefs';
 
-interface NotificationPrefs {
+interface LocalPrefs {
   pushEnabled: boolean;
   inAppEnabled: boolean;
-  bookings: boolean;
-  errands: boolean;
-  jobs: boolean;
-  routes: boolean;
-  reports: boolean;
 }
 
-const DEFAULT_PREFS: NotificationPrefs = {
+const DEFAULT_LOCAL_PREFS: LocalPrefs = {
   pushEnabled: true,
   inAppEnabled: true,
-  bookings: true,
-  errands: true,
-  jobs: true,
-  routes: true,
-  reports: true,
 };
+
+// Per-type notification preferences honored by the notify-user / send-push
+// edge functions. Critical types (sos, strike_received, account_suspended,
+// payment_*) are intentionally not listed: they always come through.
+const NOTIFICATION_PREF_TYPES: { key: string; label: string; description: string }[] = [
+  { key: 'new_message', label: 'New chat messages', description: 'Direct messages from a trip partner.' },
+  { key: 'booking_request', label: 'Booking requests', description: 'When someone books or applies to your post.' },
+  { key: 'booking_accepted', label: 'Booking accepted', description: 'When your booking or application is accepted.' },
+  { key: 'booking_rejected', label: 'Booking rejected', description: 'When your application is declined.' },
+  { key: 'contract_event', label: 'Trip updates', description: 'Trip status updates from your driver or rider.' },
+  { key: 'trip_reminder', label: 'Trip reminders', description: 'Reminders before a scheduled trip.' },
+  { key: 'route_activated', label: 'Ride activations', description: 'When a recurring ride hits its rider minimum.' },
+  { key: 'recurring_route_advanced', label: 'Recurring route updates', description: 'Next-occurrence updates for recurring rides.' },
+  { key: 'post_expired', label: 'Post expirations', description: 'When one of your posts expires.' },
+  { key: 'post_cancelled', label: 'Post cancellations', description: 'When a post you booked is cancelled.' },
+];
 
 export default function NotificationSettingsScreen() {
   const { c } = useTheme();
   const styles = createStyles(c);
   const tabBarPad = useFloatingTabBarPad();
-  const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const [updateProfile] = useUpdateProfileMutation();
+  const [localPrefs, setLocalPrefs] = useState<LocalPrefs>(DEFAULT_LOCAL_PREFS);
   const [loading, setLoading] = useState(true);
   const [systemPermission, setSystemPermission] = useState<string | null>(null);
 
@@ -52,7 +67,15 @@ export default function NotificationSettingsScreen() {
     (async () => {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
+        try {
+          const parsed = JSON.parse(stored);
+          setLocalPrefs({
+            pushEnabled: parsed?.pushEnabled ?? true,
+            inAppEnabled: parsed?.inAppEnabled ?? true,
+          });
+        } catch {
+          // ignore malformed cached prefs
+        }
       }
       const { status } = await Notifications.getPermissionsAsync();
       setSystemPermission(status);
@@ -60,11 +83,25 @@ export default function NotificationSettingsScreen() {
     })();
   }, []);
 
-  const updatePref = useCallback(async (key: keyof NotificationPrefs, value: boolean) => {
-    const updated = { ...prefs, [key]: value };
-    setPrefs(updated);
+  const updateLocalPref = useCallback(async (key: keyof LocalPrefs, value: boolean) => {
+    const updated = { ...localPrefs, [key]: value };
+    setLocalPrefs(updated);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  }, [prefs]);
+  }, [localPrefs]);
+
+  const serverPrefs = (profile?.notification_preferences ?? {}) as Record<string, unknown>;
+  const updateTypePref = useCallback(async (key: string, value: boolean) => {
+    if (!userId) return;
+    const next = { ...serverPrefs, [key]: value };
+    try {
+      await updateProfile({
+        id: userId,
+        updates: { notification_preferences: next as Record<string, boolean> },
+      }).unwrap();
+    } catch {
+      showAlert('Error', 'Could not update notification preferences.');
+    }
+  }, [userId, serverPrefs, updateProfile]);
 
   const requestPermission = useCallback(async () => {
     const { status } = await Notifications.requestPermissionsAsync();
@@ -113,56 +150,37 @@ export default function NotificationSettingsScreen() {
             icon="bell"
             label="Push Notifications"
             description="Receive notifications on your device"
-            value={prefs.pushEnabled}
-            onToggle={(v) => updatePref('pushEnabled', v)}
+            value={localPrefs.pushEnabled}
+            onToggle={(v) => updateLocalPref('pushEnabled', v)}
           />
           <ToggleRow
             icon="bell"
             label="In-App Alerts"
             description="Show banner notifications inside the app"
-            value={prefs.inAppEnabled}
-            onToggle={(v) => updatePref('inAppEnabled', v)}
+            value={localPrefs.inAppEnabled}
+            onToggle={(v) => updateLocalPref('inAppEnabled', v)}
           />
         </View>
 
-        {/* Category toggles */}
+        {/* Per-type toggles (server-backed) */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>
-          <ToggleRow
-            icon="compass"
-            label="Bookings & Rides"
-            description="Seat bookings, ride confirmations"
-            value={prefs.bookings}
-            onToggle={(v) => updatePref('bookings', v)}
-          />
-          <ToggleRow
-            icon="package"
-            label="Errands & Packages"
-            description="Errand accepted, package delivery updates"
-            value={prefs.errands}
-            onToggle={(v) => updatePref('errands', v)}
-          />
-          <ToggleRow
-            icon="clipboard-list"
-            label="Jobs"
-            description="Job applications and responses"
-            value={prefs.jobs}
-            onToggle={(v) => updatePref('jobs', v)}
-          />
-          <ToggleRow
-            icon="map-pin"
-            label="Rides"
-            description="Ride updates and status changes"
-            value={prefs.routes}
-            onToggle={(v) => updatePref('routes', v)}
-          />
-          <ToggleRow
-            icon="alert-triangle"
-            label="Reports"
-            description="Road reports and gas price alerts"
-            value={prefs.reports}
-            onToggle={(v) => updatePref('reports', v)}
-          />
+          <Text style={styles.sectionHint}>
+            Critical alerts (SOS, account, payments) always come through.
+          </Text>
+          {NOTIFICATION_PREF_TYPES.map((item) => {
+            const enabled = serverPrefs[item.key] !== false;
+            return (
+              <ToggleRow
+                key={item.key}
+                icon="bell"
+                label={item.label}
+                description={item.description}
+                value={enabled}
+                onToggle={(v) => updateTypePref(item.key, v)}
+              />
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -261,6 +279,12 @@ const createStyles = (c: SemanticColors) =>
     color: c.text,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  sectionHint: {
+    ...type.caption.regular,
+    color: c.textMuted,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
   toggleRow: {

@@ -38,23 +38,6 @@ import { Text } from '@/components/ui/Text';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Notification types the user can mute. Critical types (sos,
-// strike_received, account_suspended, payment_*) are intentionally not
-// listed: they are enforced as always-on by the notify-user / send-push
-// edge functions.
-const NOTIFICATION_PREF_TYPES: { key: string; label: string; description: string }[] = [
-  { key: 'new_message', label: 'New chat messages', description: 'Direct messages from a trip partner.' },
-  { key: 'booking_request', label: 'Booking requests', description: 'When someone books or applies to your post.' },
-  { key: 'booking_accepted', label: 'Booking accepted', description: 'When your booking or application is accepted.' },
-  { key: 'booking_rejected', label: 'Booking rejected', description: 'When your application is declined.' },
-  { key: 'contract_event', label: 'Trip updates', description: 'Trip status updates from your driver or rider.' },
-  { key: 'trip_reminder', label: 'Trip reminders', description: 'Reminders before a scheduled trip.' },
-  { key: 'route_activated', label: 'Ride activations', description: 'When a recurring ride hits its rider minimum.' },
-  { key: 'recurring_route_advanced', label: 'Recurring route updates', description: 'Next-occurrence updates for recurring rides.' },
-  { key: 'post_expired', label: 'Post expirations', description: 'When one of your posts expires.' },
-  { key: 'post_cancelled', label: 'Post cancellations', description: 'When a post you booked is cancelled.' },
-];
-
 const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
   { value: 'belize', label: 'Belize' },
   { value: 'cayo', label: 'Cayo' },
@@ -361,46 +344,8 @@ export default function SettingsScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Notifications</Text>
           <Text style={styles.hint}>
-            Critical alerts (SOS, account, payments) always come through.
+            Manage notification preferences in Profile → Notifications.
           </Text>
-          <View style={styles.notifList}>
-            {NOTIFICATION_PREF_TYPES.map((item) => {
-              const prefs = (profile?.notification_preferences ?? {}) as Record<string, unknown>;
-              const enabled = prefs[item.key] !== false;
-              const onToggle = async () => {
-                if (!userId) return;
-                const next = { ...prefs, [item.key]: !enabled };
-                try {
-                  await updateProfile({
-                    id: userId,
-                    updates: { notification_preferences: next as Record<string, boolean> },
-                  }).unwrap();
-                } catch {
-                  showAlert('Error', 'Could not update notification preferences.');
-                }
-              };
-              return (
-                <Pressable
-                  key={item.key}
-                  style={styles.notifRow}
-                  onPress={onToggle}
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: enabled }}
-                  accessibilityLabel={item.label}
-                >
-                  <View style={styles.notifTextWrap}>
-                    <Text style={styles.notifLabel}>{item.label}</Text>
-                    <Text style={styles.notifDesc}>{item.description}</Text>
-                  </View>
-                  <View style={[styles.notifToggle, enabled && styles.notifToggleOn]}>
-                    <Text style={[styles.notifToggleText, enabled && styles.notifToggleTextOn]}>
-                      {enabled ? 'On' : 'Off'}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
         </View>
 
         <Button
@@ -656,39 +601,6 @@ const createStyles = (c: SemanticColors) =>
   },
   themeBtnText: { ...type.bodySm.bold, color: c.textMuted },
   themeBtnTextActive: { color: c.chipSelectedText },
-
-  notifList: { gap: spacing.xs, marginTop: spacing.xs },
-  notifRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.surface,
-    gap: spacing.md,
-  },
-  notifTextWrap: { flex: 1 },
-  notifLabel: { ...type.body.bold, color: c.text },
-  notifDesc: { ...type.caption.regular, color: c.textMuted, marginTop: 2 },
-  notifToggle: {
-    minWidth: 56,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm + 2,
-    borderRadius: borderRadius.pill,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bg,
-    alignItems: 'center',
-  },
-  notifToggleOn: {
-    borderColor: c.chipSelectedBg,
-    backgroundColor: c.chipSelectedBg,
-  },
-  notifToggleText: { ...type.bodySm.bold, color: c.textMuted },
-  notifToggleTextOn: { color: c.chipSelectedText },
 
   districtGrid: {
     flexDirection: 'row',

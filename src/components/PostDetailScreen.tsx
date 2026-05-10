@@ -624,7 +624,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
     bottomAction = (
       <View style={styles.bottomBar}>
         <Button
-          title={isRouteOffer ? 'Manage Trip' : 'View Active Contract'}
+          title={isRouteOffer ? 'Manage Trip' : 'View Contract'}
           onPress={() => {
             if (isRouteOffer) {
               router.push(`/(tabs)/activity/trip/${post.id}`);

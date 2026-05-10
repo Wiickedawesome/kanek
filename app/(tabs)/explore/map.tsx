@@ -269,6 +269,7 @@ export default function ExploreMapScreen() {
           showUserLocation={hasGPS}
           highlightDistrict={profileDistrict}
           compassTopOffset={headerHeight}
+          recenterBottomOffset={tabBarPad + spacing.md + 48 + spacing.sm}
         />
 
         {/* Header overlay */}

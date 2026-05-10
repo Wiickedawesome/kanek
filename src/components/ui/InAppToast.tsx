@@ -153,8 +153,6 @@ const createStyles = (c: SemanticColors) =>
     padding: spacing.md,
     gap: spacing.sm,
     ...shadows.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent.green,
   },
   iconCircle: {
     width: 36,

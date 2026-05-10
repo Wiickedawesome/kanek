@@ -178,7 +178,13 @@ const createStyles = (c: SemanticColors) =>
   list: { padding: spacing.lg, paddingBottom: spacing.lg },
   separator: { height: spacing.sm },
   notifCard: { padding: spacing.md },
-  unreadCard: { backgroundColor: '#f0fdf0' },
+  unreadCard: {
+    backgroundColor:
+      c.scheme === 'dark' ? 'rgba(81, 193, 82, 0.10)' : '#f0fdf0',
+    borderColor:
+      c.scheme === 'dark' ? 'rgba(81, 193, 82, 0.30)' : 'rgba(81, 193, 82, 0.40)',
+    borderWidth: 1,
+  },
   notifRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   iconCircle: {
     width: 36,
