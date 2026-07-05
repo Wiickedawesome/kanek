@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "bz.kanek.app",
+      "buildNumber": "20",
       "associatedDomains": [
         "applinks:kanek.bz"
       ],
