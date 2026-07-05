@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { Text } from '@/components/ui/Text';
+
+const LOGO_IMAGE = require('../../assets/icon.png');
 
 export default function WelcomeScreen() {
   const { c } = useTheme();
@@ -12,6 +14,7 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
+        <Image source={LOGO_IMAGE} style={styles.logo} accessibilityRole="image" accessibilityLabel="Kanek logo" />
         <Text style={styles.brand}>kanek</Text>
         <Text style={styles.tagline}>Move Belize Forward</Text>
         <Text style={styles.description}>
@@ -50,6 +53,11 @@ const createStyles = (c: SemanticColors) =>
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: spacing.lg,
   },
   brand: {
     ...type.h1.bold,

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, TextInput, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable, Platform, Image } from 'react-native';
 import { showAlert } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -12,6 +12,8 @@ import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { HCaptcha, type HCaptchaHandle } from '@/components/HCaptcha';
 import { Text } from '@/components/ui/Text';
+
+const LOGO_IMAGE = require('../../assets/icon.png');
 
 export default function LoginScreen() {
   const { c } = useTheme();
@@ -123,6 +125,7 @@ export default function LoginScreen() {
         </Pressable>
       </View>
       <View style={styles.content}>
+        <Image source={LOGO_IMAGE} style={styles.loginLogo} accessibilityRole="image" accessibilityLabel="Kanek logo" />
         <Text style={styles.title}>
           {isInputStep
             ? isSignUp
@@ -288,6 +291,12 @@ const createStyles = (c: SemanticColors) =>
     ...type.bodySm.regular,
     color: c.textMuted,
     marginBottom: spacing.xl,
+  },
+  loginLogo: {
+    width: 80,
+    height: 80,
+    marginBottom: spacing.lg,
+    alignSelf: 'center',
   },
   input: {
     ...type.h2.bold,
