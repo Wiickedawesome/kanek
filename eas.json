@@ -19,6 +19,12 @@
       "environment": "production",
       "env": {
         "MAPBOX_DOWNLOAD_TOKEN": "${MAPBOX_DOWNLOAD_TOKEN}"
+      },
+      "ios": {
+        "buildNumber": "20"
+      },
+      "android": {
+        "versionCode": 20
       }
     }
   },
