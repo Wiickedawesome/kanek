@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -31,6 +31,13 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   booking_cancelled: 'clipboard-list',
   contract_completed: 'star',
   new_booking: 'user',
+  new_applicant: 'user',
+  applicant_accepted: 'clipboard-list',
+  applicant_rejected: 'alert-triangle',
+  booking_accepted: 'clipboard-list',
+  booking_rejected: 'alert-triangle',
+  match_confirmed: 'clipboard-list',
+  contract_event: 'navigation',
   new_message: 'send',
   post_cancelled: 'alert-triangle',
   errand_accepted: 'package',
@@ -52,7 +59,7 @@ const ICON_MAP: Record<string, React.ComponentProps<typeof Icon>['name']> = {
 
 export default function NotificationsScreen() {
   const { c } = useTheme();
-  const styles = createStyles(c);
+  const styles = useMemo(() => createStyles(c), [c]);
   const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((s: RootState) => s.auth.user?.id);
   const {
@@ -105,7 +112,7 @@ export default function NotificationsScreen() {
         </Pressable>
       );
     },
-    [handlePress],
+    [handlePress, styles],
   );
 
   const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;

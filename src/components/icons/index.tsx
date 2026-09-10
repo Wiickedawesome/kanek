@@ -32,6 +32,7 @@ import { MessageCircle } from './MessageCircle';
 import { Lock } from './Lock';
 import { Map } from './Map';
 import { Download } from './Download';
+import { Check } from './Check';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -70,6 +71,7 @@ export { Lock } from './Lock';
 export { MessageCircle } from './MessageCircle';
 export { Map } from './Map';
 export { Download } from './Download';
+export { Check } from './Check';
 
 const iconMap = {
   compass: Compass,
@@ -103,6 +105,7 @@ const iconMap = {
   'message-circle': MessageCircle,
   map: Map,
   download: Download,
+  check: Check,
 } as const;
 
 export type IconName = keyof typeof iconMap;

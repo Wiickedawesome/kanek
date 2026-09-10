@@ -1,5 +1,6 @@
-import { Linking, Platform, ActionSheetIOS, Alert } from 'react-native';
+import { Linking, Platform, ActionSheetIOS } from 'react-native';
 import { router } from 'expo-router';
+import { showOptions } from './alert';
 import { PHONE_REGEX, BELIZE_BBOX } from './constants';
 
 const BZ_LOCALE = 'en-BZ';
@@ -48,10 +49,9 @@ export function openInMaps(
       },
     );
   } else {
-    // Android: use Alert with buttons
-    Alert.alert(
+    // Android / web: use cross-platform options sheet
+    showOptions(
       'Open in Maps',
-      undefined,
       [
         ...options.map((o) => ({
           text: o.label,
@@ -332,6 +332,7 @@ export function normalizeAppPath(path: string): string {
 
 const AUTHOR_POST_NOTIFICATION_TYPES = new Set([
   'new_booking',
+  'new_applicant',
   'errand_accepted',
   'job_application',
   'booking_cancelled',
@@ -375,15 +376,19 @@ export function navigateToNotification(
 
   if (notificationType === 'post_cancelled') return;
 
+  const { contractId, postId, ratedId } = getNotificationRouteData(data);
+
+  if (notificationType === 'new_message' && contractId) {
+    router.push(`/(tabs)/activity/messages/${contractId}` as any);
+    return;
+  }
+
   if (notificationType === 'route_activated') {
-    const { postId } = getNotificationRouteData(data);
     if (postId) {
       router.push(`/(tabs)/activity/post/${postId}` as any);
     }
     return;
   }
-
-  const { contractId, postId, ratedId } = getNotificationRouteData(data);
 
   if (contractId && ratedId) {
     router.push({

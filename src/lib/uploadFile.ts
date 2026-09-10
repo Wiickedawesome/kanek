@@ -10,6 +10,15 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   webp: 'image/webp',
 };
 
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/gif': 'gif',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
 function inferMimeType(uri: string, fallbackMimeType?: string | null) {
   if (fallbackMimeType) return fallbackMimeType;
 
@@ -18,6 +27,22 @@ function inferMimeType(uri: string, fallbackMimeType?: string | null) {
   if (!extension) return null;
 
   return MIME_BY_EXTENSION[extension] ?? null;
+}
+
+export function getSafeUploadExtension(uri: string, mimeType?: string | null): string {
+  if (!uri.startsWith('blob:') && !uri.startsWith('data:')) {
+    const cleanUri = uri.split('?')[0] ?? uri;
+    const rawExt = cleanUri.split('.').pop()?.toLowerCase() ?? '';
+    if (rawExt && rawExt.length <= 5 && /^[a-z0-9]+$/.test(rawExt)) {
+      return rawExt === 'jpeg' ? 'jpg' : rawExt;
+    }
+  }
+
+  if (mimeType && EXTENSION_BY_MIME[mimeType]) {
+    return EXTENSION_BY_MIME[mimeType];
+  }
+
+  return 'jpg';
 }
 
 export async function readUploadFile(uri: string, fallbackMimeType?: string | null) {

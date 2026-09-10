@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -23,7 +23,7 @@ type ReportItem = { type: 'gas'; data: GasPriceRow };
 
 export default function ReportsScreen() {
   const { c } = useTheme();
-  const styles = createStyles(c);
+  const styles = useMemo(() => createStyles(c), [c]);
   const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
 
@@ -67,7 +67,7 @@ export default function ReportsScreen() {
         </View>
       </Card>
     );
-  }, []);
+  }, [styles, c]);
 
   const onRefresh = useCallback(() => {
     refetch();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui';
-import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
+import { type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { FormField } from './FormField';
 import { Text } from '@/components/ui/Text';

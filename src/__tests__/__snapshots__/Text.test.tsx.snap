@@ -1,15 +1,145 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Text layout style overrides apply but do not override colour/font 1`] = `null`;
+exports[`Text layout style overrides apply but do not override colour/font 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#656e5e",
+        "fontFamily": "Manrope-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+      },
+      {
+        "marginTop": 8,
+        "textAlign": "center",
+      },
+    ]
+  }
+>
+  x
+</Text>
+`;
 
-exports[`Text renders body medium muted 1`] = `null`;
+exports[`Text renders body medium muted 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#656e5e",
+        "fontFamily": "Manrope-Medium",
+        "fontSize": 16,
+        "fontWeight": "500",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+      },
+      undefined,
+    ]
+  }
+>
+  sub
+</Text>
+`;
 
-exports[`Text renders body/regular/text by default 1`] = `null`;
+exports[`Text renders body/regular/text by default 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#142800",
+        "fontFamily": "Manrope-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+      },
+      undefined,
+    ]
+  }
+>
+  hello
+</Text>
+`;
 
-exports[`Text renders danger tone 1`] = `null`;
+exports[`Text renders danger tone 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#d32f2f",
+        "fontFamily": "Manrope-Regular",
+        "fontSize": 14,
+        "fontWeight": "400",
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+      },
+      undefined,
+    ]
+  }
+>
+  err
+</Text>
+`;
 
-exports[`Text renders dark scheme text 1`] = `null`;
+exports[`Text renders dark scheme text 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#f2f2f3",
+        "fontFamily": "WorkSans-Bold",
+        "fontSize": 26,
+        "fontWeight": "700",
+        "letterSpacing": -0.4,
+        "lineHeight": 32,
+      },
+      undefined,
+    ]
+  }
+>
+  Dark
+</Text>
+`;
 
-exports[`Text renders h1 bold 1`] = `null`;
+exports[`Text renders h1 bold 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#142800",
+        "fontFamily": "WorkSans-Bold",
+        "fontSize": 32,
+        "fontWeight": "700",
+        "letterSpacing": -0.6,
+        "lineHeight": 38,
+      },
+      undefined,
+    ]
+  }
+>
+  Title
+</Text>
+`;
 
-exports[`Text renders overline uppercase 1`] = `null`;
+exports[`Text renders overline uppercase 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#142800",
+        "fontFamily": "Manrope-Medium",
+        "fontSize": 11,
+        "fontWeight": "500",
+        "letterSpacing": 0.6,
+        "lineHeight": 14,
+        "textTransform": "uppercase",
+      },
+      undefined,
+    ]
+  }
+>
+  Section
+</Text>
+`;

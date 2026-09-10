@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
@@ -355,7 +355,7 @@ export default function RouteFormScreen() {
     }
 
     try {
-      await createPost({
+      const result = await createPost({
         author_id: userId,
         type: postType,
         title: title.trim(),
@@ -386,7 +386,11 @@ export default function RouteFormScreen() {
       }).unwrap();
 
       dispatch(showToast({ title: 'Post created successfully!' }));
-      safeBack();
+      if (result?.id) {
+        router.replace(`/(tabs)/activity/post/${result.id}`);
+      } else {
+        router.replace('/(tabs)/activity');
+      }
     } catch (err: unknown) {
       console.error('Post save error:', err);
       const message =
@@ -702,7 +706,7 @@ export default function RouteFormScreen() {
                   }}
                 >
                   <View style={[styles.checkbox, repeatEnabled && styles.checkboxChecked]}>
-                    {repeatEnabled ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                    {repeatEnabled ? <Icon name="check" size={14} color="#fff" /> : null}
                   </View>
                   <Text style={styles.repeatToggleText}>
                     This trip repeats on specific days

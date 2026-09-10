@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,7 +21,7 @@ type EkyashTxnRow = Database['public']['Tables']['ekyash_transactions']['Row'];
 
 export default function WalletScreen() {
   const { c } = useTheme();
-  const styles = createStyles(c);
+  const styles = useMemo(() => createStyles(c), [c]);
   const tabBarPad = useFloatingTabBarPad();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const { data: transactions, isLoading, refetch, isFetching } = useGetPaymentHistoryQuery(
@@ -71,7 +71,7 @@ export default function WalletScreen() {
         </Card>
       );
     },
-    [userId],
+    [userId, styles],
   );
 
   return (

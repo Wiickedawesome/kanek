@@ -27,3 +27,30 @@ export function showConfirm(title: string, message?: string): Promise<boolean> {
     ]);
   });
 }
+
+export interface AlertOption {
+  text: string;
+  onPress?: () => void;
+  style?: 'default' | 'cancel' | 'destructive';
+}
+
+/**
+ * Cross-platform options chooser dialog.
+ */
+export function showOptions(title: string, options: AlertOption[], message?: string) {
+  if (Platform.OS === 'web') {
+    const actionOptions = options.filter((o) => o.style !== 'cancel');
+    const promptText = `${title}${message ? `\n${message}` : ''}\n` +
+      actionOptions.map((o, i) => `${i + 1}. ${o.text}`).join('\n');
+    const choice = window.prompt(promptText);
+    if (choice) {
+      const idx = parseInt(choice, 10) - 1;
+      if (idx >= 0 && idx < actionOptions.length) {
+        actionOptions[idx].onPress?.();
+      }
+    }
+  } else {
+    Alert.alert(title, message, options);
+  }
+}
+

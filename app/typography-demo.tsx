@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
+import { Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { useTheme } from '@/theme/ThemeContext';
@@ -26,6 +27,10 @@ const TONES: TextTone[] = ['text', 'subtle', 'muted', 'accent', 'danger'];
  */
 export default function TypographyDemo() {
   const { c, scheme } = useTheme();
+
+  if (!__DEV__) {
+    return <Redirect href="/" />;
+  }
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: c.bg }]}>
       <ScrollView contentContainerStyle={styles.content}>

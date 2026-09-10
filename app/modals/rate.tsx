@@ -75,7 +75,7 @@ export default function RateModal() {
       }).unwrap();
 
       showAlert('Thanks!', 'Your rating has been submitted.');
-      router.back();
+      router.replace('/(tabs)/activity');
     } catch {
       showAlert('Error', 'Could not submit rating. Please try again.');
     } finally {

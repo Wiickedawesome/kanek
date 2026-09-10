@@ -22,6 +22,7 @@ import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, To
 import { useGetPostsQuery } from '@/store/api/postsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { useGetGasPricesQuery } from '@/store/api/reportsApi';
+import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
 import type { RootState } from '@/store';
 import { useRealtime } from '@/hooks/useRealtime';
 import { DISTANCE_PRESETS } from '@/lib/constants';
@@ -73,6 +74,10 @@ export default function ExploreScreen() {
   const hasGPS = userLat != null && userLng != null;
 
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const { data: unreadCount = 0 } = useGetUnreadCountQuery(userId ?? '', {
+    skip: !userId,
+    pollingInterval: 60_000,
+  });
   const firstName = profile?.first_name ?? '';
   const userDistrict = profile?.district ?? null;
 
@@ -168,9 +173,25 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
-        <Text style={styles.greeting}>
-          {getGreeting()}{firstName ? `, ${firstName}` : ''}
-        </Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.greeting}>
+            {getGreeting()}{firstName ? `, ${firstName}` : ''}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/activity/notifications')}
+            hitSlop={12}
+            style={styles.bellButton}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <Icon name="bell" size={22} color={c.text} />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
 
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
@@ -346,10 +367,37 @@ const createStyles = (c: SemanticColors) =>
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  bellButton: {
+    position: 'relative',
+    padding: spacing.xs,
+  },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: colors.accent.green,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: colors.forest[900],
+    fontSize: 10,
+    fontFamily: 'Manrope-Bold',
+    lineHeight: 12,
+  },
   greeting: {
     ...type.h2.bold,
     color: c.text,
-    marginBottom: spacing.md,
   },
   searchRow: {
     flexDirection: 'row',

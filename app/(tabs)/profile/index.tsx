@@ -281,7 +281,7 @@ export default function ProfileScreen() {
           />
           <MenuItem
             icon="bell"
-            label="Notifications"
+            label="Notification Settings"
             onPress={() => router.push('/(tabs)/profile/notifications')}
           />
           <MenuItem

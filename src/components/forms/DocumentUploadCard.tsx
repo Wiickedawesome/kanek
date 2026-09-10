@@ -15,7 +15,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
 import { showAlert } from '@/lib/alert';
-import { readUploadFile } from '@/lib/uploadFile';
+import { readUploadFile, getSafeUploadExtension } from '@/lib/uploadFile';
 import type { DriverDocumentType, ReviewStatus , Database } from '@/types/database';
 import { DRIVER_DOC_LABELS } from '@/store/api/driverDocumentsApi';
 import { Text } from '@/components/ui/Text';
@@ -163,10 +163,9 @@ export function DocumentUploadCard({ userId, documentType, existingDoc, onUpsert
 
       if (imageUri) {
         // Upload new image
-        const ext = imageUri.split('.').pop() ?? 'jpg';
-        const filePath = `${userId}/${documentType}-${Date.now()}.${ext}`;
-
         const { arrayBuffer, mimeType } = await readUploadFile(imageUri, 'image/jpeg');
+        const ext = getSafeUploadExtension(imageUri, mimeType);
+        const filePath = `${userId}/${documentType}-${Date.now()}.${ext}`;
 
         const { error } = await supabase.storage
           .from('documents')

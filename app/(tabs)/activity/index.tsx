@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -34,6 +34,7 @@ const HISTORY_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'no_show'];
 const HISTORY_CONTRACT_STATUSES: ContractStatus[] = ['completed', 'cancelled'];
 const MY_POSTS_EXCLUDED_STATUSES = ['completed', 'cancelled', 'expired'];
 const ACTIVE_CONTRACT_STATUSES: ContractStatus[] = ['active'];
+const ACTIVE_BOOKING_STATUSES: BookingStatus[] = ['pending', 'confirmed'];
 
 // Reanimated's FadeInUp uses CSS animations on web that can get stuck at
 // intermediate opacity when the parent re-renders (e.g. on theme change),
@@ -45,7 +46,7 @@ const cardEntering = (index: number) =>
 
 export default function ActivityScreen() {
   const { c } = useTheme();
-  const styles = createStyles(c);
+  const styles = useMemo(() => createStyles(c), [c]);
   const tabBarPad = useFloatingTabBarPad();
   const params = useLocalSearchParams<{ tab?: string }>();
   const initialTab = params.tab === 'history' ? 'history' : 'my_posts';
@@ -97,11 +98,28 @@ export default function ActivityScreen() {
     { skip: !userId || tab !== 'my_posts' },
   );
 
+  const {
+    data: activeBookings,
+    isLoading: activeBookingsLoading,
+    isFetching: activeBookingsFetching,
+    refetch: refetchActiveBookings,
+  } = useGetMyBookingsQuery(
+    { userId: userId ?? '', status: ACTIVE_BOOKING_STATUSES },
+    { skip: !userId || tab !== 'my_posts' },
+  );
+
   // Active contracts where user is booker/helper (not post author)
   const activeJobs = React.useMemo(() => {
     if (!activeContracts || !userId) return [];
     return activeContracts.filter(c => c.post?.author_id !== userId);
   }, [activeContracts, userId]);
+
+  // Active bookings where user is booker/rider (not post author), excluding contracts already in activeJobs
+  const userActiveBookings = React.useMemo(() => {
+    if (!activeBookings || !userId) return [];
+    const contractBookingIds = new Set(activeJobs.map(c => c.booking_id).filter(Boolean));
+    return activeBookings.filter(b => b.post?.author_id !== userId && !contractBookingIds.has(b.id));
+  }, [activeBookings, activeJobs, userId]);
 
   const [deletePost] = useDeletePostMutation();
   const [cancelBooking] = useCancelBookingMutation();
@@ -150,11 +168,12 @@ export default function ActivityScreen() {
     if (tab === 'my_posts') {
       refetchPosts();
       refetchActiveContracts();
+      refetchActiveBookings();
     } else {
       refetchBookings();
       refetchContracts();
     }
-  }, [tab, refetchPosts, refetchActiveContracts, refetchBookings, refetchContracts]);
+  }, [tab, refetchPosts, refetchActiveContracts, refetchActiveBookings, refetchBookings, refetchContracts]);
 
   const renderBooking = useCallback(
     ({ item, index }: { item: BookingWithPost; index?: number }) => {
@@ -198,6 +217,13 @@ export default function ActivityScreen() {
                 </View>
               )}
 
+              {item.post?.price_cents != null && (
+                <View style={styles.routeInfo}>
+                  <Icon name="receipt" size={14} color={c.textMuted} />
+                  <Text style={styles.routeText}>{formatBZD(item.post.price_cents)}</Text>
+                </View>
+              )}
+
               <View style={styles.cardFooter}>
                 <Text style={styles.footerText}>
                   {getBookingFooterLabel(item.post?.type, item.seats_booked, item.payment_method)}
@@ -223,7 +249,7 @@ export default function ActivityScreen() {
         </Animated.View>
       );
     },
-    [handleCancelBooking],
+    [handleCancelBooking, styles, c],
   );
 
   const renderContract = useCallback(
@@ -259,7 +285,7 @@ export default function ActivityScreen() {
         </Pressable>
       </Animated.View>
     ),
-    [],
+    [styles, c],
   );
 
   // Build merged history list: contracts first, then bookings without a contract
@@ -417,22 +443,31 @@ export default function ActivityScreen() {
       </Animated.View>
       );
     },
-    [handleDeletePost, getContractIdForPost],
+    [handleDeletePost, getContractIdForPost, styles, c],
   );
 
   type SectionItem =
     | { kind: 'post'; data: MyPostWithBookings }
-    | { kind: 'contract'; data: ContractWithDetails };
+    | { kind: 'contract'; data: ContractWithDetails }
+    | { kind: 'booking'; data: BookingWithPost };
 
   type ActivitySection = { title: string; data: SectionItem[] };
 
   const sections = React.useMemo((): ActivitySection[] => {
     const result: ActivitySection[] = [];
 
-    // Active jobs (user is booker/helper, not post author)
+    // 1. Active bookings / requests (user is booker / rider)
+    if (userActiveBookings.length > 0) {
+      result.push({
+        title: 'My Bookings & Requests',
+        data: userActiveBookings.map(b => ({ kind: 'booking' as const, data: b })),
+      });
+    }
+
+    // 2. Active jobs (user is booker/helper, not post author)
     if (activeJobs.length > 0) {
       result.push({
-        title: 'Active Jobs',
+        title: 'Active Trips & Jobs',
         data: activeJobs.map(c => ({ kind: 'contract' as const, data: c })),
       });
     }
@@ -465,21 +500,24 @@ export default function ActivityScreen() {
         }
       }
 
-      if (active.length > 0) result.push({ title: 'Active', data: active });
-      if (regular.length > 0) result.push({ title: 'My Posts', data: regular });
+      if (active.length > 0) result.push({ title: 'Active Listings', data: active });
+      if (regular.length > 0) result.push({ title: 'My Listings', data: regular });
     }
 
     return result;
-  }, [myPosts, activeJobs]);
+  }, [userActiveBookings, activeJobs, myPosts]);
 
   const renderSectionItem = useCallback(
     ({ item, index }: { item: SectionItem; index: number }) => {
       if (item.kind === 'contract') {
         return renderContract({ item: item.data, index });
       }
+      if (item.kind === 'booking') {
+        return renderBooking({ item: item.data, index });
+      }
       return renderMyPost({ item: item.data, index });
     },
-    [renderContract, renderMyPost],
+    [renderContract, renderBooking, renderMyPost],
   );
 
   const renderSectionHeader = useCallback(
@@ -488,11 +526,11 @@ export default function ActivityScreen() {
         <Text style={styles.sectionHeaderText}>{section.title}</Text>
       </View>
     ),
-    [],
+    [styles],
   );
 
-  const isLoading = tab === 'my_posts' ? (postsLoading || activeContractsLoading) : (bookingsLoading || contractsLoading);
-  const isFetching = tab === 'my_posts' ? (postsFetching || activeContractsFetching) : (bookingsFetching || contractsFetching);
+  const isLoading = tab === 'my_posts' ? (postsLoading || activeContractsLoading || activeBookingsLoading) : (bookingsLoading || contractsLoading);
+  const isFetching = tab === 'my_posts' ? (postsFetching || activeContractsFetching || activeBookingsFetching) : (bookingsFetching || contractsFetching);
 
   let content: React.ReactNode;
 
@@ -508,7 +546,7 @@ export default function ActivityScreen() {
         sections={sections}
         renderItem={renderSectionItem}
         renderSectionHeader={renderSectionHeader}
-        keyExtractor={(item) => item.kind === 'contract' ? `c_${item.data.id}` : item.data.id}
+        keyExtractor={(item) => (item.kind === 'contract' ? `c_${item.data.id}` : item.kind === 'booking' ? `b_${item.data.id}` : `p_${item.data.id}`)}
         contentContainerStyle={[styles.feed, { paddingBottom: tabBarPad }]}
         initialNumToRender={8}
         maxToRenderPerBatch={6}
@@ -526,8 +564,8 @@ export default function ActivityScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="clipboard-list"
-            title="No posts yet"
-            message="Posts you create will appear here so you can manage them."
+            title="No active activity"
+            message="Rides you book and posts you create will appear here."
           />
         }
       />
@@ -583,7 +621,7 @@ export default function ActivityScreen() {
           onPress={() => setTab('my_posts')}
         >
           <Text style={[styles.tabText, tab === 'my_posts' && styles.tabTextActive]}>
-            My Posts
+            Active
           </Text>
         </Pressable>
         <Pressable

@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { TextInput, Button, ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { LocationInput, DateInput, TimeInput } from '@/components/forms';
@@ -163,7 +164,7 @@ export default function ErrandFormScreen() {
         : null;
 
     try {
-      await createPost({
+      const result = await createPost({
         author_id: userId,
         type: 'errand',
         title: title.trim(),
@@ -186,7 +187,11 @@ export default function ErrandFormScreen() {
       }).unwrap();
 
       dispatch(showToast({ title: 'Post created successfully!' }));
-      safeBack();
+      if (result?.id) {
+        router.replace(`/(tabs)/activity/post/${result.id}`);
+      } else {
+        router.replace('/(tabs)/activity');
+      }
     } catch (err: unknown) {
       console.error('Post save error:', err);
       const message =

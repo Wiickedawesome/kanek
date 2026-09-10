@@ -81,6 +81,7 @@ export function ThemeProvider({ children, forceScheme }: ThemeProviderProps) {
 
   // Hydrate preference from storage once on mount.
   useEffect(() => {
+    if (forceScheme) return;
     let cancelled = false;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
@@ -93,7 +94,7 @@ export function ThemeProvider({ children, forceScheme }: ThemeProviderProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [forceScheme]);
 
   const setPreference = useMemo(
     () => (pref: ThemePreference) => {

@@ -12,6 +12,7 @@ import { View,
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { colors, type, spacing } from '@/theme';
 import { Text } from '@/components/ui/Text';
+import { Icon } from '@/components/icons';
 
 const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 
@@ -59,7 +60,7 @@ export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
         onPress={() => { if (!verified) setShowModal(true); }}
       >
         <View style={[styles.checkbox, verified && styles.checkboxChecked]}>
-          {verified && <Text style={styles.checkmark}>✓</Text>}
+          {verified && <Icon name="check" size={14} color="#fff" />}
         </View>
         <Text style={[styles.verifyText, verified && styles.verifiedText]}>
           {verified ? 'Verified' : 'Tap to verify'}

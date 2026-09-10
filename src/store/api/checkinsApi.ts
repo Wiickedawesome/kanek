@@ -1,6 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
-import { readUploadFile } from '@/lib/uploadFile';
+import { readUploadFile, getSafeUploadExtension } from '@/lib/uploadFile';
 import type { Database } from '@/types/database';
 
 type CheckinRow = Database['public']['Tables']['driver_checkins']['Row'];
@@ -50,7 +50,7 @@ export const checkinsApi = createApi({
           return { error: { status: 'CUSTOM_ERROR' as const, error: 'File must be an image' } };
         }
 
-        const ext = imageUri.split('.').pop() ?? 'jpg';
+        const ext = getSafeUploadExtension(imageUri, mimeType);
         const filePath = `${driverId}/${contractId}.${ext}`;
 
         // Upload to Supabase Storage

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { colors, spacing, borderRadius, useTheme } from '@/theme';
+import { spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { FormField } from './FormField';
 

@@ -99,6 +99,16 @@ export function useNotifications() {
       navigateToNotification(type, data);
     });
 
+    // Handle tap on OS notification that launched the app from a cold start
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (!response) return;
+        const data = (response.notification.request.content.data ?? {}) as Record<string, unknown>;
+        const type = typeof data.type === 'string' ? data.type : undefined;
+        navigateToNotification(type, data);
+      })
+      .catch(() => {});
+
     return () => {
       receivedSub.remove();
       responseSub.remove();

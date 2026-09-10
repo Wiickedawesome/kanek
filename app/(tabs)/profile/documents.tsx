@@ -15,7 +15,7 @@ import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import { safeGoBack } from '@/lib/helpers';
 import { MAX_UPLOAD_SIZE } from '@/lib/constants';
-import { readUploadFile } from '@/lib/uploadFile';
+import { readUploadFile, getSafeUploadExtension } from '@/lib/uploadFile';
 import {
   useGetLatestRiderDocumentQuery,
   useGetMyProfileQuery,
@@ -103,10 +103,9 @@ export default function DocumentsScreen() {
         return;
       }
 
-      const ext = asset.uri.split('.').pop() ?? 'jpg';
-      const filePath = `${userId}/government-id-${Date.now()}.${ext}`;
-
       const { arrayBuffer, mimeType } = await readUploadFile(asset.uri, asset.mimeType);
+      const ext = getSafeUploadExtension(asset.uri, mimeType);
+      const filePath = `${userId}/government-id-${Date.now()}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
         .from('documents')

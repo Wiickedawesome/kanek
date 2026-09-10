@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { borderRadius, colors } from '@/theme';
+import { colors } from '@/theme';
 import { Icon, type IconName } from '@/components/icons';
 import type { PostType } from '@/types/database';
 

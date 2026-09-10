@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -89,7 +89,10 @@ export default function NotificationSettingsScreen() {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }, [localPrefs]);
 
-  const serverPrefs = (profile?.notification_preferences ?? {}) as Record<string, unknown>;
+  const serverPrefs = useMemo(
+    () => (profile?.notification_preferences ?? {}) as Record<string, unknown>,
+    [profile?.notification_preferences],
+  );
   const updateTypePref = useCallback(async (key: string, value: boolean) => {
     if (!userId) return;
     const next = { ...serverPrefs, [key]: value };
@@ -126,7 +129,7 @@ export default function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="Notifications" onBack={() => safeGoBack('/(tabs)/profile/')} />
+      <ScreenHeader title="Notification Settings" onBack={() => safeGoBack('/(tabs)/profile/')} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}>
         {/* System permission banner */}

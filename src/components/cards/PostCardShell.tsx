@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, Pressable, StyleSheet, View, type ViewStyle, type StyleProp } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { borderRadius, shadows, useTheme } from '@/theme';
+import { shadows, useTheme } from '@/theme';
 import { hapticLight } from '@/lib/haptics';
 
 const SPRING = { damping: 15, stiffness: 300 };

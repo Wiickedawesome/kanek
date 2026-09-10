@@ -441,3 +441,10 @@ verify_jwt = false
 verify_jwt = false
 [functions.check-route-activation]
 verify_jwt = false
+[functions.ekyash-callback]
+verify_jwt = false
+[functions.update-rating-avg]
+verify_jwt = false
+[functions.purge-deleted-accounts]
+verify_jwt = false
+

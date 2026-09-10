@@ -1,12 +1,15 @@
-import React from 'react';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+import React, { act } from 'react';
 // @ts-ignore -- no types ship with react-test-renderer; runtime use only.
 import { create } from 'react-test-renderer';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { Text } from '@/components/ui/Text';
 
 function render(node: React.ReactNode, scheme: 'light' | 'dark' = 'light') {
-  return create(<ThemeProvider forceScheme={scheme}>{node}</ThemeProvider>).toJSON();
+  let renderer: any;
+  act(() => {
+    renderer = create(<ThemeProvider forceScheme={scheme}>{node}</ThemeProvider>);
+  });
+  return renderer.toJSON();
 }
 
 describe('Text', () => {
