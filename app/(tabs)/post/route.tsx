@@ -289,12 +289,9 @@ export default function RouteFormScreen() {
     }
 
     if (pickupStyle === 'multi_stop') {
-      if (routeStops.length === 0) {
-        newErrors.routeStops = 'Add at least one stop';
-      }
-
       routeStops.forEach((stop) => {
-        if (!stop.address.trim()) {
+        // Only validate stops that the user started filling (has address)
+        if (stop.address.trim().length > 0 && stop.address.trim().length < 2) {
           newErrors[`routeStop:${stop.id}`] = 'Stop address is required';
         }
       });
@@ -512,8 +509,8 @@ export default function RouteFormScreen() {
           {isOffer && pickupStyle === 'multi_stop' && (
             <View style={styles.pickupSection}>
               <View style={styles.stopHeaderRow}>
-                <Text style={styles.fieldLabel}>Stops on the way</Text>
-                <Text style={styles.stopCounter}>{routeStops.length}/{MAX_MULTI_STOPS}</Text>
+                <Text style={styles.fieldLabel}>Stops on the way (optional)</Text>
+                <Text style={styles.stopCounter}>{routeStops.filter(s => s.address.trim()).length}/{MAX_MULTI_STOPS}</Text>
               </View>
 
               {routeStops.map((stop, index) => (
@@ -538,12 +535,13 @@ export default function RouteFormScreen() {
                 </View>
               ))}
 
-              {routeStops.length < MAX_MULTI_STOPS && (
+{routeStops.length < MAX_MULTI_STOPS && (
                 <Pressable style={styles.addStopButton} onPress={addRouteStop}>
                   <Icon name="plus-circle" size={18} color={c.textMuted} />
-                  <Text style={styles.addStopText}>Add another stop</Text>
+                  <Text style={styles.addStopText}>Add stop</Text>
                 </Pressable>
               )}
+              <Text style={styles.helperText}>Add stops along your route (optional)</Text>
             </View>
           )}
 

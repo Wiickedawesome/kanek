@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Pressable, TextInput as RNTextInput } from 'react-native';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -24,6 +24,9 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
   const [minute, setMinute] = useState(parsed.minute);
   const [period, setPeriod] = useState<'AM' | 'PM'>(parsed.period);
 
+  const hourRef = useRef<RNTextInput>(null);
+  const minuteRef = useRef<RNTextInput>(null);
+
   const emit = useCallback(
     (h: string, m: string, p: 'AM' | 'PM') => {
       const hNum = parseInt(h, 10);
@@ -45,6 +48,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
       const clean = text.replace(/\D/g, '').slice(0, 2);
       setHour(clean);
       emit(clean, minute, period);
+      if (clean.length === 2) minuteRef.current?.focus();
     },
     [minute, period, emit],
   );
@@ -72,6 +76,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
       <View style={[styles.row, styles.rowCompact]}>
         <View style={[styles.inputRow, error ? styles.errorBorder : undefined]}>
           <RNTextInput
+            ref={hourRef}
             style={styles.timeField}
             placeholder="hh"
             placeholderTextColor={c.textMuted}
@@ -83,6 +88,7 @@ export function TimeInput({ label, value, onChangeText, error }: TimeInputProps)
           />
           <Text style={styles.colon}>:</Text>
           <RNTextInput
+            ref={minuteRef}
             style={styles.timeField}
             placeholder="mm"
             placeholderTextColor={c.textMuted}

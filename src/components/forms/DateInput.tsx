@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -23,6 +23,10 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
   const [month, setMonth] = useState(parsed.month);
   const [year, setYear] = useState(parsed.year);
 
+  const dayRef = useRef<RNTextInput>(null);
+  const monthRef = useRef<RNTextInput>(null);
+  const yearRef = useRef<RNTextInput>(null);
+
   const emit = useCallback(
     (d: string, m: string, y: string) => {
       const dNum = parseInt(d, 10);
@@ -44,6 +48,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
       const clean = text.replace(/\D/g, '').slice(0, 2);
       setDay(clean);
       emit(clean, month, year);
+      if (clean.length === 2) monthRef.current?.focus();
     },
     [month, year, emit],
   );
@@ -53,6 +58,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
       const clean = text.replace(/\D/g, '').slice(0, 2);
       setMonth(clean);
       emit(day, clean, year);
+      if (clean.length === 2) yearRef.current?.focus();
     },
     [day, year, emit],
   );
@@ -71,6 +77,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputRow, error ? styles.errorBorder : undefined]}>
         <RNTextInput
+          ref={dayRef}
           style={styles.field}
           placeholder="DD"
           placeholderTextColor={c.textMuted}
@@ -82,6 +89,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
         />
         <Text style={styles.separator}>/</Text>
         <RNTextInput
+          ref={monthRef}
           style={styles.field}
           placeholder="MM"
           placeholderTextColor={c.textMuted}
@@ -93,6 +101,7 @@ export function DateInput({ label, value, onChangeText, error }: DateInputProps)
         />
         <Text style={styles.separator}>/</Text>
         <RNTextInput
+          ref={yearRef}
           style={styles.yearField}
           placeholder="YYYY"
           placeholderTextColor={c.textMuted}
