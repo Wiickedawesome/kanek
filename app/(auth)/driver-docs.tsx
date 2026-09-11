@@ -56,12 +56,17 @@ export default function DriverDocsScreen() {
     plate: '',
   });
 
+  const hasUploadedLicense = driverDocs.some(
+    (d) => d.document_type === 'drivers_license' && !!d.document_url
+  );
+
   const isFormValid =
     vehicle.make.trim() &&
     vehicle.model.trim() &&
     vehicle.year.trim() &&
     vehicle.color.trim() &&
-    vehicle.plate.trim();
+    vehicle.plate.trim() &&
+    hasUploadedLicense;
 
   const handleExit = async () => {
     if (isSubmitting) return;
@@ -213,6 +218,12 @@ export default function DriverDocsScreen() {
           maxLength={20}
         />
 
+        {!hasUploadedLicense && (
+          <Text style={styles.missingDocWarning}>
+            {"* Driver's license upload is required to continue."}
+          </Text>
+        )}
+
         <Button
           title={isSubmitting ? 'Submitting...' : 'Continue'}
           onPress={handleSubmit}
@@ -295,5 +306,11 @@ const createStyles = (c: SemanticColors) =>
     color: c.textMuted,
     textAlign: 'center',
     marginTop: spacing.lg,
+  },
+  missingDocWarning: {
+    ...type.caption.regular,
+    color: colors.warning,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
 });

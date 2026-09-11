@@ -11,13 +11,17 @@ import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ScreenHeader, ScreenLoader, Card, useFloatingTabBarPad } from '@/components/ui';
+import { ScreenHeader, ScreenLoader, Card, Avatar, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
 import { VerificationStatus, RoleBadge } from '@/components/profile';
-import { Avatar } from '@/components/ui/Avatar';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
-import { useGetMyProfileQuery, useUpdateProfileMutation } from '@/store/api/profilesApi';
+import {
+  useGetMyProfileQuery,
+  useUpdateProfileMutation,
+  useGetLatestRiderDocumentQuery,
+} from '@/store/api/profilesApi';
+import { useGetDriverDocumentsQuery } from '@/store/api/driverDocumentsApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useSOS } from '@/hooks/useSOS';
@@ -49,6 +53,32 @@ export default function ProfileScreen() {
     { userId: userId ?? '', limit: 5 },
     { skip: !userId },
   );
+
+  const { data: riderDoc } = useGetLatestRiderDocumentQuery(userId ?? '', {
+    skip: !userId,
+  });
+  const { data: driverDocs = [] } = useGetDriverDocumentsQuery(userId ?? '', {
+    skip: !userId || profile?.role !== 'driver',
+  });
+
+  const isDriver = profile?.role === 'driver';
+  const hasRejectedDocs =
+    riderDoc?.review_status === 'rejected' ||
+    (isDriver && driverDocs.some((d) => d.review_status === 'rejected'));
+  const hasPendingDocs =
+    riderDoc?.review_status === 'pending' ||
+    (isDriver && driverDocs.some((d) => d.review_status === 'pending'));
+  const isDocsVerified =
+    riderDoc?.review_status === 'approved' &&
+    (!isDriver || (driverDocs.length > 0 && driverDocs.every((d) => d.review_status === 'approved')));
+
+  const docBadge = hasRejectedDocs
+    ? { label: 'Action Required', tone: 'error' as const }
+    : hasPendingDocs
+      ? { label: 'In Review', tone: 'warning' as const }
+      : isDocsVerified
+        ? { label: 'Verified', tone: 'success' as const }
+        : undefined;
 
   const handleSignOut = async () => {
     const confirmed = await showConfirm('Sign Out', 'Are you sure you want to sign out?');
@@ -272,6 +302,27 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Rejection alert banner */}
+        {hasRejectedDocs && (
+          <Card style={styles.rejectionBanner}>
+            <View style={styles.rejectionBannerContent}>
+              <Icon name="alert-triangle" size={20} color={colors.error} />
+              <View style={styles.rejectionTextWrap}>
+                <Text style={styles.rejectionTitle}>Verification Issue</Text>
+                <Text style={styles.rejectionDesc}>
+                  One or more verification documents were rejected. Please review and re-upload.
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              style={styles.rejectionActionBtn}
+              onPress={() => router.push('/(tabs)/profile/documents')}
+            >
+              <Text style={styles.rejectionActionBtnText}>Review & Re-upload</Text>
+            </Pressable>
+          </Card>
+        )}
+
         {/* Menu items */}
         <View style={styles.menuSection}>
           <MenuItem
@@ -287,6 +338,8 @@ export default function ProfileScreen() {
           <MenuItem
             icon="clipboard-list"
             label="My Documents"
+            badge={docBadge?.label}
+            badgeTone={docBadge?.tone}
             onPress={() => router.push('/(tabs)/profile/documents')}
           />
           <MenuItem
@@ -374,16 +427,34 @@ function MenuItem({
   label,
   subtitle,
   badge,
+  badgeTone = 'neutral',
   onPress,
 }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   subtitle?: string;
   badge?: string;
+  badgeTone?: 'success' | 'warning' | 'error' | 'neutral';
   onPress: () => void;
 }) {
   const { c } = useTheme();
   const styles = createStyles(c);
+
+  const getBadgeColors = () => {
+    switch (badgeTone) {
+      case 'error':
+        return { bg: colors.error + '18', border: colors.error + '44', text: colors.error };
+      case 'warning':
+        return { bg: colors.warning + '18', border: colors.warning + '44', text: colors.warning };
+      case 'success':
+        return { bg: colors.accent.green + '18', border: colors.accent.green + '44', text: colors.accent.green };
+      default:
+        return { bg: colors.neutral[200], border: colors.neutral[300], text: c.textMuted };
+    }
+  };
+
+  const badgeColors = getBadgeColors();
+
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
       <Icon name={icon} size={20} color={c.textMuted} />
@@ -391,8 +462,13 @@ function MenuItem({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Text style={styles.menuLabel}>{label}</Text>
           {badge && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{badge}</Text>
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: badgeColors.bg, borderColor: badgeColors.border },
+              ]}
+            >
+              <Text style={[styles.badgeText, { color: badgeColors.text }]}>{badge}</Text>
             </View>
           )}
         </View>
@@ -575,6 +651,42 @@ const createStyles = (c: SemanticColors) =>
   showAllText: {
     ...type.bodySm.bold,
     color: colors.accent.green,
+  },
+  rejectionBanner: {
+    backgroundColor: colors.error + '12',
+    borderColor: colors.error + '40',
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  rejectionBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  rejectionTextWrap: {
+    flex: 1,
+  },
+  rejectionTitle: {
+    ...type.bodySm.bold,
+    color: colors.error,
+  },
+  rejectionDesc: {
+    ...type.caption.regular,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  rejectionActionBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.pill,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  rejectionActionBtnText: {
+    ...type.caption.semibold,
+    color: '#ffffff',
   },
   menuSection: {
     backgroundColor: c.surface,

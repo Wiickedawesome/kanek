@@ -67,6 +67,14 @@ export function useOnboardingStatus() {
           ? '/(auth)/driver-docs'
           : null;
 
+  const isIdRejected = riderDocument?.review_status === 'rejected';
+  const isIdPending = riderDocument?.review_status === 'pending';
+  const isIdApproved = riderDocument?.review_status === 'approved';
+
+  const isDriverRejected = driverDetails?.review_status === 'rejected';
+  const isDriverPending = driverDetails?.review_status === 'pending';
+  const isDriverApproved = driverDetails?.review_status === 'approved';
+
   return {
     session,
     userId,
@@ -74,6 +82,12 @@ export function useOnboardingStatus() {
     riderDocument,
     driverDetails,
     accountStatus: profile?.account_status ?? null,
+    isIdRejected,
+    isIdPending,
+    isIdApproved,
+    isDriverRejected,
+    isDriverPending,
+    isDriverApproved,
     isLoading,
     isComplete: !!userId && !nextAuthRoute,
     nextAuthRoute,

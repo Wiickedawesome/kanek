@@ -24,6 +24,7 @@ export default function IdUploadScreen() {
   const [idUri, setIdUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [webCamera, setWebCamera] = useState<{ facing: CameraFacing; target: 'id' | 'selfie' } | null>(null);
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
@@ -135,41 +136,39 @@ export default function IdUploadScreen() {
     const idPath = `${user.id}/id-${Date.now()}.jpg`;
     const selfiePath = `${user.id}/selfie-${Date.now()}.jpg`;
 
-    const [idOk, selfieOk] = await Promise.all([
-      uploadImage(idUri, idPath),
-      uploadImage(selfieUri, selfiePath),
-    ]);
+    try {
+      setUploadStatus('Uploading ID photo...');
+      const idOk = await uploadImage(idUri, idPath);
+      if (!idOk) return;
 
-    if (!idOk || !selfieOk) {
+      setUploadStatus('Uploading selfie...');
+      const selfieOk = await uploadImage(selfieUri, selfiePath);
+      if (!selfieOk) return;
+
+      setUploadStatus('Saving verification record...');
+      const { error: docError } = await supabase.from('rider_documents').insert({
+        user_id: user.id,
+        document_url: idPath,
+      });
+
+      if (docError) {
+        showAlert('Error', docError.message);
+        return;
+      }
+
+      dispatch(profilesApi.util.invalidateTags([
+        { type: 'Profile', id: user.id },
+        { type: 'RiderDocument', id: user.id },
+      ]));
+
+      if (resolvedRole === 'driver') {
+        router.push('/(auth)/driver-docs');
+      } else {
+        router.replace('/(tabs)/explore');
+      }
+    } finally {
       setIsUploading(false);
-      return;
-    }
-
-    // Store ID document record. Selfie lives in the private documents bucket
-    // at selfiePath for admin verification; it intentionally does NOT become
-    // the profile avatar — users can upload that separately from their profile.
-    const { error: docError } = await supabase.from('rider_documents').insert({
-      user_id: user.id,
-      document_url: idPath,
-    });
-
-    if (docError) {
-      showAlert('Error', docError.message);
-      setIsUploading(false);
-      return;
-    }
-
-    dispatch(profilesApi.util.invalidateTags([
-      { type: 'Profile', id: user.id },
-      { type: 'RiderDocument', id: user.id },
-    ]));
-
-    setIsUploading(false);
-
-    if (resolvedRole === 'driver') {
-      router.push('/(auth)/driver-docs');
-    } else {
-      router.replace('/(tabs)/explore');
+      setUploadStatus(null);
     }
   };
 
@@ -229,14 +228,14 @@ export default function IdUploadScreen() {
         )}
 
         <Button
-          title={isUploading ? 'Uploading...' : 'Submit for Review'}
+          title={uploadStatus ?? (isUploading ? 'Uploading...' : 'Submit for Review')}
           onPress={handleSubmit}
           loading={isUploading}
           disabled={!canSubmit}
         />
 
         <Text style={styles.note}>
-          Your documents have been submitted for review. You can keep using kanek while we verify them.
+          Your documents will be reviewed securely. You can keep browsing kanek while we verify your account.
         </Text>
       </ScrollView>
 

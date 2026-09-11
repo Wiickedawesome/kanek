@@ -76,7 +76,7 @@ export default function RoleSelectScreen() {
         <Text style={styles.subtitle}>Your name and how you plan to use kanek</Text>
 
         <Pressable onPress={handleSignOut} style={styles.notYou}>
-          <Text style={styles.notYouText}>Not you? Sign in with a different number</Text>
+          <Text style={styles.notYouText}>Not you? Sign in with a different account</Text>
         </Pressable>
 
         <TextInput
