@@ -605,19 +605,12 @@ Deno.serve(async (req) => {
 
     await Promise.allSettled(notifications);
 
-    // Delete expired road reports (they auto-expire after 2 hours)
-    const { count: deletedReports } = await supabase
-      .from('road_reports')
-      .delete({ count: 'exact' })
-      .lt('expires_at', now);
-
     return jsonResponse({
       expiredPosts: expiredIds.length,
       cancelledPosts: cancelledIds.length,
       advancedRecurringPosts: advancedIds.length,
       recurringKeepalivePosts: recurringKeepalivePosts.length,
       remindedPosts: reminderPostsResult.data?.length ?? 0,
-      deletedRoadReports: deletedReports ?? 0,
     });
   } catch (error) {
     return errorResponse(

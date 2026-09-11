@@ -135,7 +135,6 @@ export default function ExploreMapScreen() {
     [posts],
   );
 
-  const reportPoints = useMemo<typeof postPoints>(() => [], []);
 
   const gasPoints = useMemo(
     () =>
@@ -259,7 +258,6 @@ export default function ExploreMapScreen() {
       <View style={styles.mapContainer}>
         <ExploreMapContent
           posts={postPoints}
-          reports={reportPoints}
           gasStations={gasPoints}
           onPinPress={handlePinPress}
           onGasPress={handleGasPress}

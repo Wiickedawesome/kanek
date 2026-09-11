@@ -21,7 +21,6 @@ interface GeoPoint {
 
 export interface ExploreMapContentProps {
   posts: GeoPoint[];
-  reports: GeoPoint[];
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onGasPress?: (id: string) => void;
@@ -44,7 +43,6 @@ export interface ExploreMapContentProps {
 
 export function ExploreMapContent({
   posts,
-  reports,
   gasStations,
   onPinPress,
   onGasPress,
@@ -93,14 +91,7 @@ export function ExploreMapContent({
     ],
   }), [posts, gasStations]);
 
-  const reportsGeoJson: GeoJSON.FeatureCollection = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: reports.map((r) => ({
-      type: 'Feature' as const,
-      geometry: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
-      properties: { id: r.id, color: r.color, label: r.label ?? '' },
-    })),
-  }), [reports]);
+
 
   const handlePinPress = (event: any) => {
     const feature = event?.features?.[0];
@@ -239,45 +230,6 @@ export function ExploreMapContent({
           </MapboxGL.ShapeSource>
         )}
 
-        {reportsGeoJson.features.length > 0 && (
-          <MapboxGL.ShapeSource
-            id="road-reports"
-            shape={reportsGeoJson}
-            cluster
-            clusterMaxZoomLevel={14}
-            clusterRadius={50}
-          >
-            <MapboxGL.CircleLayer
-              id="road-reports-clusters"
-              filter={['has', 'point_count']}
-              style={{
-                circleRadius: ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-                circleColor: '#d32f2f',
-                circleStrokeWidth: 2,
-                circleStrokeColor: '#ffffff',
-              }}
-            />
-            <MapboxGL.SymbolLayer
-              id="road-reports-cluster-count"
-              filter={['has', 'point_count']}
-              style={{
-                textField: ['get', 'point_count_abbreviated'],
-                textSize: 12,
-                textColor: '#ffffff',
-              }}
-            />
-            <MapboxGL.CircleLayer
-              id="road-reports-circles"
-              filter={['!', ['has', 'point_count']]}
-              style={{
-                circleRadius: 7,
-                circleColor: ['get', 'color'],
-                circleStrokeWidth: 2,
-                circleStrokeColor: '#ffffff',
-              }}
-            />
-          </MapboxGL.ShapeSource>
-        )}
       </MapboxGL.MapView>
 
       {/* Recenter button */}

@@ -27,7 +27,6 @@ interface GeoPoint {
 
 export interface ExploreMapContentProps {
   posts: GeoPoint[];
-  reports: GeoPoint[];
   gasStations: GeoPoint[];
   onPinPress?: (id: string) => void;
   onGasPress?: (id: string) => void;
@@ -42,7 +41,6 @@ export interface ExploreMapContentProps {
 
 export function ExploreMapContent({
   posts,
-  reports,
   gasStations,
   onPinPress,
   onGasPress,
@@ -69,7 +67,7 @@ export function ExploreMapContent({
     ...posts.map((p) => ({ ...p, kind: 'post' as const })),
     ...gasStations.map((g) => ({ ...g, kind: 'gas' as const })),
   ]), [posts, gasStations]);
-  const reportsGeoJson = useMemo(() => toFeatureCollection(reports), [reports]);
+
 
   const districtGeoJSON = useMemo(() => getDistrictBoundariesGeoJSON(highlightDistrict), [highlightDistrict]);
 
@@ -219,52 +217,8 @@ export function ExploreMapContent({
         },
       });
 
-      // Reports layer (clustered)
-      map.addSource('road-reports', {
-        type: 'geojson',
-        data: reportsGeoJson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-      map.addLayer({
-        id: 'road-reports-clusters',
-        type: 'circle',
-        source: 'road-reports',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-radius': ['step', ['get', 'point_count'], 16, 10, 22, 50, 28],
-          'circle-color': '#d32f2f',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-      map.addLayer({
-        id: 'road-reports-cluster-count',
-        type: 'symbol',
-        source: 'road-reports',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': '{point_count_abbreviated}',
-          'text-size': 12,
-        },
-        paint: { 'text-color': '#ffffff' },
-      });
-      map.addLayer({
-        id: 'road-reports-circles',
-        type: 'circle',
-        source: 'road-reports',
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': ['get', 'color'],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-
       // Click cluster to zoom in
-      for (const layerId of ['posts-clusters', 'road-reports-clusters']) {
+      for (const layerId of ['posts-clusters']) {
         map.on('click', layerId, (e) => {
           const feature = e.features?.[0];
           if (!feature) return;
@@ -308,10 +262,7 @@ export function ExploreMapContent({
     if (src) src.setData(postsGeoJson);
   }, [postsGeoJson]);
 
-  useEffect(() => {
-    const src = mapRef.current?.getSource('road-reports') as mapboxgl.GeoJSONSource | undefined;
-    if (src) src.setData(reportsGeoJson);
-  }, [reportsGeoJson]);
+
 
   return (
     <div

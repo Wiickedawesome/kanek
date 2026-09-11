@@ -2,6 +2,7 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
 import { postsApi } from './postsApi';
 import { getCurrentNotificationActor, sendPushOnly } from '@/lib/notify';
+import { invokeFunction } from '@/lib/invokeFunction';
 import type { Database, BookingStatus, PostType, ContractStatus, PaymentMethod } from '@/types/database';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -475,6 +476,30 @@ export const bookingsApi = createApi({
           dispatch(bookingsApi.util.invalidateTags([
             { type: 'Booking', id: `POST_${data.post_id}` },
           ]));
+
+          // Fire-and-forget: send completion receipt email
+          (async () => {
+            try {
+              const { data: contract } = await supabase
+                .from('contracts')
+                .select('id, parties')
+                .eq('booking_id', data.id)
+                .maybeSingle();
+
+              if (contract) {
+                // Send receipt to each party on the contract
+                for (const partyId of contract.parties ?? []) {
+                  invokeFunction('send-email-receipt', {
+                    body: {
+                      userId: partyId,
+                      contractId: contract.id,
+                      type: 'completion',
+                    },
+                  }).catch(() => { /* receipt send is best-effort */ });
+                }
+              }
+            } catch { /* receipt send is best-effort */ }
+          })();
         } catch { /* complete failed */ }
       },
     }),
