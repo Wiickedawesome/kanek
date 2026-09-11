@@ -3,3 +3,4 @@ export { VerificationStatus } from './VerificationStatus';
 export { RatingBreakdown } from './RatingBreakdown';
 export { TrustBadge } from './TrustBadge';
 export { RoleBadge } from './RoleBadge';
+export { TaxiVerifiedBadge } from './TaxiVerifiedBadge';

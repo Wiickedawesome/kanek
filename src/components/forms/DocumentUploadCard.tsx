@@ -84,6 +84,7 @@ function numberFieldLabel(type: DriverDocumentType): string {
     case 'vehicle_insurance': return 'Policy Number';
     case 'vehicle_registration': return 'Registration Number';
     case 'police_record': return 'Record Number';
+    case 'taxi_association_card': return 'Member ID / Permit Number';
   }
 }
 

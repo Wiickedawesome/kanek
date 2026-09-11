@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/Text';
 import { formatDeparture } from '@/lib/helpers';
 import { PriceBadge } from './PriceBadge';
 import { MetaItem } from './MetaItem';
+import { TaxiVerifiedBadge } from '@/components/profile';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 interface RouteOfferCardProps {
@@ -64,9 +65,15 @@ export const RouteOfferCard = React.memo(function RouteOfferCard({ post, onPress
       <View style={styles.footer}>
         <View style={styles.authorRow}>
           <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
-          <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.flex1}>
+          <Text variant="bodySm" weight="bold" numberOfLines={1}>
             {authorName}
           </Text>
+          {post.author?.taxi_association_verified && (
+            <TaxiVerifiedBadge
+              variant="compact"
+              associationName={post.author.taxi_association_name}
+            />
+          )}
         </View>
         {post.seats_total != null && (
           <View style={[styles.seatsChip, { backgroundColor: c.surfaceMuted }]}>

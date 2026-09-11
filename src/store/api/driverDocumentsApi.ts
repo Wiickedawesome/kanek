@@ -15,6 +15,7 @@ export const DRIVER_DOC_LABELS: Record<DriverDocumentType, string> = {
   vehicle_insurance: 'Vehicle Insurance',
   vehicle_registration: 'Vehicle Registration',
   police_record: 'Police Record',
+  taxi_association_card: 'Taxi Association Card / Decal',
 };
 
 export const DRIVER_DOC_ICONS: Record<DriverDocumentType, string> = {
@@ -22,6 +23,7 @@ export const DRIVER_DOC_ICONS: Record<DriverDocumentType, string> = {
   vehicle_insurance: 'shield-alert',
   vehicle_registration: 'clipboard-list',
   police_record: 'shield-alert',
+  taxi_association_card: 'taxi-verified',
 };
 
 export const driverDocumentsApi = createApi({

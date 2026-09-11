@@ -13,13 +13,14 @@ import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { ScreenHeader, ScreenLoader, Card, Avatar, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
-import { VerificationStatus, RoleBadge } from '@/components/profile';
+import { VerificationStatus, RoleBadge, TaxiVerifiedBadge } from '@/components/profile';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import {
   useGetMyProfileQuery,
   useUpdateProfileMutation,
   useGetLatestRiderDocumentQuery,
+  useGetDriverDetailsQuery,
 } from '@/store/api/profilesApi';
 import { useGetDriverDocumentsQuery } from '@/store/api/driverDocumentsApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
@@ -58,6 +59,9 @@ export default function ProfileScreen() {
     skip: !userId,
   });
   const { data: driverDocs = [] } = useGetDriverDocumentsQuery(userId ?? '', {
+    skip: !userId || profile?.role !== 'driver',
+  });
+  const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', {
     skip: !userId || profile?.role !== 'driver',
   });
 
@@ -234,6 +238,24 @@ export default function ProfileScreen() {
                 <VerificationStatus status={profile.account_status} />
               )}
             </View>
+            {isDriver && driverDetails?.taxi_association_name && (
+              <View style={{ marginTop: spacing.xs }}>
+                {driverDetails.taxi_association_verified ? (
+                  <TaxiVerifiedBadge
+                    variant="pill"
+                    associationName={driverDetails.taxi_association_name}
+                    memberId={driverDetails.taxi_association_member_id}
+                  />
+                ) : (
+                  <View style={styles.assocPendingPill}>
+                    <Icon name="taxi-verified" size={13} color={colors.warning} />
+                    <Text variant="caption" weight="semibold" style={{ color: colors.warning }}>
+                      {driverDetails.taxi_association_name} (In Review)
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
             {profile?.account_status && profile.account_status !== 'active' && (
               <Text style={styles.statusHint}>{getStatusHint(profile.account_status)}</Text>
             )}
@@ -651,6 +673,18 @@ const createStyles = (c: SemanticColors) =>
   showAllText: {
     ...type.bodySm.bold,
     color: colors.accent.green,
+  },
+  assocPendingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.pill,
+    backgroundColor: colors.warning + '18',
+    borderColor: colors.warning + '44',
+    borderWidth: 1,
+    alignSelf: 'flex-start',
   },
   rejectionBanner: {
     backgroundColor: colors.error + '12',

@@ -9,7 +9,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 export interface PostWithAuthor extends PostRow {
   author: Pick<
     ProfileRow,
-    'id' | 'first_name' | 'last_name' | 'avatar_url' | 'rating_avg' | 'punctuality_pct'
+    'id' | 'first_name' | 'last_name' | 'avatar_url' | 'rating_avg' | 'punctuality_pct' | 'taxi_association_name' | 'taxi_association_verified'
   > | null;
 }
 
@@ -63,7 +63,7 @@ export const postsApi = createApi({
             errand_category, errand_fee_cents, item_cost_cents,
             job_category, job_timeline, pay_rate_cents, pay_type,
             author:profiles_public!posts_author_id_fkey (
-              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
+              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct, taxi_association_name, taxi_association_verified
             )
           `)
           .eq('status', status)
@@ -118,7 +118,7 @@ export const postsApi = createApi({
           .select(`
             *,
             author:profiles_public!posts_author_id_fkey (
-              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
+              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct, taxi_association_name, taxi_association_verified
             )
           `)
           .eq('id', postId)
@@ -170,7 +170,7 @@ export const postsApi = createApi({
           .select(`
             *,
             author:profiles_public!posts_author_id_fkey (
-              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct
+              id, first_name, last_name, avatar_url, rating_avg, punctuality_pct, taxi_association_name, taxi_association_verified
             )
           `)
           .eq('author_id', userId)

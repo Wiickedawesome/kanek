@@ -13,6 +13,7 @@ import { Button, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/comp
 import { Icon } from '@/components/icons';
 import { PostTypeBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { TaxiVerifiedBadge } from '@/components/profile';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -952,7 +953,22 @@ export default function PostDetailScreen({ backFallback }: Props) {
               size="md"
             />
             <View style={styles.authorInfo}>
-              <Text style={styles.authorName}>{authorName}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <Text style={styles.authorName}>{authorName}</Text>
+                {post.author?.taxi_association_verified && (
+                  <TaxiVerifiedBadge
+                    variant="compact"
+                    associationName={post.author.taxi_association_name}
+                  />
+                )}
+              </View>
+              {post.author?.taxi_association_verified && post.author.taxi_association_name && (
+                <TaxiVerifiedBadge
+                  variant="pill"
+                  associationName={post.author.taxi_association_name}
+                  style={{ marginTop: 2, marginBottom: 2 }}
+                />
+              )}
               {post.author && (
                 <View style={styles.authorStats}>
                   <View style={styles.stat}>

@@ -33,6 +33,7 @@ import { Lock } from './Lock';
 import { Map } from './Map';
 import { Download } from './Download';
 import { Check } from './Check';
+import { TaxiVerifiedIcon } from './TaxiVerifiedIcon';
 
 export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
   size?: number;
@@ -40,6 +41,7 @@ export interface IconProps extends Omit<SvgProps, 'width' | 'height'> {
 }
 
 // Re-export all icons
+export { TaxiVerifiedIcon } from './TaxiVerifiedIcon';
 export { Compass } from './Compass';
 export { PlusCircle } from './PlusCircle';
 export { ClipboardList } from './ClipboardList';
@@ -106,6 +108,7 @@ const iconMap = {
   map: Map,
   download: Download,
   check: Check,
+  'taxi-verified': TaxiVerifiedIcon,
 } as const;
 
 export type IconName = keyof typeof iconMap;

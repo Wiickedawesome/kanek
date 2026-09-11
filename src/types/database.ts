@@ -417,6 +417,12 @@ export type Database = {
           license_url: string | null
           rejection_reason: string | null
           review_status: Database["public"]["Enums"]["review_status"]
+          taxi_association_id: string | null
+          taxi_association_member_id: string | null
+          taxi_association_name: string | null
+          taxi_association_verified: boolean | null
+          taxi_association_verified_at: string | null
+          taxi_association_verified_by: string | null
           vehicle_color: string | null
           vehicle_make: string | null
           vehicle_model: string | null
@@ -433,6 +439,12 @@ export type Database = {
           license_url?: string | null
           rejection_reason?: string | null
           review_status?: Database["public"]["Enums"]["review_status"]
+          taxi_association_id?: string | null
+          taxi_association_member_id?: string | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
+          taxi_association_verified_at?: string | null
+          taxi_association_verified_by?: string | null
           vehicle_color?: string | null
           vehicle_make?: string | null
           vehicle_model?: string | null
@@ -449,6 +461,12 @@ export type Database = {
           license_url?: string | null
           rejection_reason?: string | null
           review_status?: Database["public"]["Enums"]["review_status"]
+          taxi_association_id?: string | null
+          taxi_association_member_id?: string | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
+          taxi_association_verified_at?: string | null
+          taxi_association_verified_by?: string | null
           vehicle_color?: string | null
           vehicle_make?: string | null
           vehicle_model?: string | null
@@ -478,6 +496,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_details_taxi_association_id_fkey"
+            columns: ["taxi_association_id"]
+            isOneToOne: false
+            referencedRelation: "taxi_associations"
             referencedColumns: ["id"]
           },
           {
@@ -1186,6 +1211,8 @@ export type Database = {
           role: Database["public"]["Enums"]["role"]
           strikes_hard: number | null
           strikes_soft: number | null
+          taxi_association_name: string | null
+          taxi_association_verified: boolean | null
           updated_at: string
         }
         Insert: {
@@ -1211,6 +1238,8 @@ export type Database = {
           role?: Database["public"]["Enums"]["role"]
           strikes_hard?: number | null
           strikes_soft?: number | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -1236,6 +1265,8 @@ export type Database = {
           role?: Database["public"]["Enums"]["role"]
           strikes_hard?: number | null
           strikes_soft?: number | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -1460,6 +1491,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      taxi_associations: {
+        Row: {
+          address: string | null
+          created_at: string
+          district: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          district: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          district?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1713,6 +1777,8 @@ export type Database = {
           punctuality_pct: number | null
           rating_avg: number | null
           role: Database["public"]["Enums"]["role"] | null
+          taxi_association_name: string | null
+          taxi_association_verified: boolean | null
         }
         Insert: {
           account_status?: Database["public"]["Enums"]["account_status"] | null
@@ -1727,6 +1793,8 @@ export type Database = {
           punctuality_pct?: number | null
           rating_avg?: number | null
           role?: Database["public"]["Enums"]["role"] | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
         }
         Update: {
           account_status?: Database["public"]["Enums"]["account_status"] | null
@@ -1741,6 +1809,8 @@ export type Database = {
           punctuality_pct?: number | null
           rating_avg?: number | null
           role?: Database["public"]["Enums"]["role"] | null
+          taxi_association_name?: string | null
+          taxi_association_verified?: boolean | null
         }
         Relationships: []
       }
@@ -1940,6 +2010,7 @@ export type Database = {
         | "vehicle_insurance"
         | "vehicle_registration"
         | "police_record"
+        | "taxi_association_card"
       ekyash_status:
         | "pending"
         | "approved"
@@ -2166,6 +2237,7 @@ export const Constants = {
         "vehicle_insurance",
         "vehicle_registration",
         "police_record",
+        "taxi_association_card",
       ],
       ekyash_status: [
         "pending",

@@ -10,11 +10,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
-import { RatingBreakdown, RoleBadge } from '@/components/profile';
+import { RatingBreakdown, RoleBadge, TaxiVerifiedBadge } from '@/components/profile';
 import { ScreenHeader, ScreenLoader } from '@/components/ui';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
-import { useGetPublicProfileQuery } from '@/store/api/profilesApi';
+import { useGetPublicProfileQuery, useGetDriverDetailsQuery } from '@/store/api/profilesApi';
 import { useGetUserRatingsQuery } from '@/store/api/ratingsApi';
 import { formatMonthYear, formatShortDate, safeGoBack } from '@/lib/helpers';
 import { Text } from '@/components/ui/Text';
@@ -36,6 +36,10 @@ export default function UserProfileModal() {
     { userId: userId ?? '', limit: 10 },
     { skip: !userId },
   );
+
+  const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', {
+    skip: !userId || profile?.role !== 'driver',
+  });
 
   if (profileLoading) {
     return (
@@ -70,10 +74,27 @@ export default function UserProfileModal() {
         {/* User identity */}
         <View style={styles.identitySection}>
           <Avatar uri={profile.avatar_url} name={fullName} size="lg" />
-          <Text style={styles.name}>{fullName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+            <Text style={styles.name}>{fullName}</Text>
+            {driverDetails?.taxi_association_verified && (
+              <TaxiVerifiedBadge
+                variant="compact"
+                associationName={driverDetails.taxi_association_name}
+                memberId={driverDetails.taxi_association_member_id}
+              />
+            )}
+          </View>
           <RoleBadge role={profile.role} />
           <Text style={styles.memberSince}>Member since {memberSince}</Text>
         </View>
+
+        {driverDetails?.taxi_association_verified && (
+          <TaxiVerifiedBadge
+            variant="banner"
+            associationName={driverDetails.taxi_association_name}
+            memberId={driverDetails.taxi_association_member_id}
+          />
+        )}
 
         {/* Trust metrics */}
         <RatingBreakdown
