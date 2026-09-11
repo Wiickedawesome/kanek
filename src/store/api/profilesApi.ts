@@ -18,6 +18,8 @@ export interface PublicProfile {
   punctuality_pct: number;
   account_status: string;
   created_at: string;
+  taxi_association_name?: string | null;
+  taxi_association_verified?: boolean | null;
 }
 
 export const profilesApi = createApi({
@@ -62,7 +64,7 @@ export const profilesApi = createApi({
         const { data, error } = await supabase
           .from('profiles_public')
           .select(
-            'id, first_name, last_name, avatar_url, role, rating_avg, punctuality_pct, account_status, created_at',
+            'id, first_name, last_name, avatar_url, role, rating_avg, punctuality_pct, account_status, created_at, taxi_association_name, taxi_association_verified',
           )
           .eq('id', userId)
           .single();

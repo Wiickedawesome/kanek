@@ -78,7 +78,27 @@ ALTER TABLE "public"."driver_details"
   ADD COLUMN IF NOT EXISTS "taxi_association_verified_at" TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS "taxi_association_verified_by" UUID REFERENCES "public"."profiles"("id");
 
--- 6. Seed official 26 Belize Taxi Associations
+-- 6. Trigger to keep profiles taxi association badge attributes in sync with driver_details
+CREATE OR REPLACE FUNCTION sync_driver_association_to_profile()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "public"."profiles"
+  SET
+    taxi_association_name = COALESCE(NEW.taxi_association_name, "profiles"."taxi_association_name"),
+    taxi_association_verified = NEW.taxi_association_verified
+  WHERE "id" = NEW.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_sync_driver_association ON "public"."driver_details";
+CREATE TRIGGER trg_sync_driver_association
+AFTER INSERT OR UPDATE OF taxi_association_name, taxi_association_verified
+ON "public"."driver_details"
+FOR EACH ROW
+EXECUTE FUNCTION sync_driver_association_to_profile();
+
+-- 7. Seed official 26 Belize Taxi Associations
 INSERT INTO "public"."taxi_associations" ("name", "district", "address", "phone", "notes")
 VALUES
   ('Bus Terminal & Market Square Taxi Cooperative Society Ltd.', 'Belize District', '111 N. Front St., Belize City', '+501 675-0702', 'Belize''s largest taxi co-op; 52 members; est. 2004; BTB Gold Standard; busterminaltaxicooperative@gmail.com'),

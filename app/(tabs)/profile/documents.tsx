@@ -229,6 +229,24 @@ export default function DocumentsScreen() {
             />
           );
         })}
+
+        {(profile?.taxi_association_name || driverDocs.some((d) => d.document_type === 'taxi_association_card')) && (
+          <DocumentUploadCard
+            key="taxi_association_card"
+            userId={userId!}
+            documentType="taxi_association_card"
+            existingDoc={driverDocs.find((d) => d.document_type === 'taxi_association_card') ?? null}
+            onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
+              await upsertDriverDoc({
+                profileId: userId!,
+                documentType: 'taxi_association_card',
+                documentUrl,
+                documentNumber,
+                expirationDate,
+              }).unwrap();
+            }}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

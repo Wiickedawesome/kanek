@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
 import { PriceBadge } from './PriceBadge';
 import { MetaItem } from './MetaItem';
+import { TaxiVerifiedBadge } from '@/components/profile';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 interface JobCardProps {
@@ -69,9 +70,15 @@ export const JobCard = React.memo(function JobCard({ post, onPress }: JobCardPro
       <View style={styles.footer}>
         <View style={styles.authorRow}>
           <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
-          <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.authorName}>
+          <Text variant="bodySm" weight="bold" numberOfLines={1}>
             {authorName}
           </Text>
+          {post.author?.taxi_association_verified && (
+            <TaxiVerifiedBadge
+              variant="compact"
+              associationName={post.author.taxi_association_name}
+            />
+          )}
         </View>
       </View>
     </PostCardShell>

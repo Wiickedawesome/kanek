@@ -11,6 +11,7 @@ import { Text } from '@/components/ui/Text';
 import { formatBZD } from '@/lib/helpers';
 import { PriceBadge } from './PriceBadge';
 import { MetaItem } from './MetaItem';
+import { TaxiVerifiedBadge } from '@/components/profile';
 import type { PostWithAuthor } from '@/store/api/postsApi';
 
 const ACCENT_BG: Record<string, string> = {
@@ -82,9 +83,15 @@ export const ErrandCard = React.memo(function ErrandCard({ post, onPress }: Erra
       <View style={styles.footer}>
         <View style={styles.authorRow}>
           <Avatar uri={post.author?.avatar_url} name={authorName} size="sm" />
-          <Text variant="bodySm" weight="bold" numberOfLines={1} style={styles.flex1}>
+          <Text variant="bodySm" weight="bold" numberOfLines={1}>
             {authorName}
           </Text>
+          {post.author?.taxi_association_verified && (
+            <TaxiVerifiedBadge
+              variant="compact"
+              associationName={post.author.taxi_association_name}
+            />
+          )}
         </View>
         {post.item_cost_cents != null && (
           <View style={[styles.itemChip, { backgroundColor: c.surfaceMuted }]}>

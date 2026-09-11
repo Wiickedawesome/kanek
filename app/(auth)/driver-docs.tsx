@@ -164,8 +164,16 @@ export default function DriverDocsScreen() {
 
       if (error) throw error;
 
+      if (finalAssocName) {
+        await supabase
+          .from('profiles')
+          .update({ taxi_association_name: finalAssocName })
+          .eq('id', user.id);
+      }
+
       dispatch(profilesApi.util.invalidateTags([
         { type: 'DriverDetails', id: user.id },
+        { type: 'Profile', id: user.id },
       ]));
 
       router.replace('/(tabs)/explore');

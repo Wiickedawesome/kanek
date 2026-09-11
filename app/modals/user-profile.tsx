@@ -64,6 +64,9 @@ export default function UserProfileModal() {
   const fullName =
     `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || 'User';
   const memberSince = formatMonthYear(profile.created_at);
+  const isTaxiVerified = profile.taxi_association_verified || driverDetails?.taxi_association_verified;
+  const taxiAssocName = profile.taxi_association_name || driverDetails?.taxi_association_name;
+  const taxiMemberId = driverDetails?.taxi_association_member_id;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,11 +79,11 @@ export default function UserProfileModal() {
           <Avatar uri={profile.avatar_url} name={fullName} size="lg" />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <Text style={styles.name}>{fullName}</Text>
-            {driverDetails?.taxi_association_verified && (
+            {isTaxiVerified && (
               <TaxiVerifiedBadge
                 variant="compact"
-                associationName={driverDetails.taxi_association_name}
-                memberId={driverDetails.taxi_association_member_id}
+                associationName={taxiAssocName}
+                memberId={taxiMemberId}
               />
             )}
           </View>
@@ -88,11 +91,11 @@ export default function UserProfileModal() {
           <Text style={styles.memberSince}>Member since {memberSince}</Text>
         </View>
 
-        {driverDetails?.taxi_association_verified && (
+        {isTaxiVerified && (
           <TaxiVerifiedBadge
             variant="banner"
-            associationName={driverDetails.taxi_association_name}
-            memberId={driverDetails.taxi_association_member_id}
+            associationName={taxiAssocName}
+            memberId={taxiMemberId}
           />
         )}
 
