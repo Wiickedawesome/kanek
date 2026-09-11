@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20Web-51c152?style=flat-square&logo=expo&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/Expo-SDK%2055-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo SDK 55" />
-  <img src="https://img.shields.io/badge/React%20Native-0.83.4-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" />
+  <img src="https://img.shields.io/badge/React%20Native-0.83.6-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Supabase-backend-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Mapbox-maps-4264FB?style=flat-square&logo=mapbox&logoColor=white" alt="Mapbox" />
@@ -24,18 +24,18 @@ kanek is not a dispatch system. It is not Uber. It is a board where Belizeans or
 
 | Layer | Technology | Version |
 |---|---|---|
-| Mobile | React Native + Expo | SDK 55 / RN 0.83.4 / React 19.2.0 |
-| Navigation | Expo Router (file-based) | ~55.0.8 |
+| Mobile | React Native + Expo | SDK 55 / RN 0.83.6 / React 19.2.0 |
+| Navigation | Expo Router (file-based) | ~55.0.13 |
 | Language | TypeScript (strict) | ~5.9.2 |
 | State | Redux Toolkit + RTK Query | ^2.6.1 |
 | Backend | Supabase (Auth, Postgres 17, Storage, Realtime, Edge Functions) | ^2.49.4 |
-| Auth | Supabase Phone OTP + hCaptcha | |
+| Auth | Supabase Web-OAuth (Google, Apple) + Email OTP | |
 | Maps | Mapbox GL (@rnmapbox/maps + mapbox-gl web) | ^10.3.0 / ^3.20.0 |
-| Payments | Cash (default) + E-Kyash (digital, BZD) | |
+| Payments | Cash (default) + E-Kyash (digital, BZD, deferred launch) | |
 | Push | Expo Notifications + FCM/APNs | |
 | Email | Supabase Edge Functions + Resend | |
-| Admin | Next.js (App Router, Tailwind CSS 4, Supabase SSR) | 15.2.4 |
-| Edge Functions | Deno (Supabase) | |
+| Admin | Next.js (App Router, Tailwind CSS 4, Static Export) | 16.2.3 (sibling repo) |
+| Edge Functions | Deno (Supabase) | 16 functions + admin-api |
 | Node | v24 LTS | |
 
 ## Project Structure
@@ -45,13 +45,13 @@ kanek/
 ├── app/                          # Expo Router screens
 │   ├── _layout.tsx               # Root: Redux Provider → Stack
 │   ├── index.tsx                 # Entry redirect
-│   ├── (auth)/                   # Onboarding (welcome, phone-verify, role-select, id-upload, driver-docs)
+│   ├── (auth)/                   # Onboarding (welcome, login, role-select, id-upload, driver-docs)
 │   ├── (tabs)/                   # Bottom Tab Navigator
 │   │   ├── explore/              # Feed + map + [postId] detail
 │   │   ├── post/                 # Create post forms (route, errand, package, job)
-│   │   ├── activity/             # Bookings, contracts, notifications, post/[postId]
+│   │   ├── activity/             # Bookings, contracts, notifications, post/[postId], trip/[postId]
 │   │   └── profile/              # Profile, settings, documents, wallet, reports
-│   └── modals/                   # Modal screens (SOS, rate, payment, reports, etc.)
+│   └── modals/                   # Modal screens (SOS, rate, payment, report-gas, etc.)
 ├── src/
 │   ├── components/               # All UI components
 │   │   ├── cards/                # Post cards (RouteOfferCard, ErrandCard, etc.)
@@ -69,7 +69,7 @@ kanek/
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 11 SQL migration files (squashed)
+│   ├── migrations/               # 21 SQL migration files
 │   ├── functions/                # 16 Deno edge functions
 │   └── templates/                # Email templates
 ├── docs/                         # Project documentation
@@ -82,17 +82,16 @@ kanek/
 - **Package delivery** -- send parcels between towns with community carriers
 - **Errand board** -- request someone to run errands (groceries, pharmacy, bills)
 - **Job posts** -- skilled trades, cleaning, tutoring, handyman work
-- **Community road reports** -- accidents, checkpoints, flooding, construction
 - **Gas price tracking** -- crowd-sourced fuel prices by station
 - **Trust profiles** -- ratings, punctuality scores, verified ID, strike system
 - **Contracts and bookings** -- structured agreements between parties
-- **E-Kyash payments** -- digital payment integration for Belize (3% platform fee)
-- **Real-time map** -- Mapbox-powered view of active routes and reports
+- **Cash and digital payments** -- Cash settlement (launch default) + E-Kyash digital integration
+- **Real-time map** -- Mapbox-powered view of active routes
 - **Live tracking** -- driver location broadcast during active trips
 - **In-app messaging** -- real-time chat between contract parties
-- **Phone OTP auth** -- no passwords, phone number is the identity
+- **Web-OAuth and Email OTP** -- sign in with Google, Apple, or email with Resend
 - **Push notifications** -- booking updates, SOS alerts, reminders
-- **SOS system** -- emergency SMS with GPS to saved contact
+- **SOS system** -- emergency email/SMS with GPS to saved contact
 - **Driver check-in** -- selfie verification before trip start
 
 ## Post Types
@@ -185,24 +184,24 @@ npm run lint         # ESLint
 
 ## Database
 
-33 migration files define the schema across 20+ tables with Row Level Security.
+21 sequential migration files define the schema across 17 active tables with Row Level Security.
 
 ### Core Tables
 
 | Table | Purpose |
 |---|---|
-| `profiles` | Users (phone, name, role, rating, strikes, emergency contact) |
+| `profiles` | Users (first/last name, email, phone, role, rating, strikes, emergency contact) |
 | `posts` | All post types (routes, errands, packages, jobs) |
 | `bookings` | User bookings on posts |
 | `contracts` | Agreements between driver + rider |
+| `contract_events` | Chronological contract lifecycle audit events |
 | `ratings` | Post-trip reviews (1-5 stars + punctuality) |
 | `strikes` | Soft (late cancel) and hard (no-show) penalties |
 
-### Community Tables
+### Community & Moderation Tables
 
 | Table | Purpose |
 |---|---|
-| `road_reports` | Accidents, checkpoints, flooding, construction |
 | `gas_prices` | Crowd-sourced fuel prices by station |
 | `flags` | Community moderation flags on posts/users |
 | `admin_actions` | Immutable admin audit trail |
@@ -211,7 +210,7 @@ npm run lint         # ESLint
 
 | Table | Purpose |
 |---|---|
-| `ekyash_transactions` | E-Kyash payment records |
+| `ekyash_transactions` | E-Kyash digital payment records |
 | `donation_totals` | Running community donation total |
 | `notifications` | Push notification records |
 | `push_tokens` | Expo push tokens |
@@ -223,15 +222,15 @@ npm run lint         # ESLint
 | Table | Purpose |
 |---|---|
 | `driver_details` | License, insurance, vehicle info (admin-reviewed) |
+| `driver_documents` | Driver license and insurance document uploads |
 | `rider_documents` | Government ID uploads (admin-reviewed) |
 | `driver_checkins` | Selfie check-ins with GPS |
-| `waitlist` | Post waitlist entries |
 
 See [docs/database-schema.md](docs/database-schema.md) for complete column definitions, types, and constraints.
 
 ## Edge Functions
 
-13 Deno edge functions in `supabase/functions/`:
+16 Deno edge functions in `supabase/functions/` (plus `admin-api` in the sibling website repo):
 
 | Function | Purpose |
 |---|---|
@@ -243,26 +242,31 @@ See [docs/database-schema.md](docs/database-schema.md) for complete column defin
 | `ekyash-refund` | Issue refund |
 | `send-push` | Push notification via Expo Push API |
 | `send-email-receipt` | Email receipt via Resend |
-| `send-sms-sos` | SOS SMS with GPS location |
-| `expire-posts` | Cron: expire old posts/reports |
-| `process-strikes` | Cron: enforce strike penalties (3 soft = restricted, 2 hard = suspended) |
-| `check-route-activation` | Check if route can activate |
+| `send-sms-sos` | Emergency SOS notification with GPS location |
+| `expire-posts` | Cron: expire overdue posts, advance recurring routes |
+| `process-strikes` | Cron: enforce strike penalties |
+| `check-route-activation` | Check if route can activate when min riders met |
 | `update-rating-avg` | Trigger: recalculate rating after new review |
+| `notify-user` | Internal: create notification row + push |
+| `delete-account` | Soft-delete user account and anonymize |
+| `purge-deleted-accounts` | Cron: permanent purge after retention window |
 
 See [docs/edge-functions.md](docs/edge-functions.md) for detailed inputs, outputs, and logic.
 
 ## State Management
 
-Redux Toolkit with 9 RTK Query API slices (all using `fakeBaseQuery` with Supabase client) and 4 sync state slices.
+Redux Toolkit with 11 RTK Query API slices (all using `fakeBaseQuery` with Supabase client) and 4 sync state slices.
 
 | API Slice | Manages |
 |---|---|
 | `postsApi` | Posts CRUD, search, filtering |
 | `bookingsApi` | Bookings, contracts |
+| `contractEventsApi` | Contract lifecycle events and timeline |
 | `profilesApi` | User profiles, driver details |
+| `driverDocumentsApi`| Driver licenses, insurance documents |
 | `ratingsApi` | Trip ratings |
 | `ekyashApi` | Payment operations |
-| `reportsApi` | Road reports, gas prices |
+| `reportsApi` | Gas prices |
 | `notificationsApi` | Notification list |
 | `checkinsApi` | Driver selfie check-ins |
 | `messagesApi` | Contract messaging (realtime) |
@@ -271,7 +275,7 @@ See [docs/state-management.md](docs/state-management.md) for complete API and sl
 
 ## Administration
 
-Admin operations (driver verification, moderation, user management, transaction review) are performed via **Supabase Studio** using SQL views and functions. See [docs/admin-studio-workflow.md](docs/admin-studio-workflow.md) for the complete workflow.
+Admin operations (driver verification, user moderation, transaction review, content management) are performed via the dedicated **Kanek Admin Portal** at `kanek.bz/admin` (backed by the `admin-api` edge function), with **Supabase Studio** available for direct database administration. See [docs/admin-studio-workflow.md](docs/admin-studio-workflow.md) for database-level workflows.
 
 ## Documentation
 

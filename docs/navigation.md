@@ -10,9 +10,12 @@ Expo Router with file-based routing. Four bottom tabs plus auth flow and modals.
 Root (Stack) — app/_layout.tsx
 │  Redux Provider wraps all screens
 │
+├── auth/
+│   └── callback.tsx             OAuth redirect consumer (idempotent PKCE code exchange)
+│
 ├── (auth) — Auth Layout (Stack)
-│   ├── welcome.tsx              Splash screen
-│   ├── phone-verify.tsx         Phone OTP entry + hCaptcha
+│   ├── welcome.tsx              Welcome screen
+│   ├── login.tsx                Web-OAuth (Google, Apple) + Email OTP
 │   ├── role-select.tsx          Choose rider/driver
 │   ├── id-upload.tsx            Government ID photo upload
 │   └── driver-docs.tsx          License, insurance, vehicle (drivers only)
@@ -40,8 +43,10 @@ Root (Stack) — app/_layout.tsx
 │   │   ├── notifications.tsx    Booking notifications
 │   │   ├── messages/
 │   │   │   └── [contractId].tsx Contract messaging thread
-│   │   └── post/
-│   │       └── [postId].tsx     Post detail (thin wrapper → PostDetailScreen)
+│   │   ├── post/
+│   │   │   └── [postId].tsx     Post detail (thin wrapper → PostDetailScreen)
+│   │   └── trip/
+│   │       └── [postId].tsx     Driver trip management screen
 │   │
 │   └── profile/ (Tab 4: User icon)
 │       ├── _layout.tsx          Stack navigator
@@ -49,7 +54,7 @@ Root (Stack) — app/_layout.tsx
 │       ├── settings.tsx         Account settings
 │       ├── documents.tsx        Manage verification documents
 │       ├── wallet.tsx           E-Kyash wallet
-│       ├── reports.tsx          My road reports
+│       ├── reports.tsx          My gas price reports
 │       ├── notifications.tsx    Notification settings
 │       ├── privacy.tsx          Privacy policy
 │       └── terms.tsx            Terms of service
@@ -57,7 +62,6 @@ Root (Stack) — app/_layout.tsx
 └── modals/ (Modal Presentation)
     ├── _layout.tsx              Modal group
     ├── sos.tsx                  SOS trigger
-    ├── report-road.tsx          Road/traffic report
     ├── report-gas.tsx           Gas price report
     ├── rate.tsx                 Post-trip rating
     ├── payment-select.tsx       Cash vs E-Kyash choice
@@ -65,8 +69,7 @@ Root (Stack) — app/_layout.tsx
     ├── flag-content.tsx         Report post/user
     ├── download-map.tsx         Offline map download
     ├── selfie-checkin.tsx       Driver selfie check-in
-    ├── user-profile.tsx         View another user's profile
-    └── report-detail.tsx        Road report detail
+    └── user-profile.tsx         View another user's profile
 ```
 
 ---
@@ -92,7 +95,7 @@ Border top:     #dbdad2
 ## Navigation Flow
 
 ```
-First launch → Welcome → Phone Verify → Role Select → ID Upload → [Driver Docs] → Explore
+First launch → Welcome → Login (Social/Email) → Role Select → ID Upload → [Driver Docs] → Explore
 
 Returning user → Explore (home)
 

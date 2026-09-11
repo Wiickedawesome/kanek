@@ -2,75 +2,73 @@
 
 ## Overview
 
-Universal Links (iOS) and App Links (Android) allow `https://kanek.bz/post/123` to open directly in the Kanek app.
+Universal Links (iOS) and App Links (Android) allow `https://kanek.bz/...` URLs to open directly in the Kanek mobile app.
 
-## What's already configured
+The domain verification files are hosted directly on the production domain via Firebase Hosting from the sibling repository `/home/wicked/Projects/kanek.bz`.
 
-- **`app.json`** — `ios.associatedDomains` and `android.intentFilters` for `kanek.bz`
-- **`public/.well-known/apple-app-site-association`** — iOS verification file (needs Team ID)
-- **`public/.well-known/assetlinks.json`** — Android verification file (needs SHA-256 fingerprint)
+## Active Configuration
 
-## Remaining steps
+### 1. Mobile App (`app.json`)
+- **iOS associated domains:** `applinks:kanek.bz`
+- **Android intent filters:**
+  - Scheme: `https`, Host: `kanek.bz`
+  - Auto-verify: `true`
+  - Path prefixes: `/explore`, `/post`, `/activity`, `/profile`, `/invite`, `/auth`
 
-### 1. Replace placeholders
+### 2. Hosted Verification Files (`kanek.bz/public/.well-known/`)
+Served automatically with `Content-Type: application/json` by Firebase Hosting on `https://kanek.bz/.well-known/`:
 
-**iOS — Apple Team ID:**
-In `public/.well-known/apple-app-site-association`, replace `APPLE_TEAM_ID` with your 10-character Apple Developer Team ID (found at https://developer.apple.com/account → Membership).
-
-**Android — SHA-256 fingerprint:**
-```bash
-# Get fingerprint from EAS credentials
-eas credentials --platform android
-# Copy the SHA-256 fingerprint and paste into public/.well-known/assetlinks.json
+#### iOS: `apple-app-site-association`
+```json
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["6VR44TAYT7.bz.kanek.app"],
+        "paths": ["/explore/*", "/post/*", "/activity/*", "/profile/*", "/invite/*", "/auth/*"]
+      }
+    ]
+  }
+}
 ```
 
-### 2. Host the verification files
+#### Android: `assetlinks.json`
+```json
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "bz.kanek.app",
+      "sha256_cert_fingerprints": [
+        "B7:E3:12:0D:5E:A2:9F:2A:6E:2E:54:8A:79:05:60:5D:AC:F4:24:95:53:8B:79:15:33:BD:83:91:51:32:59:C6"
+      ]
+    }
+  }
+]
+```
 
-The `.well-known` files must be served from `https://kanek.bz/.well-known/` with `Content-Type: application/json`.
+## Hosting & Verification
 
-**Option A — GitHub Pages (recommended, free):**
+The verification files are committed in `kanek.bz/public/.well-known/` and deployed automatically to Firebase Hosting (`site: kanek-bz`).
 
-1. Create a repo named `kanek-bz-site` (or use the main repo's `docs/` folder)
-2. Copy `public/.well-known/` into the repo root
-3. Add a `_config.yml`:
-   ```yaml
-   include:
-     - .well-known
-   ```
-4. Enable GitHub Pages in repo Settings → Pages → Deploy from branch
-5. Add a `CNAME` file containing: `kanek.bz`
-6. Configure DNS at your registrar:
-   - `A` record → `185.199.108.153` (GitHub Pages IP)
-   - `A` record → `185.199.109.153`
-   - `A` record → `185.199.110.153`
-   - `A` record → `185.199.111.153`
-   - `CNAME` for `www` → `<your-github-username>.github.io`
-
-**Option B — Cloudflare Pages:**
-1. Upload `public/.well-known/` to a Cloudflare Pages project
-2. Point `kanek.bz` DNS to Cloudflare
-3. Cloudflare handles HTTPS automatically
-
-### 3. Verify
-
+### Verify Deployment:
 ```bash
-# iOS
+# iOS Verification
 curl -I https://kanek.bz/.well-known/apple-app-site-association
-# Should return 200 with application/json
 
-# Android
-curl https://kanek.bz/.well-known/assetlinks.json
-# Validate at https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://kanek.bz&relation=delegate_permission/common.handle_all_urls
+# Android Verification
+curl -s https://kanek.bz/.well-known/assetlinks.json | jq .
 ```
 
-### 4. Add Expo Router linking config
-
-Once the domain is live, add a linking handler in `app/_layout.tsx` if needed for path-to-screen mapping. Expo Router's file-based routing handles most cases automatically.
-
-## Supported deep link paths
+## Supported Deep Link Paths
 
 | URL Pattern | Opens Screen |
 |---|---|
 | `https://kanek.bz/post/:id` | Post detail |
 | `https://kanek.bz/profile/:id` | User profile |
 | `https://kanek.bz/invite/:code` | Invite/referral |
+| `https://kanek.bz/activity/*` | Trip activity & tracking |
+| `https://kanek.bz/auth/callback` | OAuth redirect code exchange |
+| `kanek://auth/callback` | Native URL scheme callback |

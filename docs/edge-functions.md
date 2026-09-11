@@ -154,12 +154,14 @@ Sends an SOS email with GPS location to the user's emergency contact.
 
 ### expire-posts
 
-Automatically expires old posts and road reports.
+Automatically expires overdue posts, advances recurring routes to their next scheduled occurrence, and cancels inactive trips after the grace window.
 
-- **Trigger:** pg_cron (configured in migration 00032)
+- **Trigger:** Scheduled cron or HTTP invoke with `CRON_SECRET` / service-role
 - **Logic:**
-  - Posts with status `open`, `activated`, or `in_progress` where `expires_at <= now()` → set to `expired`
-  - Road reports where `expires_at <= now()` → mark expired
+  - Posts with status `open` or `activated` where `expires_at <= now()` → marked `expired`
+  - Overdue recurring routes (`repeat_days` set) → advances `departure_at` to the next occurrence
+  - Stale in-progress trips beyond scheduled duration + inactivity grace period → marked `cancelled`
+  - Sends departure reminder notifications 30 minutes before trip start
 
 ### process-strikes
 
@@ -252,7 +254,16 @@ Set in Supabase dashboard → Edge Functions → Secrets:
 | `EKYASH_SID` | E-Kyash merchant SID |
 | `EKYASH_PIN_HASH` | E-Kyash hashed PIN |
 | `EKYASH_API_KEY` | E-Kyash API key |
+| `EKYASH_API_URL` | Optional E-Kyash API endpoint override |
 | `RESEND_API_KEY` | Resend email API key |
+| `RESEND_FROM_EMAIL`| Sender email address (`support@belizechain.org`) |
+| `CRON_SECRET` | Secret token for scheduled cron invokes |
+
+---
+
+## Sibling Repo Edge Function (`admin-api`)
+
+The sibling repository `kanek.bz` implements and deploys [`admin-api`](file:///home/wicked/Projects/kanek.bz/supabase/functions/admin-api/index.ts) to the same Supabase project (`tlggdherqjvybpddsqjj`). It enforces `profiles.role = 'admin'` and provides privileged endpoints for the Kanek web admin portal.
 
 ---
 
@@ -263,8 +274,11 @@ Set in Supabase dashboard → Edge Functions → Secrets:
 supabase functions deploy
 
 # Deploy a single function
-supabase functions deploy ekyash-create-invoice
+supabase functions deploy expire-posts
+
+# Deploy webhook with no-verify-jwt (for external callbacks)
+supabase functions deploy ekyash-callback --no-verify-jwt
 
 # Test locally
-supabase functions serve ekyash-create-invoice --env-file supabase/.env
+supabase functions serve expire-posts --env-file .env.local
 ```

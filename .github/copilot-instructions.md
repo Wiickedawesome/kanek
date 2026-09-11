@@ -374,9 +374,9 @@ auth: {
 - **OAuth callback:** `kanek://auth/callback` — handled by `app/auth/callback.tsx` which calls `consumeAuthRedirectUrl(url)` from `src/lib/authRedirect.ts`. The consumer is **idempotent** — it dedupes redirects via a `handledRedirects` Map and exchanges the code via `supabase.auth.exchangeCodeForSession(authCode)`.
 - **SMTP:** Resend (`smtp.resend.com:465`), sender `support@belizechain.org`. Configured in Supabase dashboard, not in code.
 
-### Schema migrations (verified 2026-05-09)
+### Schema migrations (verified 2026-09-11)
 
-There are **17 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
+There are **21 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
 
 | # | File | Purpose (from filename + brief) |
 |---|---|---|
@@ -397,6 +397,10 @@ There are **17 migration files** under `supabase/migrations/`. Each is run seque
 | 00015 | `00015_scrub_invalid_coords.sql` | Clean stored coords outside Belize bbox |
 | 00016 | `00016_route_proceed_cancel_rpcs.sql` | Route proceed/cancel RPCs |
 | 00017 | `00017_recurring_route_until_confirm.sql` | Recurring route until-confirm logic |
+| 00018 | `00018_notification_preferences.sql` | Notification preferences table and defaults |
+| 00019 | `00019_audit_remediation.sql` | RLS and policy remediation from security audit |
+| 00020 | `00020_fix_plpgsql_lint_errors.sql` | PL/pgSQL function lint and variable shadowing fixes |
+| 00021 | `00021_drop_road_reports_and_waitlist.sql` | Drop road_reports and waitlist tables |
 
 For the full table catalogue see `docs/database-schema.md`. The most-touched tables are listed in §25.
 
@@ -436,7 +440,7 @@ There are **16 Deno edge functions** in `supabase/functions/`, plus a `_shared/`
 | `send-push` | user JWT or internal | Push via Expo Push API | `supabase/functions/send-push/index.ts` |
 | `send-email-receipt` | user JWT | Receipt via Resend | `supabase/functions/send-email-receipt/index.ts` |
 | `send-sms-sos` | user JWT | SOS SMS with GPS location | `supabase/functions/send-sms-sos/index.ts` |
-| `expire-posts` | **internal-only** (cron) | Expire old posts/road_reports | `supabase/functions/expire-posts/index.ts` |
+| `expire-posts` | **internal-only** (cron) | Expire overdue posts, advance recurring routes | `supabase/functions/expire-posts/index.ts` |
 | `process-strikes` | **internal-only** (cron) | Apply soft/hard strikes | `supabase/functions/process-strikes/index.ts` |
 | `check-route-activation` | **internal-only** (cron) | Activate routes when min_riders met | `supabase/functions/check-route-activation/index.ts` |
 | `update-rating-avg` | trigger or internal | Recalc `profiles.rating_avg` | `supabase/functions/update-rating-avg/index.ts` |
@@ -1220,7 +1224,7 @@ For the full catalogue see `docs/database-schema.md`. The most-touched tables:
 | `contracts` | accepted booking → payment | |
 | `ratings` | post-contract reviews | trigger updates `profiles.rating_avg` via `update-rating-avg` |
 | `flags` | user-submitted abuse reports | `target_id` polymorphic, no FK (deferred §37) |
-| `road_reports` | gas prices, road conditions | has `expires_at`; cleared by `expire-posts` |
+| `gas_prices` | crowd-sourced fuel prices by station | verified count tracking |
 | `notifications` | user notification log | |
 | `messages` | DM threads | 24 h cutoff (migration 00010) |
 | `driver_documents` | license, insurance, vehicle photos | |

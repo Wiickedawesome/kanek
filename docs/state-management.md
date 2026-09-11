@@ -178,17 +178,17 @@ const api = createApi({
 
 ### reportsApi (`src/store/api/reportsApi.ts`)
 
+Manages crowd-sourced fuel price tracking by station across Belize.
+
 **Queries:**
-- `getRoadReports(lat, lng, radiusKm)` — nearby road reports
-- `getGasPrices(lat, lng, radiusKm)` — nearby gas prices
+- `getGasPrices(limit?)` — fuel prices sorted by most recently reported
 
 **Mutations:**
-- `createRoadReport(type, lat, lng, description)` — submit road report
-- `createGasPrice(stationName, stationLat, stationLng, regular, premium, diesel)` — submit gas price
-- `upvoteRoadReport(reportId)` — confirm report
-- `markReportGone(reportId)` — mark report as cleared
+- `createGasPrice({ reporterId, stationName, stationLat, stationLng, regularCents, premiumCents, dieselCents })` — submit/update fuel prices with automatic nearby deduplication (~220m bbox)
+- `updateGasPrice({ id, stationName, stationLat, stationLng, regularCents, premiumCents, dieselCents })` — edit gas price row
+- `verifyGasPrice(priceId)` — increment community verification count
 
-**Tags:** `'Report'`, `'GasPrice'`
+**Tags:** `'GasPrice'`
 
 ### notificationsApi (`src/store/api/notificationsApi.ts`)
 

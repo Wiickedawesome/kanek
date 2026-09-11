@@ -2,6 +2,8 @@
 
 E-Kyash is a Belizean digital payment system. Kanek integrates it as a settlement method for posts that opt into digital payments, with a 3% platform fee.
 
+> **Launch Posture**: Digital payments via E-Kyash are currently deferred (`ENABLE_EKYASH = false` in `src/lib/constants.ts`). All rides settle via Cash by default for initial launch. Digital payment infrastructure and webhooks are built, deployed, and tested for the subsequent payments rollout.
+
 ---
 
 ## Payment Flow

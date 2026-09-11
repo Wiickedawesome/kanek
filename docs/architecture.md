@@ -5,7 +5,7 @@ Kanek is a community mobility board for Belize. The system is split into two lay
 1. **Mobile App** (React Native + Expo) — user-facing feed, posting, booking, payments, tracking
 2. **Backend** (Supabase) — PostgreSQL, Auth, Edge Functions, Realtime, Storage
 
-Admin operations are handled via **Supabase Studio** using SQL views and functions (see [admin-studio-workflow.md](admin-studio-workflow.md)).
+Admin operations are handled via the dedicated **Kanek Admin Portal** at `kanek.bz/admin` (backed by the `admin-api` edge function), with **Supabase Studio** available for direct database administration (see [admin-studio-workflow.md](admin-studio-workflow.md)).
 
 ---
 
@@ -14,7 +14,7 @@ Admin operations are handled via **Supabase Studio** using SQL views and functio
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Mobile App (Expo)                      │
-│  React Native 0.83.4 · Expo SDK 55 · TypeScript 5.9     │
+│  React Native 0.83.6 · Expo SDK 55 · TypeScript 5.9     │
 │  Redux Toolkit · RTK Query · Mapbox GL · Expo Router     │
 └──────────────────┬──────────────────────────────────────┘
                    │ Supabase JS Client (fakeBaseQuery)
@@ -23,7 +23,7 @@ Admin operations are handled via **Supabase Studio** using SQL views and functio
 │                  Supabase Backend                        │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
 │  │ Postgres │ │   Auth   │ │ Storage  │ │ Realtime │   │
-│  │ 17 + RLS │ │ Phone OTP│ │ Buckets  │ │ Channels │   │
+│  │ 17 + RLS │ │ OAuth/OTP│ │ Buckets  │ │ Channels │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │           16 Deno Edge Functions                  │   │
@@ -48,20 +48,19 @@ Admin operations are handled via **Supabase Studio** using SQL views and functio
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| Mobile | React Native | 0.83.4 | Cross-platform UI |
-| Mobile | Expo | SDK 55 (~55.0.9) | Build toolchain, native modules |
-| Navigation | Expo Router | ~55.0.8 | File-based routing |
+| Mobile | React Native | 0.83.6 | Cross-platform UI |
+| Mobile | Expo | SDK 55 (~55.0.19) | Build toolchain, native modules |
+| Navigation | Expo Router | ~55.0.13 | File-based routing |
 | Language | TypeScript | ~5.9.2 | Type safety (strict mode) |
 | State | Redux Toolkit | ^2.6.1 | Global state + API caching |
 | State | RTK Query | (bundled with RTK) | Data fetching via fakeBaseQuery |
 | Backend | Supabase JS | ^2.49.4 | Client SDK |
-| Auth | Supabase Phone OTP | — | Phone number identity |
-| Auth | hCaptcha | ^2.0.2 | Bot protection on OTP |
+| Auth | Supabase Web-OAuth + Email OTP | — | Google, Apple, and Email OTP identity |
 | Maps | @rnmapbox/maps | ^10.3.0 | Native map (iOS/Android) |
 | Maps | mapbox-gl | ^3.20.0 | Web map |
-| Payments | E-Kyash | — | Belizean digital payments (BZD) |
-| Push | Expo Notifications | ~55.0.14 | FCM/APNs push |
-| Email | Resend | — | Transaction receipts |
+| Payments | Cash + E-Kyash | — | Cash (default) + E-Kyash digital payments |
+| Push | Expo Notifications | ~55.0.22 | FCM/APNs push |
+| Email | Resend | — | Transaction receipts and alerts |
 | Edge Functions | Deno | — | Serverless functions |
 | Node | Node.js | v24 LTS | Runtime |
 

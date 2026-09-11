@@ -111,14 +111,18 @@ Default size: 24x24. Style: outlined stroke. Colors: `forest-400` inactive, `acc
 | `ClipboardList` | Activity tab |
 | `User` | Profile tab |
 | `CircleDot` | Post type badges |
-| `AlertTriangle` | Road reports |
-| `Construction` | Construction reports |
+| `AlertTriangle` | Warnings / caution badges |
+| `Check` | Confirmation / success checks |
+| `Construction` | Construction notices |
+| `Download` | File / receipt download |
 | `Fuel` | Gas prices |
+| `Lock` | Secure storage / auth |
+| `Map` | Map view toggles |
 | `Star` | Ratings |
 | `Clock` | Punctuality |
 | `MapPin` | Locations |
 | `Navigation` | Route direction |
-| `Phone` | Contact / auth |
+| `Phone` | Contact / profile phone |
 | `ShieldAlert` | SOS button |
 | `Receipt` | Transactions |
 | `QrCode` | E-Kyash QR |
@@ -190,16 +194,20 @@ Default size: 24x24. Style: outlined stroke. Colors: `forest-400` inactive, `acc
 
 ## Post Card Variants (`src/components/cards/`)
 
-| Component | Post Type |
-|-----------|-----------|
+| Component | Post Type / Purpose |
+|-----------|---------------------|
 | `RouteOfferCard` | Driver offering seats (`route_offer`) |
 | `RouteRequestCard` | Rider looking for ride (`route_request`) |
 | `ErrandCard` | Task/errand (`errand`) |
 | `JobCard` | Work opportunity (`job`) |
-| `RoadReportCard` | Road condition report |
 | `GasPriceCard` | Gas station price report |
 | `RouteInfoCard` | Route distance/duration/cost widget |
 | `TopRoutesSection` | Popular routes feed widget |
+| `PostCardShell` | Common card wrapper with interactive feedback |
+| `HeroMap` | Interactive map preview in feed header |
+| `HeroGradient` | Top visual gradient background |
+| `PriceBadge` | Formatted price display pill |
+| `MetaItem` | Standard icon + text metadata row |
 
 ---
 

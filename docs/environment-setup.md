@@ -87,6 +87,7 @@ Set in Supabase dashboard → Settings → Edge Functions → Secrets:
 | `EKYASH_API_URL` | Optional E-Kyash API base URL override |
 | `RESEND_API_KEY` | Required for account emails, SOS emails, and any receipt delivery |
 | `RESEND_FROM_EMAIL` | Sender address, set to `support@belizechain.org` |
+| `CRON_SECRET` | Bearer secret for automated `expire-posts` cron webhook trigger |
 
 Hosted Supabase Edge Functions already provide `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`; you do not need to add those manually in the dashboard.
 
@@ -213,7 +214,7 @@ npx supabase functions serve ekyash-create-invoice --env-file supabase/.env
 ### Supabase auth failing
 - Verify `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are correct
 - Check hCaptcha site key matches Supabase dashboard setting
-- Phone OTP requires Supabase Auth > Phone Provider enabled
+- Email OTP requires Resend credentials and `support@belizechain.org` configured; OAuth requires Google/Apple providers enabled in Supabase dashboard
 
 ### TypeScript errors after migration changes
 - Regenerate types: `npx supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts`

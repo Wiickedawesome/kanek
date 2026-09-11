@@ -2,9 +2,9 @@
 
 Supabase PostgreSQL 17. Project ref: `tlggdherqjvybpddsqjj`.
 
-50 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
+21 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
 
-Types are generated via:
+TypeScript types are generated via:
 ```bash
 supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/database.ts
 ```
@@ -15,457 +15,424 @@ supabase gen types typescript --project-id tlggdherqjvybpddsqjj > src/types/data
 
 ```sql
 CREATE TYPE role AS ENUM ('rider', 'driver', 'admin');
-CREATE TYPE account_status AS ENUM ('pending', 'active', 'restricted', 'suspended', 'dormant');
+CREATE TYPE account_status AS ENUM ('pending', 'active', 'restricted', 'suspended', 'pending_deletion', 'deleted');
 CREATE TYPE post_type AS ENUM ('route_offer', 'route_request', 'errand', 'package', 'job');
-CREATE TYPE post_status AS ENUM ('open', 'activated', 'in_progress', 'filled', 'completed', 'cancelled', 'expired');
-CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'no_show', 'completed');
+CREATE TYPE post_status AS ENUM ('open', 'activated', 'in_progress', 'completed', 'cancelled', 'expired', 'filled');
+CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled');
 CREATE TYPE booking_role AS ENUM ('rider', 'driver');
 CREATE TYPE payment_method AS ENUM ('cash', 'ekyash');
-CREATE TYPE contract_status AS ENUM ('active', 'completed', 'disputed', 'cancelled');
+CREATE TYPE contract_status AS ENUM ('active', 'completed', 'cancelled');
 CREATE TYPE strike_type AS ENUM ('soft', 'hard');
 CREATE TYPE strike_reason AS ENUM ('late_cancel', 'no_show', 'early_leave', 'driver_no_show', 'report');
-CREATE TYPE ekyash_status AS ENUM ('pending', 'approved', 'cancelled', 'refunded');
-CREATE TYPE road_report_type AS ENUM ('accident', 'checkpoint', 'traffic', 'flooding', 'construction', 'road_damage');
-CREATE TYPE errand_category AS ENUM ('grocery', 'bill', 'pharmacy', 'document', 'delivery', 'food', 'hardware', 'other');
-CREATE TYPE pickup_style AS ENUM ('single', 'multi_stop');
-CREATE TYPE flag_target AS ENUM ('post', 'user', 'booking');
-CREATE TYPE flag_reason AS ENUM ('spam', 'scam', 'harassment', 'fake_account', 'safety', 'other');
-CREATE TYPE flag_status AS ENUM ('pending', 'reviewed', 'action_taken', 'dismissed');
 CREATE TYPE review_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE admin_action_type AS ENUM ('approve_driver', 'reject_driver', 'approve_rider_doc', 'reject_rider_doc',
-  'suspend_user', 'unsuspend_user', 'remove_post', 'dismiss_flag', 'issue_strike');
-CREATE TYPE BelizeDistrict AS ENUM ('belize', 'cayo', 'corozal', 'orange_walk', 'stann_creek', 'toledo');
+CREATE TYPE driver_document_type AS ENUM ('license', 'insurance', 'id_card', 'vehicle_registration');
+CREATE TYPE errand_category AS ENUM ('grocery', 'pharmacy', 'hardware', 'bills', 'pickup', 'other');
+CREATE TYPE job_category AS ENUM ('construction', 'cleaning', 'gardening', 'delivery', 'handyman', 'landscaping', 'moving', 'tutoring', 'tech', 'other');
+CREATE TYPE job_timeline AS ENUM ('asap', 'today', 'this_week', 'flexible');
+CREATE TYPE pay_type AS ENUM ('hourly', 'fixed');
+CREATE TYPE pickup_style AS ENUM ('single', 'multi_stop');
+CREATE TYPE flag_reason AS ENUM ('spam', 'safety', 'inappropriate', 'fraud', 'other');
+CREATE TYPE belize_district AS ENUM ('belize', 'cayo', 'corozal', 'orange_walk', 'stann_creek', 'toledo');
 ```
 
 ---
 
 ## Tables
 
-### profiles
+### `profiles`
+User profiles linked 1:1 with Supabase Auth (`auth.users`).
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | References `auth.users(id)` ON DELETE CASCADE |
-| `phone` | `text` UNIQUE NOT NULL | Format: `+501XXXXXXX` |
-| `full_name` | `text` | 1–50 chars |
-| `role` | `role` NOT NULL DEFAULT 'rider' | rider, driver, admin |
-| `account_status` | `account_status` DEFAULT 'pending' | |
-| `avatar_url` | `text` | Storage bucket URL |
-| `id_document_url` | `text` | Government ID photo |
-| `id_verified` | `boolean` DEFAULT false | Admin verifies |
-| `rating_avg` | `numeric(3,2)` DEFAULT 0 | 0.00–5.00, maintained by trigger |
-| `rating_count` | `integer` DEFAULT 0 | |
-| `punctuality_pct` | `integer` DEFAULT 100 | 0–100%, maintained by trigger |
-| `soft_strikes` | `integer` DEFAULT 0 | Late cancels |
-| `hard_strikes` | `integer` DEFAULT 0 | No-shows |
-| `emergency_contact` | `text` | Phone number for SOS |
-| `district` | `BelizeDistrict` | User's home district |
-| `address` | `text` | User's address |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | References `auth.users.id` ON DELETE CASCADE |
+| `first_name` | `text` | First name |
+| `last_name` | `text` | Last name |
+| `email` | `text` | User email address |
+| `phone` | `text` | Phone number (`+501XXXXXXX`) |
+| `role` | `role` NOT NULL | Default `'rider'` |
+| `account_status` | `account_status` | Default `'active'` |
+| `rating_avg` | `numeric` | Average star rating (0.00–5.00) |
+| `punctuality_pct` | `integer` | Punctuality percentage (0–100) |
+| `strikes_soft` | `integer` | Count of soft strikes (late cancellation) |
+| `strikes_hard` | `integer` | Count of hard strikes (no-show) |
+| `district` | `belize_district` | User's primary district in Belize |
+| `address_line` | `text` | Street / community address |
+| `emergency_contact` | `text` | Emergency contact phone or email for SOS |
+| `avatar_url` | `text` | URL to public profile picture in `avatars` bucket |
+| `created_at` | `timestamptz` | Account creation timestamp |
+| `last_active_at` | `timestamptz` | Last activity timestamp |
+| `updated_at` | `timestamptz` | Last profile update timestamp |
 
-**RLS:** Users can read all profiles, update own profile only. Admins can update any.
-
----
-
-### posts
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `author_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `type` | `post_type` NOT NULL | route_offer, route_request, errand, package, job |
-| `status` | `post_status` DEFAULT 'open' | |
-| `title` | `text` NOT NULL | |
-| `description` | `text` | Max 500 chars |
-| `from_location` | `text` | Origin name |
-| `from_lat` | `numeric(10,7)` | |
-| `from_lng` | `numeric(10,7)` | |
-| `to_location` | `text` | Destination name |
-| `to_lat` | `numeric(10,7)` | |
-| `to_lng` | `numeric(10,7)` | |
-| `departure_date` | `date` | |
-| `departure_time` | `time` | |
-| `price_cents` | `integer` | In cents, max 999900 |
-| `seats_total` | `integer` | 1–20 |
-| `seats_available` | `integer` | Decremented on booking |
-| `payment_method` | `payment_method` DEFAULT 'cash' | |
-| `pickup_style` | `pickup_style` DEFAULT 'single' | |
-| `errand_category` | `errand_category` | For errand posts |
-| `item_cost_cents` | `integer` | Separate from errand fee |
-| `expires_at` | `timestamptz` | Auto-expire via cron |
-| `route_distance_km` | `numeric(10,2)` | Mapbox Directions result |
-| `route_duration_min` | `numeric(10,2)` | Mapbox Directions result |
-| `route_map_url` | `text` | Mapbox Static Map URL |
-| `vehicle_make` | `text` | Driver's vehicle |
-| `vehicle_color` | `text` | |
-| `license_plate` | `text` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
-
-**Job-specific columns** (added in migration 00011):
-- `job_category`, `pay_type`, `pay_rate_cents`, `job_timeline`, `job_location`, `job_lat`, `job_lng`, `requirements`
-
-**Indexes:** `idx_posts_author`, `idx_posts_type_status`, `idx_posts_location` (from_lat, from_lng)
-
-**RLS:** Anyone can read open posts. Authors can create/update/delete own posts. Admins can update any.
+**RLS**: Users can read public profile fields; users can update own profile; admins can update any profile.
 
 ---
 
-### bookings
+### `driver_details`
+Driver vehicle and license details submitted during onboarding.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `post_id` | `uuid` NOT NULL | FK → posts(id) ON DELETE CASCADE |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `role` | `booking_role` NOT NULL | rider or driver |
-| `status` | `booking_status` DEFAULT 'pending' | |
-| `seats_booked` | `integer` DEFAULT 1 | |
-| `payment_method` | `payment_method` DEFAULT 'cash' | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
-
-**Unique:** `idx_booking_unique (post_id, user_id)` — one booking per user per post.
-
-**Trigger:** `on_booking_confirmed` — auto-creates contract, decrements seats_available.
-
-**RLS:** Users can view own bookings. Post authors can view bookings on their posts.
-
----
-
-### contracts
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `post_id` | `uuid` NOT NULL | FK → posts(id) |
-| `booking_id` | `uuid` NOT NULL | FK → bookings(id) ON DELETE CASCADE |
-| `driver_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `rider_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `status` | `contract_status` DEFAULT 'active' | |
-| `payment_method` | `payment_method` DEFAULT 'cash' | |
-| `amount_cents` | `integer` | Agreed price |
-| `completed_at` | `timestamptz` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**RLS:** Only contract parties (driver_id or rider_id) can view/update.
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | References `profiles.id` ON DELETE CASCADE |
+| `vehicle_make` | `text` | Make of vehicle (e.g. Toyota) |
+| `vehicle_model` | `text` | Model of vehicle (e.g. Corolla) |
+| `vehicle_year` | `integer` | Vehicle manufacture year |
+| `vehicle_color` | `text` | Vehicle color |
+| `vehicle_plate` | `text` | License plate number |
+| `verified` | `boolean` | Whether driver is fully verified |
+| `review_status` | `review_status` | `'pending'`, `'approved'`, or `'rejected'` |
+| `rejection_reason`| `text` | Reason if application was rejected |
+| `license_url` | `text` | Driver's license document path |
+| `insurance_url` | `text` | Vehicle insurance document path |
+| `id_document_url` | `text` | Photo ID document path |
+| `created_at` | `timestamptz` | Application timestamp |
+| `updated_at` | `timestamptz` | Review timestamp |
 
 ---
 
-### ratings
+### `driver_documents`
+Per-document tracking for driver compliance.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `contract_id` | `uuid` NOT NULL | FK → contracts(id) ON DELETE CASCADE |
-| `rater_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `rated_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `stars` | `integer` NOT NULL | 1–5, CHECK constraint |
-| `was_on_time` | `boolean` | Punctuality tracking |
-| `comment` | `text` | Max 500 chars |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Unique:** `idx_rating_unique (contract_id, rater_id)` — one rating per rater per contract.
-
-**Trigger:** `update_rating_avg` — recalculates `profiles.rating_avg` and `punctuality_pct`.
-
----
-
-### strikes
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `contract_id` | `uuid` | FK → contracts(id) |
-| `type` | `strike_type` NOT NULL | soft or hard |
-| `reason` | `strike_reason` NOT NULL | |
-| `notes` | `text` | Admin notes |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Auto-escalation:**
-- 3 soft strikes → account_status = 'restricted'
-- 2 hard strikes → account_status = 'suspended'
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Document UUID |
+| `profile_id` | `uuid` NOT NULL | References `profiles.id` |
+| `document_type` | `driver_document_type` | `'license'`, `'insurance'`, `'id_card'`, etc. |
+| `document_url` | `text` NOT NULL | Storage path in `documents` bucket |
+| `document_number` | `text` | License or policy number |
+| `expiration_date` | `date` | Document expiration date |
+| `review_status` | `review_status` | Status of review |
+| `rejection_reason`| `text` | Rejection explanation |
+| `created_at` | `timestamptz` | Upload timestamp |
+| `updated_at` | `timestamptz` | Status update timestamp |
 
 ---
 
-### road_reports
+### `rider_documents`
+Government ID verification documents for riders.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `reporter_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `type` | `road_report_type` NOT NULL | accident, checkpoint, traffic, flooding, construction, road_damage |
-| `description` | `text` | Max 500 chars |
-| `lat` | `numeric(10,7)` NOT NULL | |
-| `lng` | `numeric(10,7)` NOT NULL | |
-| `upvote_count` | `integer` DEFAULT 1 | Community confirmation |
-| `gone_count` | `integer` DEFAULT 0 | "It's gone" counter |
-| `expires_at` | `timestamptz` | Auto-expire via cron |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
----
-
-### gas_prices
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `reporter_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `station_name` | `text` NOT NULL | |
-| `station_lat` | `numeric(10,7)` NOT NULL | |
-| `station_lng` | `numeric(10,7)` NOT NULL | |
-| `regular_cents` | `integer` | Price per imperial gallon |
-| `premium_cents` | `integer` | |
-| `diesel_cents` | `integer` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Document UUID |
+| `user_id` | `uuid` NOT NULL | References `profiles.id` |
+| `document_url` | `text` NOT NULL | Storage path in `documents` bucket |
+| `verified` | `boolean` | Verification status |
+| `review_status` | `review_status` | Review status |
+| `rejection_reason`| `text` | Rejection explanation |
+| `created_at` | `timestamptz` | Upload timestamp |
+| `updated_at` | `timestamptz` | Review timestamp |
 
 ---
 
-### ekyash_transactions
+### `driver_checkins`
+Selfie check-ins with GPS coordinates before trip commencement.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `contract_id` | `uuid` NOT NULL | FK → contracts(id) |
-| `payer_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `payee_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `order_id` | `text` UNIQUE NOT NULL | E-Kyash order reference |
-| `invoice_id` | `text` UNIQUE | E-Kyash invoice reference |
-| `transaction_id` | `text` UNIQUE | E-Kyash transaction reference |
-| `amount_cents` | `integer` NOT NULL | Total amount |
-| `platform_fee_cents` | `integer` NOT NULL | 3% fee |
-| `donation_cents` | `integer` DEFAULT 0 | Optional community donation |
-| `status` | `ekyash_status` DEFAULT 'pending' | pending, approved, cancelled, refunded |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Checkin UUID |
+| `contract_id` | `uuid` NOT NULL | References `contracts.id` |
+| `driver_id` | `uuid` NOT NULL | References `profiles.id` |
+| `selfie_url` | `text` NOT NULL | Storage path to verification photo |
+| `lat` | `numeric` NOT NULL | Latitude at check-in |
+| `lng` | `numeric` NOT NULL | Longitude at check-in |
+| `created_at` | `timestamptz` | Timestamp |
 
 ---
 
-### donation_totals
+### `posts`
+All posts across all five mobility categories.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `total_cents` | `bigint` DEFAULT 0 | Running total |
-| `updated_at` | `timestamptz` DEFAULT now() | |
-
-Single row, incremented by trigger when `ekyash_transactions.status = 'approved'`.
-
----
-
-### notifications
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) ON DELETE CASCADE |
-| `title` | `text` NOT NULL | |
-| `body` | `text` NOT NULL | |
-| `data` | `jsonb` | Navigation data (contractId, postId, etc.) |
-| `read` | `boolean` DEFAULT false | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
----
-
-### push_tokens
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL UNIQUE | FK → profiles(id) ON DELETE CASCADE |
-| `token` | `text` NOT NULL | Expo push token |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
-
----
-
-### waitlist
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `post_id` | `uuid` NOT NULL | FK → posts(id) ON DELETE CASCADE |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Unique:** `(post_id, user_id)` — one waitlist entry per user per post.
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Post UUID |
+| `author_id` | `uuid` NOT NULL | References `profiles.id` |
+| `type` | `post_type` NOT NULL | `'route_offer'`, `'route_request'`, `'errand'`, `'package'`, `'job'` |
+| `status` | `post_status` | Default `'open'` |
+| `title` | `text` NOT NULL | Title of the post |
+| `description` | `text` | Optional description |
+| `origin_address` | `text` | Origin location name |
+| `origin_lat` | `numeric` | Origin latitude (Belize bbox validated) |
+| `origin_lng` | `numeric` | Origin longitude (Belize bbox validated) |
+| `dest_address` | `text` | Destination location name |
+| `dest_lat` | `numeric` | Destination latitude |
+| `dest_lng` | `numeric` | Destination longitude |
+| `departure_at` | `timestamptz` | Scheduled departure / start time |
+| `price_cents` | `integer` | Price per seat or task in integer BZD cents |
+| `seats_total` | `integer` | Total seats or slots offered (1–20) |
+| `seats_remaining`| `integer` | Available seats remaining |
+| `is_round_trip` | `boolean` | Round trip flag |
+| `return_time` | `timestamptz` | Return schedule for round trips |
+| `repeat_days` | `smallint[]` | Weekly recurring days (1=Mon .. 7=Sun) |
+| `repeat_until` | `date` | End date for recurring schedule |
+| `expires_at` | `timestamptz` | Auto-expiration timestamp (cleared by `expire-posts`) |
+| `last_confirmed_at` | `timestamptz` | Last keepalive confirmation for recurring routes |
+| `route_distance_km`| `numeric` | Computed route distance |
+| `route_duration_min`| `numeric` | Estimated travel duration |
+| `vehicle_description`| `text` | Vehicle summary |
+| `pickup_notes` | `text` | Meeting or pickup instructions |
+| `payment_method` | `payment_method` | Preferred payment method (`'cash'`, `'ekyash'`) |
+| `pickup_style` | `pickup_style` | Single stop or multi-stop |
+| `min_riders` | `integer` | Minimum riders required to activate route |
+| `errand_category` | `errand_category` | Errand subcategory |
+| `errand_fee_cents`| `integer` | Service fee for errand |
+| `item_cost_cents` | `integer` | Estimated cost of items |
+| `job_category` | `job_category` | Gig / job subcategory |
+| `job_timeline` | `job_timeline` | Urgency timeline |
+| `pay_rate_cents` | `integer` | Wage or rate in cents |
+| `pay_type` | `pay_type` | Hourly or fixed payment |
+| `created_at` | `timestamptz` | Post creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
 
 ---
 
-### email_receipts
+### `bookings`
+Requests and reservations on posts.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `contract_id` | `uuid` | FK → contracts(id) |
-| `ekyash_txn_id` | `uuid` | FK → ekyash_transactions(id) |
-| `type` | `text` NOT NULL | payment, refund, dispute |
-| `resend_id` | `text` | Resend API response ID |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Known issue:** Both `contract_id` and `ekyash_txn_id` can be NULL (needs CHECK constraint).
-
----
-
-### driver_details
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL UNIQUE | FK → profiles(id) ON DELETE CASCADE |
-| `license_url` | `text` | Driver's license photo |
-| `license_status` | `review_status` DEFAULT 'pending' | |
-| `insurance_url` | `text` | Insurance document |
-| `insurance_status` | `review_status` DEFAULT 'pending' | |
-| `vehicle_make` | `text` | |
-| `vehicle_model` | `text` | |
-| `vehicle_year` | `integer` | |
-| `vehicle_color` | `text` | |
-| `license_plate` | `text` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-| `updated_at` | `timestamptz` DEFAULT now() | |
-
-**RLS:** Owner can read/update own. Admins can read/update all.
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Booking UUID |
+| `post_id` | `uuid` NOT NULL | References `posts.id` ON DELETE CASCADE |
+| `user_id` | `uuid` NOT NULL | References `profiles.id` |
+| `role` | `booking_role` | `'rider'` or `'driver'` |
+| `status` | `booking_status` | `'pending'`, `'confirmed'`, `'cancelled'` |
+| `seats_booked` | `integer` | Number of seats booked |
+| `payment_method` | `payment_method` | Payment method |
+| `cancel_reason` | `text` | Reason if cancelled |
+| `cancelled_at` | `timestamptz` | Cancellation timestamp |
+| `created_at` | `timestamptz` | Booking creation timestamp |
+| `updated_at` | `timestamptz` | Last update timestamp |
 
 ---
 
-### rider_documents
+### `contracts`
+Agreements established between parties upon booking confirmation.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `user_id` | `uuid` NOT NULL | FK → profiles(id) ON DELETE CASCADE |
-| `document_url` | `text` NOT NULL | Storage URL |
-| `document_type` | `text` NOT NULL | 'government_id', 'passport', etc. |
-| `status` | `review_status` DEFAULT 'pending' | |
-| `reviewed_by` | `uuid` | FK → profiles(id) |
-| `reviewed_at` | `timestamptz` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
----
-
-### flags
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `reporter_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `target_type` | `flag_target` NOT NULL | post, user, booking |
-| `target_id` | `uuid` NOT NULL | Polymorphic — no FK constraint |
-| `reason` | `flag_reason` NOT NULL | spam, scam, harassment, fake_account, safety, other |
-| `description` | `text` | Max 500 chars |
-| `status` | `flag_status` DEFAULT 'pending' | pending, reviewed, action_taken, dismissed |
-| `reviewed_by` | `uuid` | FK → profiles(id) |
-| `reviewed_at` | `timestamptz` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Known issue:** `target_id` has no FK constraint due to polymorphic pattern.
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Contract UUID |
+| `post_id` | `uuid` NOT NULL | References `posts.id` |
+| `booking_id` | `uuid` NOT NULL | References `bookings.id` |
+| `origin_address` | `text` | Trip origin |
+| `dest_address` | `text` | Trip destination |
+| `agreed_price_cents`| `integer` | Agreed payment in cents |
+| `status` | `contract_status` | `'active'`, `'completed'`, `'cancelled'` |
+| `departure_at` | `timestamptz` | Scheduled departure time |
+| `completed_at` | `timestamptz` | Completion timestamp |
+| `parties` | `jsonb` | Identity snapshot of driver and rider |
+| `terms` | `jsonb` | Agreed contract terms |
+| `created_at` | `timestamptz` | Contract agreement timestamp |
 
 ---
 
-### admin_actions
+### `contract_events`
+Chronological audit events tracking contract lifecycle.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `admin_id` | `uuid` NOT NULL | FK → profiles(id) |
-| `action` | `admin_action_type` NOT NULL | |
-| `target_type` | `text` NOT NULL | |
-| `target_id` | `uuid` NOT NULL | |
-| `reason` | `text` | |
-| `metadata` | `jsonb` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-Audit trail — immutable. RLS: admins only.
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Event UUID |
+| `contract_id` | `uuid` NOT NULL | References `contracts.id` |
+| `actor_id` | `uuid` NOT NULL | References `profiles.id` |
+| `event_type` | `text` NOT NULL | Lifecycle event (e.g. `'trip_started'`, `'completed'`, `'cancelled'`) |
+| `note` | `text` | Optional event note or detail |
+| `created_at` | `timestamptz` | Event timestamp |
 
 ---
 
-### driver_checkins
+### `contract_messages`
+Real-time encrypted chat messages between contract parties.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `driver_id` | `uuid` NOT NULL | FK → profiles(id) ON DELETE CASCADE |
-| `contract_id` | `uuid` NOT NULL | FK → contracts(id) ON DELETE CASCADE |
-| `selfie_url` | `text` NOT NULL | |
-| `lat` | `numeric(10,7)` | |
-| `lng` | `numeric(10,7)` | |
-| `created_at` | `timestamptz` DEFAULT now() | |
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Message UUID |
+| `contract_id` | `uuid` NOT NULL | References `contracts.id` |
+| `sender_id` | `uuid` NOT NULL | References `profiles.id` |
+| `body` | `text` NOT NULL | Message text |
+| `created_at` | `timestamptz` | Message timestamp |
 
-**Unique:** One check-in per driver per contract.
-
----
-
-### contract_messages
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `contract_id` | `uuid` NOT NULL | FK → contracts(id) ON DELETE CASCADE |
-| `sender_id` | `uuid` NOT NULL | FK → profiles(id) ON DELETE CASCADE |
-| `body` | `text` NOT NULL | 1–2000 chars |
-| `created_at` | `timestamptz` DEFAULT now() | |
-
-**Realtime:** Enabled for real-time chat between contract parties.
-
-**RLS:** Only contract parties can read/send.
+**Retention**: Messages are accessible for 24 hours following trip completion.
 
 ---
 
-## Migration Index
+### `ratings`
+Mutual reviews and punctuality ratings after contract completion.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Rating UUID |
+| `contract_id` | `uuid` NOT NULL | References `contracts.id` |
+| `rater_id` | `uuid` NOT NULL | References `profiles.id` (review author) |
+| `rated_id` | `uuid` NOT NULL | References `profiles.id` (reviewed user) |
+| `stars` | `smallint` NOT NULL | Rating score (1 to 5) |
+| `was_on_time` | `boolean` | Punctuality vote |
+| `comment` | `text` | Review text |
+| `created_at` | `timestamptz` | Review timestamp |
+
+**Trigger**: Triggers recalculation of `rating_avg` and `punctuality_pct` in `profiles`.
+
+---
+
+### `gas_prices`
+Crowd-sourced fuel price reporting across Belize.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Record UUID |
+| `reporter_id` | `uuid` NOT NULL | References `profiles.id` |
+| `station_name` | `text` NOT NULL | Gas station brand and name |
+| `station_lat` | `numeric` NOT NULL | Latitude |
+| `station_lng` | `numeric` NOT NULL | Longitude |
+| `regular_cents` | `integer` | Regular gasoline price per gallon in cents |
+| `premium_cents` | `integer` | Premium gasoline price per gallon in cents |
+| `diesel_cents` | `integer` | Diesel fuel price per gallon in cents |
+| `verified_count`| `integer` | Number of community verifications |
+| `reported_at` | `timestamptz` | Timestamp of latest price report |
+
+---
+
+### `flags`
+Community moderation reports on posts or profiles.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Flag UUID |
+| `reporter_id` | `uuid` NOT NULL | References `profiles.id` |
+| `target_type` | `text` NOT NULL | `'post'`, `'user'`, `'booking'` |
+| `target_id` | `uuid` NOT NULL | Target UUID |
+| `reason` | `flag_reason` | Reason code |
+| `description` | `text` | User explanation |
+| `status` | `text` | `'pending'`, `'reviewed'`, `'action_taken'`, `'dismissed'` |
+| `reviewed_by` | `uuid` | References `profiles.id` (admin reviewer) |
+| `created_at` | `timestamptz` | Report timestamp |
+
+---
+
+### `strikes`
+Disciplinary penalties applied to accounts.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Strike UUID |
+| `user_id` | `uuid` NOT NULL | References `profiles.id` |
+| `contract_id` | `uuid` | Related contract if applicable |
+| `type` | `strike_type` NOT NULL | `'soft'` (late cancellation) or `'hard'` (no-show) |
+| `reason` | `strike_reason` NOT NULL | Reason code |
+| `auto_generated`| `boolean` | Whether applied automatically by cron |
+| `created_at` | `timestamptz` | Penalty timestamp |
+
+---
+
+### `notifications`
+In-app notification records sent to users.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Notification UUID |
+| `user_id` | `uuid` NOT NULL | References `profiles.id` |
+| `type` | `text` NOT NULL | Notification type code |
+| `title` | `text` NOT NULL | Headline |
+| `body` | `text` NOT NULL | Notification message |
+| `read` | `boolean` | Read status |
+| `data` | `jsonb` | Context payload (e.g. `postId`, `contractId`) |
+| `created_at` | `timestamptz` | Timestamp |
+
+---
+
+### `notification_preferences`
+Per-user notification delivery toggles.
+
+| Column | Type | Description |
+|---|---|---|
+| `user_id` | `uuid` PK | References `profiles.id` |
+| `push_enabled` | `boolean` | Enable push notifications |
+| `email_enabled` | `boolean` | Enable email receipts and updates |
+| `marketing_enabled`| `boolean`| Enable marketing communications |
+| `created_at` | `timestamptz` | Timestamp |
+| `updated_at` | `timestamptz` | Last change |
+
+---
+
+### `ekyash_transactions`
+Digital payment records processed via E-Kyash Belize.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Transaction UUID |
+| `contract_id` | `uuid` NOT NULL | References `contracts.id` |
+| `payer_id` | `uuid` NOT NULL | References `profiles.id` |
+| `payee_id` | `uuid` NOT NULL | References `profiles.id` |
+| `order_id` | `text` NOT NULL | E-Kyash order identifier |
+| `amount_cents` | `integer` NOT NULL | Transaction amount in cents |
+| `platform_fee_cents`| `integer` | 3% platform fee |
+| `donation_cents`| `integer` | Optional community donation |
+| `currency` | `text` | Currency code (`'BZD'`) |
+| `status` | `text` | `'pending'`, `'approved'`, `'cancelled'`, `'refunded'` |
+| `created_at` | `timestamptz` | Transaction timestamp |
+
+---
+
+### `donation_totals`
+Aggregate tracking for community mobility fund donations.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Record ID |
+| `total_cents` | `bigint` NOT NULL | Cumulative donation total in cents |
+| `updated_at` | `timestamptz` | Last accumulation timestamp |
+
+---
+
+### `email_receipts`
+Audit log of transactional emails sent through Resend.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Receipt UUID |
+| `user_id` | `uuid` NOT NULL | References `profiles.id` |
+| `contract_id` | `uuid` | References `contracts.id` |
+| `email_to` | `text` NOT NULL | Recipient email address |
+| `type` | `text` NOT NULL | Receipt type |
+| `status` | `text` | `'sent'`, `'failed'` |
+| `error` | `text` | Error details if delivery failed |
+| `sent_at` | `timestamptz` | Timestamp |
+
+---
+
+### `admin_actions`
+Immutable audit trail of administrator decisions.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Action UUID |
+| `admin_id` | `uuid` NOT NULL | References `profiles.id` (admin user) |
+| `action` | `text` NOT NULL | Action name (e.g. `'approve_driver'`, `'issue_strike'`) |
+| `target_type` | `text` NOT NULL | Target entity type (`'user'`, `'post'`, `'driver_document'`) |
+| `target_id` | `uuid` NOT NULL | Target entity UUID |
+| `reason` | `text` | Optional explanation |
+| `created_at` | `timestamptz` | Timestamp of admin action |
+
+---
+
+## Migration Index (21 Sequential Migrations)
 
 | # | File | Purpose |
-|---|------|---------|
-| 1 | `00001_profiles.sql` | profiles table, roles, account status |
-| 2 | `00002_posts.sql` | posts table, post types |
-| 3 | `00003_bookings_contracts.sql` | bookings, contracts |
-| 4 | `00004_ratings_strikes.sql` | ratings, strikes, triggers |
-| 5 | `00005_reports.sql` | road_reports, gas_prices |
-| 6 | `00006_ekyash.sql` | ekyash_transactions, donation_totals |
-| 7 | `00007_notifications.sql` | notifications table |
-| 8 | `00008_email_receipts.sql` | email_receipts |
-| 9 | `00009_rls_policies.sql` | RLS policies, driver_details, rider_documents |
-| 10 | `00010_reports_update_policies.sql` | Report update RLS |
-| 11 | `00011_job_fields.sql` | Job-specific columns on posts |
-| 12 | `00012_push_tokens.sql` | push_tokens table |
-| 13 | `00013_fix_email_receipts.sql` | Fix email_receipts constraints |
-| 14 | `00014_driver_checkins.sql` | driver_checkins table |
-| 15 | `00015_allow_author_delete_any_status.sql` | Author can delete own posts |
-| 16 | `00016_contracts_cascade_delete.sql` | CASCADE on contract delete |
-| 17 | `00017_add_route_metadata_columns.sql` | Route distance/duration/map URL |
-| 18 | `00018_fuel_prices.sql` | Fuel price enhancements |
-| 19 | `00019_drop_fuel_prices.sql` | Remove duplicate fuel table |
-| 20 | `00020_fix_selfie_privacy.sql` | Selfie storage policy fix |
-| 21 | `00021_road_report_gone_count.sql` | "It's gone" counter |
-| 22 | `00022_road_reports_delete_policy.sql` | Delete policy for reports |
-| 23 | `00023_route_offer_driver_fields.sql` | Vehicle fields on posts |
-| 24 | `00024_profile_district_address.sql` | District/address on profiles |
-| 25 | `00025_posts_payment_method.sql` | Payment method on posts |
-| 26 | `00026_allow_email_signup.sql` | Email auth support |
-| 27 | `00027_booking_flow_trigger.sql` | Booking confirmation trigger |
-| 28 | `00028_fix_booking_flow.sql` | Booking flow fix |
-| 29 | `00029_fix_contract_fk_timing.sql` | Contract FK timing fix |
-| 30 | `00030_booking_completion_cascade.sql` | Booking completion cascade |
-| 31 | `00031_unified_booking_flow.sql` | Unified booking flow |
-| 32 | `00032_cron_schedules.sql` | pg_cron schedules |
-| 33 | `00033_contract_messages.sql` | Contract messaging |
-| 34 | `00034_message_notifications.sql` | Message notification triggers |
-| 35 | `00035_phone_change_rate_limit.sql` | Phone change rate limiting |
-| 36 | `00036_anonymous_ratings.sql` | Anonymous rating support |
-| 37 | `00037_contract_completion_notifications.sql` | Contract completion notifications |
-| 38 | `00038_activity_notifications.sql` | Activity notification triggers |
-| 39 | `00039_profile_avatars.sql` | Profile avatar support |
-| 40 | `00040_job_application_flow.sql` | Job application flow |
-| 41 | `00041_secure_report_actions.sql` | Secure report action policies |
-| 42 | `00042_deduplicate_upvotes.sql` | Deduplicate report upvotes |
-| 43 | `00043_phone_change_rate_limit_trigger.sql` | Phone change rate limit trigger |
-| 44 | `00044_profiles_public_view.sql` | Public profiles view |
-| 45 | `00045_universal_applicant_review.sql` | Universal applicant review flow |
-| 46 | `00046_gate_actions_behind_active_status.sql` | Gate actions behind active account status |
-| 47 | `00047_contract_events.sql` | Contract events table |
-| 48 | `00048_driver_documents.sql` | Driver documents table |
-| 49 | `00049_remove_police_record.sql` | Remove police record requirement |
-| 50 | `00050_phase2_audit_fixes.sql` | Phase 2 audit fixes |
+|---|---|---|
+| 00001 | `00001_initial_schema.sql` | Base tables, enums, RLS policies, trigger handlers |
+| 00002 | `00002_admin_studio_migration.sql` | Admin database views and stored procedures |
+| 00003 | `00003_fix_handle_new_user_trigger.sql` | Fix auth signup trigger for profile creation |
+| 00004 | `00004_storage_bucket_policies.sql` | Storage policies for `avatars` and `documents` buckets |
+| 00005 | `00005_set_initial_role_rpc.sql` | RPC for onboarding role assignment |
+| 00006 | `00006_soft_delete_retention.sql` | Soft-delete retention window support |
+| 00007 | `00007_reactivate_account_rpc.sql` | RPC to reactivate soft-deleted account |
+| 00008 | `00008_rename_route_to_ride_text.sql` | UX text alignment migration |
+| 00009 | `00009_route_repeat_days_return_time.sql` | Recurring route schedule columns |
+| 00010 | `00010_messaging_24h_cutoff.sql` | Enforce 24-hour message cutoff after trip completion |
+| 00011 | `00011_ekyash_partial_refund.sql` | E-Kyash partial refund tracking |
+| 00012 | `00012_add_suspended_pending_deletion_status.sql` | Extended account lifecycle statuses |
+| 00013 | `00013_fix_switch_to_driver_role.sql` | RPC fix for switching to driver role |
+| 00014 | `00014_check_user_availability_rpc.sql` | Driver availability conflict check RPC |
+| 00015 | `00015_scrub_invalid_coords.sql` | Geographic bounding box scrubber |
+| 00016 | `00016_route_proceed_cancel_rpcs.sql` | Route proceeding and cancellation RPCs |
+| 00017 | `00017_recurring_route_until_confirm.sql` | Recurring route keepalive and confirmation logic |
+| 00018 | `00018_notification_preferences.sql` | User notification preferences table and defaults |
+| 00019 | `00019_audit_remediation.sql` | Security audit remediation and RLS hardening |
+| 00020 | `00020_fix_plpgsql_lint_errors.sql` | PL/pgSQL function syntax and variable shadowing fixes |
+| 00021 | `00021_drop_road_reports_and_waitlist.sql` | Drop road_reports, votes, and waitlist tables |

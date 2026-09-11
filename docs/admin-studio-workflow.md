@@ -1,6 +1,7 @@
 # Admin Operations — Supabase Studio Workflow
 
-> Replaces the custom Next.js admin panel. All admin work happens in Supabase Studio.  
+> Note: Day-to-day admin operations (user moderation, driver approvals, transaction ledgers) are managed via the dedicated **Kanek Admin Portal** at `kanek.bz/admin` (backed by the `admin-api` edge function).  
+> The Supabase Studio workflows and SQL stored procedures documented below serve as direct database-level administration and emergency operations.  
 > Migration: `supabase/migrations/00002_admin_studio_migration.sql`
 
 ---

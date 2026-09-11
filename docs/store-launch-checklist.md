@@ -85,7 +85,7 @@
 - [x] **Host Privacy Policy** — `https://kanek.bz/privacy`
 - [x] **Host Terms of Service** — `https://kanek.bz/terms`
 - [ ] **Run `npm run launch:check`** until it reports no blocker-level items
-- [x] **Verify current migrations** — remote database already matches local migrations `00001` through `00014`
+- [x] **Verify current migrations** — remote database already matches local migrations `00001` through `00021`
 - [ ] **Apply future migrations** — `supabase db push` still requires the remote Postgres password from CLI
 - [ ] **Set production secrets** in Supabase dashboard:
   - Launch blocker now narrowed to runtime observability and email delivery, not deferred payments
@@ -133,16 +133,16 @@ Kanek is the community mobility board for Belize. Post and discover rides, route
 
 **For Everyone:**
 • Post errands and package deliveries for community help
-• Report road conditions and gas prices
+• Track and report local gas prices
 • Find and post local transport jobs
 • Emergency SOS with GPS location sharing
 
 **Key Features:**
 • Live feed of rides, routes, errands, and jobs across Belize
 • Real-time map with Mapbox navigation
-• E-Kyash digital payments with 3% platform fee
+• Cash and E-Kyash digital payments
 • Community trust system with ratings and verification
-• Road condition reports and gas price tracking
+• Fuel price tracking across Belize districts
 • Offline map support for rural areas
 • SOS emergency feature
 
