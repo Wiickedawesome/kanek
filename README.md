@@ -69,7 +69,7 @@ kanek/
 │   ├── theme/                    # Design tokens (colors, typography, spacing)
 │   └── types/                    # TypeScript types (database.ts, ekyash.ts)
 ├── supabase/
-│   ├── migrations/               # 21 SQL migration files
+│   ├── migrations/               # 23 SQL migration files
 │   ├── functions/                # 16 Deno edge functions
 │   └── templates/                # Email templates
 ├── docs/                         # Project documentation
@@ -184,7 +184,7 @@ npm run lint         # ESLint
 
 ## Database
 
-21 sequential migration files define the schema across 17 active tables with Row Level Security.
+23 sequential migration files define the schema across 18 active tables with Row Level Security.
 
 ### Core Tables
 

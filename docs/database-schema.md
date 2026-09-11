@@ -2,7 +2,7 @@
 
 Supabase PostgreSQL 17. Project ref: `tlggdherqjvybpddsqjj`.
 
-21 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
+23 sequential migration files in `supabase/migrations/`. Never modify a deployed migration — create a new one.
 
 TypeScript types are generated via:
 ```bash
@@ -411,7 +411,23 @@ Immutable audit trail of administrator decisions.
 
 ---
 
-## Migration Index (21 Sequential Migrations)
+### `taxi_associations`
+Official registry of Belize taxi associations and cooperatives across all 6 districts.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` PK | Association UUID |
+| `name` | `text` UNIQUE NOT NULL | Official association name |
+| `district` | `text` NOT NULL | District (`Belize District`, `Cayo District`, etc.) |
+| `address` | `text` | Physical stand / office address |
+| `phone` | `text` | Dispatcher contact number |
+| `notes` | `text` | Verification notes, email, operating characteristics |
+| `is_active` | `boolean` NOT NULL DEFAULT true | Active status |
+| `created_at` | `timestamptz` | Timestamp |
+
+---
+
+## Migration Index (23 Sequential Migrations)
 
 | # | File | Purpose |
 |---|---|---|
@@ -436,3 +452,5 @@ Immutable audit trail of administrator decisions.
 | 00019 | `00019_audit_remediation.sql` | Security audit remediation and RLS hardening |
 | 00020 | `00020_fix_plpgsql_lint_errors.sql` | PL/pgSQL function syntax and variable shadowing fixes |
 | 00021 | `00021_drop_road_reports_and_waitlist.sql` | Drop road_reports, votes, and waitlist tables |
+| 00022 | `00022_taxi_associations.sql` | Belize taxi associations directory (26 records), driver affiliations, and sync trigger |
+| 00023 | `00023_optimize_rls_initplan_and_security.sql` | RLS (select auth.uid()) InitPlan optimization, consolidated policies, and function hardening |

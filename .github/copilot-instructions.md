@@ -211,7 +211,7 @@ kanek/
 │       └── helpers.test.ts
 ├── supabase/
 │   ├── config.toml
-│   ├── migrations/                    # 17 SQL files (verified)
+│   ├── migrations/                    # 23 SQL files (verified)
 │   ├── functions/                     # 16 Deno edge functions
 │   └── templates/                     # email templates
 ├── android/                           # native Android (managed by Expo prebuild)
@@ -376,7 +376,7 @@ auth: {
 
 ### Schema migrations (verified 2026-09-11)
 
-There are **21 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
+There are **23 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
 
 | # | File | Purpose (from filename + brief) |
 |---|---|---|
@@ -401,6 +401,8 @@ There are **21 migration files** under `supabase/migrations/`. Each is run seque
 | 00019 | `00019_audit_remediation.sql` | RLS and policy remediation from security audit |
 | 00020 | `00020_fix_plpgsql_lint_errors.sql` | PL/pgSQL function lint and variable shadowing fixes |
 | 00021 | `00021_drop_road_reports_and_waitlist.sql` | Drop road_reports and waitlist tables |
+| 00022 | `00022_taxi_associations.sql` | Belize taxi associations directory (26 records), driver affiliations, and sync trigger |
+| 00023 | `00023_optimize_rls_initplan_and_security.sql` | RLS (select auth.uid()) InitPlan optimization, consolidated policies, and function hardening |
 
 For the full table catalogue see `docs/database-schema.md`. The most-touched tables are listed in §25.
 
