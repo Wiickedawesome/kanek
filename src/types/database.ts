@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -1402,119 +1402,6 @@ export type Database = {
           },
         ]
       }
-      road_report_gone_votes: {
-        Row: {
-          created_at: string | null
-          report_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          report_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          report_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "road_report_gone_votes_report_id_fkey"
-            columns: ["report_id"]
-            isOneToOne: false
-            referencedRelation: "road_reports"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      road_report_votes: {
-        Row: {
-          created_at: string
-          report_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          report_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          report_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "road_report_votes_report_id_fkey"
-            columns: ["report_id"]
-            isOneToOne: false
-            referencedRelation: "road_reports"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      road_reports: {
-        Row: {
-          created_at: string
-          description: string | null
-          expires_at: string
-          gone_count: number
-          id: string
-          lat: number
-          lng: number
-          reporter_id: string
-          type: Database["public"]["Enums"]["road_report_type"]
-          upvotes: number | null
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          expires_at?: string
-          gone_count?: number
-          id?: string
-          lat: number
-          lng: number
-          reporter_id: string
-          type: Database["public"]["Enums"]["road_report_type"]
-          upvotes?: number | null
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          expires_at?: string
-          gone_count?: number
-          id?: string
-          lat?: number
-          lng?: number
-          reporter_id?: string
-          type?: Database["public"]["Enums"]["road_report_type"]
-          upvotes?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "road_reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "admin_flag_detail"
-            referencedColumns: ["target_post_author_id"]
-          },
-          {
-            foreignKeyName: "road_reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "road_reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       strikes: {
         Row: {
           auto_generated: boolean | null
@@ -1567,66 +1454,6 @@ export type Database = {
           },
           {
             foreignKeyName: "strikes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      waitlist: {
-        Row: {
-          created_at: string
-          id: string
-          notified: boolean | null
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notified?: boolean | null
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notified?: boolean | null
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "waitlist_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "admin_posts_list"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "waitlist_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "waitlist_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_flag_detail"
-            referencedColumns: ["target_post_author_id"]
-          },
-          {
-            foreignKeyName: "waitlist_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "waitlist_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles_public"
@@ -2048,34 +1875,9 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
-      report_road_report_gone: {
-        Args: { report_id: string }
-        Returns: undefined
-      }
       set_initial_role: { Args: { p_role: string }; Returns: undefined }
       switch_to_driver_role: { Args: { p_user_id: string }; Returns: undefined }
       switch_to_rider_role: { Args: { p_user_id: string }; Returns: undefined }
-      upvote_road_report: {
-        Args: { report_id: string }
-        Returns: {
-          created_at: string
-          description: string | null
-          expires_at: string
-          gone_count: number
-          id: string
-          lat: number
-          lng: number
-          reporter_id: string
-          type: Database["public"]["Enums"]["road_report_type"]
-          upvotes: number | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "road_reports"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       verify_gas_price: {
         Args: { price_id: string }
         Returns: {
@@ -2186,13 +1988,6 @@ export type Database = {
         | "filled"
       post_type: "route_offer" | "route_request" | "errand" | "package" | "job"
       review_status: "pending" | "approved" | "rejected"
-      road_report_type:
-        | "accident"
-        | "checkpoint"
-        | "traffic"
-        | "flooding"
-        | "construction"
-        | "road_damage"
       role: "rider" | "driver" | "admin"
       strike_reason:
         | "late_cancel"
@@ -2216,12 +2011,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2245,11 +2040,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2270,11 +2065,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2295,11 +2090,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2312,11 +2107,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2425,14 +2220,6 @@ export const Constants = {
       ],
       post_type: ["route_offer", "route_request", "errand", "package", "job"],
       review_status: ["pending", "approved", "rejected"],
-      road_report_type: [
-        "accident",
-        "checkpoint",
-        "traffic",
-        "flooding",
-        "construction",
-        "road_damage",
-      ],
       role: ["rider", "driver", "admin"],
       strike_reason: [
         "late_cancel",
@@ -2461,5 +2248,4 @@ export type PickupStyle = Enums<'pickup_style'>
 export type PostStatus = Enums<'post_status'>
 export type PostType = Enums<'post_type'>
 export type ReviewStatus = Enums<'review_status'>
-export type RoadReportType = Enums<'road_report_type'>
 export type Role = Enums<'role'>

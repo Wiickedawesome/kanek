@@ -78,6 +78,28 @@ function parseEnvNames(output) {
 }
 
 function parseTable(output) {
+  const trimmed = output.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      const list = Array.isArray(parsed)
+        ? parsed
+        : (parsed.secrets || parsed.functions || Object.values(parsed)[0] || []);
+      if (Array.isArray(list)) {
+        return list.map((item) => {
+          const normalized = {};
+          for (const [k, v] of Object.entries(item)) {
+            normalized[k] = v;
+            normalized[k.toUpperCase()] = v;
+          }
+          return normalized;
+        });
+      }
+    } catch {
+      // fallback to table parsing below
+    }
+  }
+
   const rows = [];
   let headers = null;
 
