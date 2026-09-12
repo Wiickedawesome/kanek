@@ -58,8 +58,15 @@ export default function RoleSelectScreen() {
 
     setIsSaving(false);
 
-    // Invalidate cached profile so auth layout picks up the new name + role
+    // Invalidate the cached profile so downstream screens refetch with the
+    // fresh role/name; keepUnusedDataFor (300s) is too long for onboarding,
+    // so also write the updated row straight into the cache.
     dispatch(profilesApi.util.invalidateTags([{ type: 'Profile', id: user.id }]));
+    dispatch(profilesApi.util.updateQueryData('getMyProfile', user.id, (draft) => {
+      draft.role = selected;
+      draft.first_name = firstName.trim();
+      draft.last_name = lastName.trim();
+    }));
 
     router.replace('/(auth)/id-upload');
   };

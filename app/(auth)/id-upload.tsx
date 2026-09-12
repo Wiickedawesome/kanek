@@ -131,7 +131,6 @@ export default function IdUploadScreen() {
   const handleSubmit = async () => {
     if (!idUri || !selfieUri || !user || !profile) return;
     setIsUploading(true);
-    const resolvedRole = profile.role;
 
     const idPath = `${user.id}/id-${Date.now()}.jpg`;
     const selfiePath = `${user.id}/selfie-${Date.now()}.jpg`;
@@ -160,6 +159,17 @@ export default function IdUploadScreen() {
         { type: 'Profile', id: user.id },
         { type: 'RiderDocument', id: user.id },
       ]));
+
+      // Refetch the profile directly from the DB — the Redux cache can be up
+      // to 300s stale (keepUnusedDataFor), and the driver branch depends on
+      // the fresh role set in role-select.
+      const { data: freshProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const resolvedRole = freshProfile?.role ?? profile.role;
 
       if (resolvedRole === 'driver') {
         router.push('/(auth)/driver-docs');
