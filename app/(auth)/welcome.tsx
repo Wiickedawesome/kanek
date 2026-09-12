@@ -55,8 +55,8 @@ const createStyles = (c: SemanticColors) =>
     alignItems: 'center',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 128,
+    height: 128,
     marginBottom: spacing.lg,
   },
   brand: {
