@@ -174,7 +174,7 @@ export default function MessagesScreen() {
                 size={18}
                 color={
                   !messageText.trim() || isSending
-                    ? colors.neutral[400]
+                    ? '#6b7264'
                     : colors.neutral[0]
                 }
               />

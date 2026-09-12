@@ -7,10 +7,11 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Icon } from '@/components/icons';
 import { Card, EmptyState, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
-import { getTimeAgo, safeGoBack, navigateToNotification } from '@/lib/helpers';
+import { getTimeAgo, navigateToNotification } from '@/lib/helpers';
 import { colors, type, spacing, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import {
@@ -93,7 +94,7 @@ export default function NotificationsScreen() {
           <Card style={[styles.notifCard, !item.read && styles.unreadCard]}>
             <View style={styles.notifRow}>
               <View style={[styles.iconCircle, !item.read && styles.iconCircleUnread]}>
-                <Icon name={iconName} size={18} color={item.read ? colors.neutral[400] : colors.accent.green} />
+                <Icon name={iconName} size={18} color={item.read ? '#6b7264' : colors.accent.green} />
               </View>
               <View style={styles.notifContent}>
                 <Text style={[styles.notifTitle, !item.read && styles.notifTitleUnread]} numberOfLines={1}>
@@ -121,7 +122,7 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader
         title="Notifications"
-        onBack={() => safeGoBack('/(tabs)/activity/')}
+        onBack={() => router.navigate('/(tabs)/activity/')}
         right={
           unreadCount > 0 && userId ? (
             <Pressable onPress={() => markAllRead(userId)} hitSlop={12}>

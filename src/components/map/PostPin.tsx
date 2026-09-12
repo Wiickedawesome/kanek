@@ -18,7 +18,7 @@ const PIN_CONFIG: Record<PostType, { icon: React.ComponentProps<typeof Icon>['na
   route_offer: { icon: 'navigation', color: colors.accent.green },
   route_request: { icon: 'compass', color: colors.forest[500] },
   errand: { icon: 'package', color: colors.accent.orange },
-  package: { icon: 'package', color: colors.forest[400] },
+  package: { icon: 'package', color: colors.forest[500] },
   job: { icon: 'construction', color: colors.accent.yellow },
 };
 

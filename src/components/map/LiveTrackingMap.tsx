@@ -154,7 +154,7 @@ export function LiveTrackingMap({
 
       {!driverLocation && !isDriver && (
         <View style={styles.waitingOverlay}>
-          <Icon name="clock" size={16} color={colors.neutral[400]} />
+          <Icon name="clock" size={16} color={'#6b7264'} />
           <Text style={styles.waitingText}>Waiting for driver location...</Text>
         </View>
       )}
@@ -223,6 +223,6 @@ const styles = StyleSheet.create({
   },
   waitingText: {
     ...type.caption.regular,
-    color: colors.neutral[400],
+    color: '#6b7264',
   },
 });

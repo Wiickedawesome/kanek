@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: colors.neutral[400],
+    borderColor: '#a7a99f',
     marginRight: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   verifyText: {
     ...type.bodySm.regular,
-    color: colors.forest[400],
+    color: '#525a4c',
   },
   verifiedText: {
     color: colors.accent.green,

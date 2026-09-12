@@ -47,7 +47,7 @@ function getStatusColor(status: ReviewStatus | 'not_uploaded'): string {
     case 'approved': return colors.accent.green;
     case 'rejected': return colors.error;
     case 'pending': return colors.warning;
-    default: return colors.neutral[400];
+    default: return '#6b7264';
   }
 }
 

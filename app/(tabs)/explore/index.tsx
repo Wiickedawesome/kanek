@@ -178,7 +178,7 @@ export default function ExploreScreen() {
             {getGreeting()}{firstName ? `, ${firstName}` : ''}
           </Text>
           <Pressable
-            onPress={() => router.push('/(tabs)/activity/notifications')}
+            onPress={() => router.navigate('/(tabs)/activity/notifications')}
             hitSlop={12}
             style={styles.bellButton}
             accessibilityRole="button"

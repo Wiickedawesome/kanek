@@ -1001,7 +1001,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
               }}
               hitSlop={8}
             >
-              <Icon name="alert-triangle" size={14} color={c.textMuted} />
+              <Icon name="alert-triangle" size={14} color={colors.error} />
               <Text style={styles.reportText}>Report</Text>
             </Pressable>
           )}
@@ -1237,7 +1237,7 @@ const createStyles = (c: SemanticColors) =>
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.neutral[400],
+    backgroundColor: '#a7a99f',
     borderWidth: 1.5,
     borderColor: c.border,
   },

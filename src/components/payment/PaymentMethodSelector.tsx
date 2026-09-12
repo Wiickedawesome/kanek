@@ -18,7 +18,7 @@ export function PaymentMethodSelector({ selected, onSelect }: PaymentMethodSelec
         style={[styles.option, selected === 'cash' && styles.optionSelected]}
         onPress={() => onSelect('cash')}
       >
-        <Icon name="receipt" size={24} color={selected === 'cash' ? colors.accent.green : colors.neutral[400]} />
+        <Icon name="receipt" size={24} color={selected === 'cash' ? colors.accent.green : '#6b7264'} />
         <Text style={[styles.optionLabel, selected === 'cash' && styles.optionLabelSelected]}>
           Cash
         </Text>
@@ -29,7 +29,7 @@ export function PaymentMethodSelector({ selected, onSelect }: PaymentMethodSelec
         style={[styles.option, selected === 'ekyash' && styles.optionSelected]}
         onPress={() => onSelect('ekyash')}
       >
-        <Icon name="qr-code" size={24} color={selected === 'ekyash' ? colors.accent.green : colors.neutral[400]} />
+        <Icon name="qr-code" size={24} color={selected === 'ekyash' ? colors.accent.green : '#6b7264'} />
         <Text style={[styles.optionLabel, selected === 'ekyash' && styles.optionLabelSelected]}>
           E-Kyash
         </Text>
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.green,
     backgroundColor: 'rgba(81, 193, 82, 0.18)',
   },
-  optionLabel: { ...type.body.bold, color: colors.neutral[500] },
+  optionLabel: { ...type.body.bold, color: '#525a4c' },
   optionLabelSelected: { color: colors.accent.green },
-  optionHint: { ...type.caption.regular, color: colors.neutral[400], textAlign: 'center' },
+  optionHint: { ...type.caption.regular, color: '#6b7264', textAlign: 'center' },
 });

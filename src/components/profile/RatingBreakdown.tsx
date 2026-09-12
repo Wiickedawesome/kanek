@@ -45,7 +45,7 @@ export function RatingBreakdown({
           <Icon
             name="shield-alert"
             size={20}
-            color={strikesHard > 0 ? colors.error : colors.neutral[400]}
+            color={strikesHard > 0 ? colors.error : '#6b7264'}
           />
           <Text style={[styles.value, strikesHard > 0 && styles.errorValue]}>
             {totalStrikes}

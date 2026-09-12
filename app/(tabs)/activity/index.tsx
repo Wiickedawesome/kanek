@@ -604,7 +604,7 @@ export default function ActivityScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <Text style={styles.title}>Activity</Text>
-        <Pressable onPress={() => router.push('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
+        <Pressable onPress={() => router.navigate('/(tabs)/activity/notifications')} hitSlop={12} style={styles.bellButton}>
           <Icon name="bell" size={22} color={c.text} />
           {unreadCount > 0 && (
             <View style={styles.badge}>
@@ -654,7 +654,7 @@ function StatusBadge({ status }: { status: BookingStatus }) {
     : {
         pending: { label: 'Pending', bg: '#fff8e1', fg: colors.warning },
         confirmed: { label: 'Confirmed', bg: '#e8f5e9', fg: colors.accent.green },
-        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[700] },
         cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
         rejected: { label: 'Rejected', bg: '#ffebee', fg: colors.error },
         no_show: { label: 'No Show', bg: '#ffebee', fg: colors.error },
@@ -687,14 +687,14 @@ function PostStatusBadge({ status }: { status: string }) {
         activated: { label: 'Activated', bg: '#e3f2fd', fg: '#1565c0' },
         in_progress: { label: 'In Progress', bg: '#fff8e1', fg: colors.warning },
         filled: { label: 'Accepted', bg: '#e3f2fd', fg: '#1565c0' },
-        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[700] },
         cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
-        expired: { label: 'Expired', bg: colors.neutral[200], fg: colors.neutral[500] },
+        expired: { label: 'Expired', bg: colors.neutral[200], fg: '#6b7264' },
       };
 
   const fallback = isDark
     ? { label: status, bg: 'rgba(255, 255, 255, 0.08)', fg: c.textMuted }
-    : { label: status, bg: colors.neutral[200], fg: colors.neutral[500] };
+    : { label: status, bg: colors.neutral[200], fg: '#6b7264' };
   const cfg = config[status] ?? fallback;
 
   return (
@@ -716,7 +716,7 @@ function ContractStatusBadge({ status }: { status: ContractStatus }) {
       }
     : {
         active: { label: 'Active', bg: '#e8f5e9', fg: colors.accent.green },
-        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[500] },
+        completed: { label: 'Completed', bg: colors.neutral[200], fg: colors.forest[700] },
         cancelled: { label: 'Cancelled', bg: '#ffebee', fg: colors.error },
         disputed: { label: 'Disputed', bg: '#fff8e1', fg: colors.warning },
       };

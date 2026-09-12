@@ -128,8 +128,8 @@ export default function WalletScreen() {
 const TXN_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: colors.warning },
   approved: { label: 'Approved', color: colors.accent.green },
-  cancelled: { label: 'Cancelled', color: colors.neutral[500] },
-  refunded: { label: 'Refunded', color: colors.neutral[500] },
+  cancelled: { label: 'Cancelled', color: '#6b7264' },
+  refunded: { label: 'Refunded', color: '#6b7264' },
 };
 
 

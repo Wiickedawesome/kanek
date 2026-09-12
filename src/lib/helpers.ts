@@ -374,7 +374,18 @@ export function navigateToNotification(
     return;
   }
 
+  // Post gone — nothing to open. Marking read happens at the call site.
   if (notificationType === 'post_cancelled') return;
+
+  // Account-level notifications can have no related record to open; do
+  // nothing rather than bouncing the user back to the notifications list.
+  if (
+    notificationType === 'driver_application_approved' ||
+    notificationType === 'rider_verified' ||
+    notificationType === 'driver_verified'
+  ) {
+    return;
+  }
 
   const { contractId, postId, ratedId } = getNotificationRouteData(data);
 
@@ -401,9 +412,8 @@ export function navigateToNotification(
     router.push(`/(tabs)/activity/${contractId}` as any);
   } else if (postId) {
     router.push(`/(tabs)/explore/${postId}` as any);
-  } else {
-    // Fallback: open notifications list
-    router.push('/(tabs)/activity/notifications' as any);
   }
+  // No usable IDs in the payload — stay where the user is instead of
+  // re-opening the notifications list they already have in front of them.
 }
 

@@ -108,7 +108,7 @@ export default function RoleSelectScreen() {
           style={[styles.card, selected === 'rider' && styles.cardSelected]}
           onPress={() => setSelected('rider')}
         >
-          <Icon name="compass" size={32} color={selected === 'rider' ? colors.accent.green : colors.forest[400]} />
+          <Icon name="compass" size={32} color={selected === 'rider' ? colors.accent.green : colors.forest[500]} />
           <View style={styles.cardText}>
             <Text style={[styles.cardTitle, selected === 'rider' && styles.cardTitleSelected]}>
               I need rides
@@ -121,7 +121,7 @@ export default function RoleSelectScreen() {
           style={[styles.card, selected === 'driver' && styles.cardSelected]}
           onPress={() => setSelected('driver')}
         >
-          <Icon name="navigation" size={32} color={selected === 'driver' ? colors.accent.green : colors.forest[400]} />
+          <Icon name="navigation" size={32} color={selected === 'driver' ? colors.accent.green : colors.forest[500]} />
           <View style={styles.cardText}>
             <Text style={[styles.cardTitle, selected === 'driver' && styles.cardTitleSelected]}>
               I drive

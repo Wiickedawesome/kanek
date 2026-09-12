@@ -57,7 +57,7 @@ export const lightColors: SemanticColors = {
 
   // Text
   text: colors.forest[900],
-  textMuted: colors.forest[400],
+  textMuted: '#525a4c',
   textSubtle: colors.forest[600],
   textInverse: colors.neutral[0],
   textOnAccent: colors.forest[900],
@@ -72,7 +72,7 @@ export const lightColors: SemanticColors = {
   tabBarBg: 'rgba(255, 255, 255, 0.92)',
   tabBarBorder: 'rgba(20, 40, 0, 0.08)',
   tabBarActive: colors.forest[900],
-  tabBarInactive: colors.forest[400],
+  tabBarInactive: colors.forest[500],
 
   // Floating action surfaces
   fabBg: colors.forest[900],
@@ -82,7 +82,7 @@ export const lightColors: SemanticColors = {
   searchBg: colors.neutral[0],
   searchBorder: 'rgba(20, 40, 0, 0.08)',
   searchText: colors.forest[900],
-  searchPlaceholder: colors.forest[400],
+  searchPlaceholder: '#6b7264',
 
   // Filter chip
   chipBg: colors.neutral[0],
@@ -111,8 +111,8 @@ export const darkColors: SemanticColors = {
 
   // Text
   text: '#f2f2f3',
-  textMuted: 'rgba(255, 255, 255, 0.62)',
-  textSubtle: 'rgba(255, 255, 255, 0.78)',
+  textMuted: 'rgba(255, 255, 255, 0.74)',
+  textSubtle: 'rgba(255, 255, 255, 0.86)',
   textInverse: '#161618',
   textOnAccent: colors.forest[900],
   textDanger: '#ff7a7a',
@@ -126,7 +126,7 @@ export const darkColors: SemanticColors = {
   tabBarBg: 'rgba(31, 31, 34, 0.92)',
   tabBarBorder: 'rgba(255, 255, 255, 0.10)',
   tabBarActive: '#f2f2f3',
-  tabBarInactive: 'rgba(255, 255, 255, 0.55)',
+  tabBarInactive: 'rgba(255, 255, 255, 0.68)',
 
   // Floating action surfaces
   fabBg: colors.accent.neonGreen,
@@ -136,7 +136,7 @@ export const darkColors: SemanticColors = {
   searchBg: '#27272b',
   searchBorder: 'rgba(255, 255, 255, 0.10)',
   searchText: '#f2f2f3',
-  searchPlaceholder: 'rgba(255, 255, 255, 0.5)',
+  searchPlaceholder: 'rgba(255, 255, 255, 0.62)',
 
   // Filter chip
   chipBg: '#27272b',

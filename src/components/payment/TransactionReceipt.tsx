@@ -19,7 +19,7 @@ interface TransactionReceiptProps {
 export function TransactionReceipt({ transaction, isSender }: TransactionReceiptProps) {
   const { c } = useTheme();
   const styles = createStyles(c);
-  const statusColor = STATUS_COLORS[transaction.status] ?? colors.neutral[400];
+  const statusColor = STATUS_COLORS[transaction.status] ?? '#6b7264';
 
   return (
     <Card style={styles.container}>
@@ -85,8 +85,8 @@ const STATUS_COLORS: Record<string, string> = {
   pending: colors.warning,
   completed: colors.accent.green,
   failed: colors.error,
-  cancelled: colors.neutral[400],
-  refunded: colors.forest[400],
+  cancelled: '#6b7264',
+  refunded: '#525a4c',
 };
 
 const createStyles = (c: SemanticColors) =>

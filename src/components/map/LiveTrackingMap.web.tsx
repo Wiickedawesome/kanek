@@ -23,7 +23,7 @@ export function LiveTrackingMap({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.placeholder}>
-        <Icon name="navigation" size={32} color={colors.neutral[400]} />
+        <Icon name="navigation" size={32} color={'#6b7264'} />
         <Text style={styles.title}>Live tracking map</Text>
         <Text style={styles.subtitle}>Available on mobile devices</Text>
       </View>
@@ -61,11 +61,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...type.body.bold,
-    color: colors.neutral[500],
+    color: '#525a4c',
   },
   subtitle: {
     ...type.caption.regular,
-    color: colors.neutral[400],
+    color: '#6b7264',
   },
   infoOverlay: {
     position: 'absolute',

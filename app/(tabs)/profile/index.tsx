@@ -291,7 +291,7 @@ export default function ProfileScreen() {
           <View style={styles.statBox}>
             <View style={styles.statIconRow}>
               <Icon name="shield-alert" size={20} color={
-                (profile?.strikes_hard ?? 0) > 0 ? colors.error : colors.neutral[400]
+                (profile?.strikes_hard ?? 0) > 0 ? colors.error : '#6b7264'
               } />
               <Text style={styles.statValue}>
                 {(profile?.strikes_soft ?? 0) + (profile?.strikes_hard ?? 0)}

@@ -129,7 +129,7 @@ export default function ExploreMapScreen() {
           id: p.id,
           lng: p.origin_lng,
           lat: p.origin_lat,
-          color: PIN_COLORS[p.type] ?? colors.forest[400],
+          color: PIN_COLORS[p.type] ?? colors.forest[500],
           label: p.title,
         })),
     [posts],

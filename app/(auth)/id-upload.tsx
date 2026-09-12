@@ -16,13 +16,24 @@ import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import type { AppDispatch, RootState } from '@/store';
+import type { BelizeDistrict } from '@/types/database';
 import { Text } from '@/components/ui/Text';
+
+const BELIZE_DISTRICTS: { value: BelizeDistrict; label: string }[] = [
+  { value: 'belize', label: 'Belize' },
+  { value: 'cayo', label: 'Cayo' },
+  { value: 'corozal', label: 'Corozal' },
+  { value: 'orange_walk', label: 'Orange Walk' },
+  { value: 'stann_creek', label: 'Stann Creek' },
+  { value: 'toledo', label: 'Toledo' },
+];
 
 export default function IdUploadScreen() {
   const { c } = useTheme();
   const styles = createStyles(c);
   const [idUri, setIdUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
+  const [district, setDistrict] = useState<BelizeDistrict | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [webCamera, setWebCamera] = useState<{ facing: CameraFacing; target: 'id' | 'selfie' } | null>(null);
@@ -158,7 +169,7 @@ export default function IdUploadScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!idUri || !selfieUri || !user || !profile) return;
+    if (!idUri || !selfieUri || !user || !profile || !district) return;
     setIsUploading(true);
 
     const idPath = `${user.id}/id-${Date.now()}.jpg`;
@@ -181,6 +192,18 @@ export default function IdUploadScreen() {
 
       if (docError) {
         showAlert('Error', docError.message);
+        return;
+      }
+
+      // Persist the chosen district on the profile so the feed, map, and
+      // admin can use it for riders and drivers alike.
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ district })
+        .eq('id', user.id);
+
+      if (profileError) {
+        showAlert('Error', `Could not save your district: ${profileError.message}`);
         return;
       }
 
@@ -211,7 +234,7 @@ export default function IdUploadScreen() {
     }
   };
 
-  const canSubmit = idUri && selfieUri && profile && !isUploading;
+  const canSubmit = idUri && selfieUri && district && profile && !isUploading;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -265,6 +288,30 @@ export default function IdUploadScreen() {
             <Text style={styles.captureLabel}>Take Selfie</Text>
           </Pressable>
         )}
+
+        {/* District */}
+        <Text style={styles.sectionLabel}>Your District</Text>
+        <View style={styles.districtWrap}>
+          {BELIZE_DISTRICTS.map((entry) => {
+            const selected = district === entry.value;
+            return (
+              <Pressable
+                key={entry.value}
+                onPress={() => setDistrict(entry.value)}
+                accessibilityRole="button"
+                accessibilityLabel={`Select district ${entry.label}`}
+                style={[
+                  styles.districtChip,
+                  selected && styles.districtChipSelected,
+                ]}
+              >
+                <Text style={[styles.districtChipText, selected && styles.districtChipTextSelected]}>
+                  {entry.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Button
           title={uploadStatus ?? (isUploading ? 'Uploading...' : 'Submit for Review')}
@@ -368,6 +415,32 @@ const createStyles = (c: SemanticColors) =>
     ...type.bodySm.regular,
     color: colors.accent.blue,
     marginTop: spacing.sm,
+  },
+  districtWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  districtChip: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surface,
+  },
+  districtChipSelected: {
+    backgroundColor: c.chipSelectedBg,
+    borderColor: c.chipSelectedBg,
+  },
+  districtChipText: {
+    ...type.bodySm.regular,
+    color: c.text,
+  },
+  districtChipTextSelected: {
+    ...type.bodySm.bold,
+    color: c.chipSelectedText,
   },
   note: {
     ...type.caption.regular,

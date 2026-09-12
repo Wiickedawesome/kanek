@@ -15,7 +15,7 @@ const LIGHT_CONFIG: Record<AccountStatus, { label: string; icon: React.Component
   restricted: { label: 'Restricted', icon: 'alert-triangle', bg: '#fff3e0', fg: colors.warning },
   suspended: { label: 'Suspended', icon: 'shield-alert', bg: '#ffebee', fg: colors.error },
   suspended_pending_deletion: { label: 'Deleting', icon: 'shield-alert', bg: '#ffebee', fg: colors.error },
-  dormant: { label: 'Dormant', icon: 'clock', bg: '#f5f5f5', fg: colors.neutral[400] },
+  dormant: { label: 'Dormant', icon: 'clock', bg: '#f5f5f5', fg: '#6b7264' },
 };
 
 const DARK_CONFIG: typeof LIGHT_CONFIG = {
@@ -24,7 +24,7 @@ const DARK_CONFIG: typeof LIGHT_CONFIG = {
   restricted: { label: 'Restricted', icon: 'alert-triangle', bg: 'rgba(255, 193, 7, 0.18)', fg: '#ffd76d' },
   suspended: { label: 'Suspended', icon: 'shield-alert', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
   suspended_pending_deletion: { label: 'Deleting', icon: 'shield-alert', bg: 'rgba(211, 47, 47, 0.22)', fg: '#ff8a8a' },
-  dormant: { label: 'Dormant', icon: 'clock', bg: 'rgba(255, 255, 255, 0.08)', fg: 'rgba(255, 255, 255, 0.62)' },
+  dormant: { label: 'Dormant', icon: 'clock', bg: 'rgba(255, 255, 255, 0.08)', fg: 'rgba(255, 255, 255, 0.74)' },
 };
 
 export function VerificationStatus({ status }: VerificationStatusProps) {

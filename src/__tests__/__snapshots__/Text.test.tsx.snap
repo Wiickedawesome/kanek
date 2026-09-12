@@ -5,7 +5,7 @@ exports[`Text layout style overrides apply but do not override colour/font 1`] =
   style={
     [
       {
-        "color": "#656e5e",
+        "color": "#525a4c",
         "fontFamily": "Manrope-Regular",
         "fontSize": 16,
         "fontWeight": "400",
@@ -28,7 +28,7 @@ exports[`Text renders body medium muted 1`] = `
   style={
     [
       {
-        "color": "#656e5e",
+        "color": "#525a4c",
         "fontFamily": "Manrope-Medium",
         "fontSize": 16,
         "fontWeight": "500",
