@@ -33,7 +33,11 @@ export function useOnboardingStatus() {
     },
   );
 
-  const needsIdUpload = !!userId && !!profile && !needsRoleSelection && !riderDocument;
+  const needsIdUpload =
+    !!userId &&
+    !!profile &&
+    !needsRoleSelection &&
+    (!riderDocument || riderDocument.review_status === 'rejected');
 
   const { data: driverDetails, isLoading: driverDetailsLoading } = useGetDriverDetailsQuery(
     userId ?? '',
@@ -48,7 +52,7 @@ export function useOnboardingStatus() {
     profile.role === 'driver' &&
     !needsRoleSelection &&
     !needsIdUpload &&
-    !driverDetails;
+    (!driverDetails || driverDetails.review_status === 'rejected');
 
   const isLoading =
     authLoading ||
@@ -70,6 +74,8 @@ export function useOnboardingStatus() {
   const isIdRejected = riderDocument?.review_status === 'rejected';
   const isIdPending = riderDocument?.review_status === 'pending';
   const isIdApproved = riderDocument?.review_status === 'approved';
+  // A pending submission is a draft: the user may keep exploriing the app
+  // while an admin reviews. Rejected docs re-open the upload step (retake).
 
   const isDriverRejected = driverDetails?.review_status === 'rejected';
   const isDriverPending = driverDetails?.review_status === 'pending';

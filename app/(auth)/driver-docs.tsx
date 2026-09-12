@@ -345,7 +345,7 @@ export default function DriverDocsScreen() {
                 <View style={{ marginBottom: spacing.sm }}>
                   <TextInput
                     style={styles.input}
-                    placeholder="Search 26 Belize associations (e.g. Airport, Placencia)"
+                    placeholder="Search taxi associations (e.g. Airport, Placencia)"
                     placeholderTextColor={c.textMuted}
                     value={assocSearch}
                     onChangeText={setAssocSearch}
@@ -353,21 +353,27 @@ export default function DriverDocsScreen() {
                   />
                   {filteredAssociations.length > 0 && (
                     <View style={styles.suggestionsList}>
-                      {filteredAssociations.map((assoc) => (
-                        <Pressable
-                          key={assoc.name}
-                          style={styles.suggestionItem}
-                          onPress={() => {
-                            setSelectedAssociation(assoc);
-                            setAssocSearch('');
-                          }}
-                        >
-                          <Text style={styles.suggestionName} numberOfLines={1}>
-                            {assoc.name}
-                          </Text>
-                          <Text style={styles.suggestionDistrict}>{assoc.district}</Text>
-                        </Pressable>
-                      ))}
+                      <ScrollView
+                        style={styles.suggestionsScroll}
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                      >
+                        {filteredAssociations.map((assoc) => (
+                          <Pressable
+                            key={assoc.name}
+                            style={styles.suggestionItem}
+                            onPress={() => {
+                              setSelectedAssociation(assoc);
+                              setAssocSearch('');
+                            }}
+                          >
+                            <Text style={styles.suggestionName} numberOfLines={1}>
+                              {assoc.name}
+                            </Text>
+                            <Text style={styles.suggestionDistrict}>{assoc.district}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
                   <Pressable
@@ -517,15 +523,15 @@ const createStyles = (c: SemanticColors, isDark: boolean) =>
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.06)',
-    borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.20)',
+    backgroundColor: isDark ? 'rgba(249, 168, 37, 0.10)' : 'rgba(249, 168, 37, 0.08)',
+    borderColor: isDark ? 'rgba(249, 168, 37, 0.30)' : 'rgba(249, 168, 37, 0.22)',
     borderWidth: 1,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
   assocToggleRowActive: {
-    borderColor: '#F59E0B',
-    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.14)' : 'rgba(245, 158, 11, 0.10)',
+    borderColor: c.warning,
+    backgroundColor: isDark ? 'rgba(249, 168, 37, 0.16)' : 'rgba(249, 168, 37, 0.12)',
   },
   assocToggleLeft: {
     flexDirection: 'row',
@@ -538,7 +544,7 @@ const createStyles = (c: SemanticColors, isDark: boolean) =>
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.20)' : 'rgba(245, 158, 11, 0.15)',
+    backgroundColor: isDark ? 'rgba(249, 168, 37, 0.22)' : 'rgba(249, 168, 37, 0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -565,8 +571,8 @@ const createStyles = (c: SemanticColors, isDark: boolean) =>
     backgroundColor: c.surface,
   },
   checkboxActive: {
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
+    backgroundColor: c.warning,
+    borderColor: c.warning,
   },
   assocDetailsWrap: {
     marginTop: spacing.md,
@@ -616,6 +622,10 @@ const createStyles = (c: SemanticColors, isDark: boolean) =>
     marginTop: -spacing.xs,
     marginBottom: spacing.sm,
     overflow: 'hidden',
+  },
+  suggestionsScroll: {
+    // Fixed box dimensions preserved; now scrollable for the full list
+    maxHeight: 220,
   },
   suggestionItem: {
     paddingVertical: spacing.sm,

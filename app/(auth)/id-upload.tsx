@@ -11,7 +11,7 @@ import { Icon } from '@/components/icons';
 import { ScreenHeader, Button } from '@/components/ui';
 import { readUploadFile } from '@/lib/uploadFile';
 import { useAuth } from '@/hooks/useAuth';
-import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { profilesApi, useGetMyProfileQuery, useGetLatestRiderDocumentQuery, useDeleteAccountMutation } from '@/store/api/profilesApi';
 import { CameraCapture, type CameraFacing } from '@/components/CameraCapture';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
@@ -30,19 +30,48 @@ export default function IdUploadScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const { signOut } = useAuth();
   const { data: profile } = useGetMyProfileQuery(user?.id ?? '', { skip: !user?.id });
+  const { data: latestRiderDoc } = useGetLatestRiderDocumentQuery(user?.id ?? '', {
+    skip: !user?.id,
+  });
+  const [deleteAccount] = useDeleteAccountMutation();
+  const hasSubmittedBefore = !!latestRiderDoc;
+
+  const handleBack = () => {
+    if (isUploading) return;
+    // Pre-submit: photos are local state only — going back is lossless.
+    router.replace('/(auth)/role-select');
+  };
 
   const handleExit = async () => {
     if (isUploading) return;
 
-    const confirmed = await showConfirm(
-      'Go back to sign in?',
-      'This will sign you out so you can retry with a different account.',
-    );
+    // Pre-submit: nothing was written yet — a plain sign-out is enough.
+    if (!hasSubmittedBefore) {
+      const confirmed = await showConfirm(
+        'Use a different account?',
+        'You will be signed out. Your account is kept.',
+      );
+      if (!confirmed) return;
+      await signOut();
+      router.replace('/(auth)/login');
+      return;
+    }
 
+    // Post-submit (re-uploading after rejection): offer Cancel Application —
+    // soft-deletes the signup draft; user has 90 days to sign back in.
+    const confirmed = await showConfirm(
+      'Cancel application?',
+      'Your submitted documents will be removed and your account marked for deletion. You have 90 days to change your mind by signing back in.',
+    );
     if (!confirmed) return;
 
-    await signOut();
-    router.replace('/(auth)/login');
+    try {
+      await deleteAccount().unwrap();
+      await signOut();
+      router.replace('/(auth)/welcome');
+    } catch (err) {
+      showAlert('Error', err instanceof Error ? err.message : 'Could not cancel application.');
+    }
   };
 
   const requestCamera = async (): Promise<boolean> => {
@@ -188,10 +217,10 @@ export default function IdUploadScreen() {
     <SafeAreaView style={styles.container}>
       <ScreenHeader style={styles.header}>
         <Pressable
-          onPress={() => { void handleExit(); }}
+          onPress={handleBack}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Exit and sign out"
+          accessibilityLabel="Back to role selection"
         >
           <Icon name="chevron-left" size={24} color={c.text} />
         </Pressable>

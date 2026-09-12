@@ -22,6 +22,7 @@ export type SemanticColors = {
   textInverse: string;
   textOnAccent: string;
   textDanger: string;
+  warning: string;
   border: string;
   borderStrong: string;
   tabBarBg: string;
@@ -61,6 +62,7 @@ export const lightColors: SemanticColors = {
   textInverse: colors.neutral[0],
   textOnAccent: colors.forest[900],
   textDanger: colors.error,
+  warning: colors.warning,
 
   // Borders
   border: 'rgba(20, 40, 0, 0.08)',
@@ -114,6 +116,7 @@ export const darkColors: SemanticColors = {
   textInverse: '#161618',
   textOnAccent: colors.forest[900],
   textDanger: '#ff7a7a',
+  warning: colors.warning,
 
   // Borders
   border: 'rgba(255, 255, 255, 0.10)',
