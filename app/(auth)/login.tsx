@@ -293,8 +293,8 @@ const createStyles = (c: SemanticColors) =>
     marginBottom: spacing.xl,
   },
   loginLogo: {
-    width: 128,
-    height: 128,
+    width: 80,
+    height: 80,
     marginBottom: spacing.lg,
     alignSelf: 'center',
   },
