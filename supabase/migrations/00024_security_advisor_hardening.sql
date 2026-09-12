@@ -1,5 +1,11 @@
 -- 00024_security_advisor_hardening.sql
--- Addresses remaining Supabase Security Advisor warnings.
+-- Addresses remaining Supabase Security Advisor warnings AND adds the
+-- 'mark_flag_action_taken' enum value used by admin-api /moderation/review-flag
+-- (kanek.bz) when an admin marks a report as "Action taken".
+--
+-- NOTE: this migration was previously applied out-of-band to the live DB but
+-- never recorded in the migration ledger; statements are guarded so the
+-- recorded replay is idempotent.
 --
 -- Fixes:
 --   1. sync_driver_association_to_profile: mutable search_path
@@ -30,24 +36,34 @@ ALTER FUNCTION public.sync_driver_association_to_profile()
 
 DROP POLICY IF EXISTS "checkin_selfies_select_authenticated" ON storage.objects;
 
-CREATE POLICY "checkin_selfies_select_party" ON storage.objects
-FOR SELECT TO authenticated
-USING (
-  bucket_id = 'checkin-selfies'
-  AND (
-    -- Owner: the driver who uploaded the selfie
-    (storage.foldername(name))[1] = (SELECT auth.uid())::text
-    -- Contract party: the other user in the contract that this check-in belongs to
-    OR EXISTS (
-      SELECT 1 FROM public.driver_checkins dc
-      JOIN public.contracts c ON c.id = dc.contract_id
-      WHERE dc.selfie_url LIKE '%' || storage.filename(name) || '%'
-        AND (SELECT auth.uid()) = ANY(c.parties)
-    )
-    -- Admin
-    OR (SELECT public.is_admin())
-  )
-);
+DO $merge$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'checkin_selfies_select_party'
+  ) THEN
+    CREATE POLICY "checkin_selfies_select_party" ON storage.objects
+    FOR SELECT TO authenticated
+    USING (
+      bucket_id = 'checkin-selfies'
+      AND (
+        -- Owner: the driver who uploaded the selfie
+        (storage.foldername(name))[1] = (SELECT auth.uid())::text
+        -- Contract party: the other user in the contract that this check-in belongs to
+        OR EXISTS (
+          SELECT 1 FROM public.driver_checkins dc
+          JOIN public.contracts c ON c.id = dc.contract_id
+          WHERE dc.selfie_url LIKE '%' || storage.filename(name) || '%'
+            AND (SELECT auth.uid()) = ANY(c.parties)
+        )
+        -- Admin
+        OR (SELECT public.is_admin())
+      )
+    );
+  END IF;
+END
+$merge$;
 
 -- ============================================================================
 -- 3. HARDEN search_path ON ALL USER-CALLABLE SECURITY DEFINER FUNCTIONS
@@ -117,6 +133,15 @@ ALTER FUNCTION public.compute_rating_avg(p_user_id uuid)
 
 ALTER FUNCTION public.enforce_phone_change_rate_limit()
   SET search_path = public, pg_temp;
+
+-- ============================================================================
+-- 4. ADD MISSING ENUM VALUE FOR FLAG "ACTION TAKEN" AUDIT LOG
+-- ============================================================================
+-- admin-api (kanek.bz) inserts action = 'mark_flag_action_taken' when an admin
+-- marks a report as "Action taken". The enum lacked this value, so the insert
+-- failed and the whole admin action errored out.
+
+ALTER TYPE public.admin_action_type ADD VALUE IF NOT EXISTS 'mark_flag_action_taken';
 
 ALTER FUNCTION public.handle_booking_status_change()
   SET search_path = public, pg_temp;
