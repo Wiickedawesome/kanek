@@ -66,11 +66,11 @@ export default function DriverDocsScreen() {
   const [memberId, setMemberId] = useState('');
 
   const filteredAssociations = useMemo(() => {
-    if (!assocSearch.trim()) return BELIZE_TAXI_ASSOCIATIONS.slice(0, 5);
-    const q = assocSearch.toLowerCase();
+    const q = assocSearch.trim().toLowerCase();
+    if (!q) return BELIZE_TAXI_ASSOCIATIONS;
     return BELIZE_TAXI_ASSOCIATIONS.filter(
       (a) => a.name.toLowerCase().includes(q) || a.district.toLowerCase().includes(q)
-    ).slice(0, 5);
+    );
   }, [assocSearch]);
 
   const hasUploadedLicense = driverDocs.some(
