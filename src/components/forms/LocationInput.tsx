@@ -5,6 +5,8 @@ import { MapPicker } from '@/components/map/MapPicker';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { searchPlaces, type GeocodeSuggestion } from '@/lib/geocode';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 import { Text } from '@/components/ui/Text';
 
 type Suggestion = GeocodeSuggestion;
@@ -45,26 +47,44 @@ export function LocationInput({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectingRef = useRef(false);
   const selectedCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const searchIdRef = useRef(0);
+  const ownPosition = useSelector((s: RootState) => ({
+    latitude: s.location.latitude,
+    longitude: s.location.longitude,
+  }));
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
+      searchIdRef.current += 1;
       setSuggestions([]);
       setShowDropdown(false);
+      setLoading(false);
       return;
     }
 
+    const requestId = ++searchIdRef.current;
     setLoading(true);
     try {
-      const items = await searchPlaces(query, { limit: 5, minChars: 3 });
+      const items = await searchPlaces(query, {
+        limit: 5,
+        minChars: 3,
+        proximity:
+          ownPosition.latitude != null && ownPosition.longitude != null
+            ? { lat: ownPosition.latitude, lng: ownPosition.longitude }
+            : null,
+      });
+      if (requestId !== searchIdRef.current) return; // superseded
       setSuggestions(items);
       setShowDropdown(items.length > 0);
     } catch {
-      setSuggestions([]);
-      setShowDropdown(false);
+      if (requestId === searchIdRef.current) {
+        setSuggestions([]);
+        setShowDropdown(false);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === searchIdRef.current) setLoading(false);
     }
-  }, []);
+  }, [ownPosition.latitude, ownPosition.longitude]);
 
   const handleChangeText = useCallback(
     (text: string) => {

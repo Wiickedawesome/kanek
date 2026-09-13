@@ -1,6 +1,7 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
 import { invokeFunction } from '@/lib/invokeFunction';
+import { calculateRoute } from '@/lib/mapbox';
 import type { Database, PostType, PostStatus, BookingStatus } from '@/types/database';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -303,6 +304,46 @@ export const postsApi = createApi({
         { type: 'Post', id: 'MY_LIST' },
       ],
     }),
+
+    /** Owner-only: rewrite stale/missing route data with a fresh Mapbox calc. */
+    updatePostRouteInfo: builder.mutation<null, string>({
+      queryFn: async (postId) => {
+        const { data: post, error: fetchErr } = await supabase
+          .from('posts')
+          .select('id, author_id, origin_lat, origin_lng, dest_lat, dest_lng')
+          .eq('id', postId)
+          .maybeSingle();
+        if (fetchErr) return { error: { status: 'CUSTOM_ERROR' as const, error: fetchErr.message } };
+        if (!post) return { error: { status: 'CUSTOM_ERROR' as const, error: 'Post not found' } };
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id !== post.author_id) {
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'Only the post owner can update route info' } };
+        }
+        if (
+          post.origin_lat == null || post.origin_lng == null ||
+          post.dest_lat == null || post.dest_lng == null
+        ) {
+          return { error: { status: 'CUSTOM_ERROR' as const, error: 'Post has no coordinates to route from' } };
+        }
+
+        const route = await calculateRoute(
+          post.origin_lat, post.origin_lng, post.dest_lat, post.dest_lng,
+        );
+        const { error } = await supabase
+          .from('posts')
+          .update({
+            route_geometry: route.geometry,
+            route_distance_km: Math.round(route.distance_km * 10) / 10,
+            route_duration_min: route.duration_minutes,
+            route_fuel_cost_cents: route.fuel_cost_cents,
+          })
+          .eq('id', postId);
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: (_result, _error, id) => [{ type: 'Post', id }],
+    }),
   }),
 });
 
@@ -315,4 +356,5 @@ export const {
   useProceedRouteMutation,
   useCancelRouteShortMutation,
   useConfirmRecurringRouteMutation,
+  useUpdatePostRouteInfoMutation,
 } = postsApi;

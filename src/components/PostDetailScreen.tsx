@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,7 +17,7 @@ import { TaxiVerifiedBadge } from '@/components/profile';
 import { RouteInfoCard } from '@/components/cards/RouteInfoCard';
 import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
-import { useGetPostByIdQuery, useDeletePostMutation, useProceedRouteMutation, useCancelRouteShortMutation, useConfirmRecurringRouteMutation } from '@/store/api/postsApi';
+import { useGetPostByIdQuery, useDeletePostMutation, useProceedRouteMutation, useCancelRouteShortMutation, useConfirmRecurringRouteMutation, useUpdatePostRouteInfoMutation } from '@/store/api/postsApi';
 import { useCreateBookingMutation, useGetBookingForPostQuery, useGetPostBookingsQuery, useAcceptApplicantMutation, useRejectApplicantMutation, useLazyGetMyConflictingContractsQuery, useLazyGetApplicantConflictsQuery } from '@/store/api/bookingsApi';
 import { useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { buildPointMapUrl, buildRouteMapUrl } from '@/lib/mapbox';
@@ -138,6 +138,28 @@ export default function PostDetailScreen({ backFallback }: Props) {
   );
   const [acceptApplicant] = useAcceptApplicantMutation();
   const [rejectApplicant] = useRejectApplicantMutation();
+  const [updatePostRouteInfo] = useUpdatePostRouteInfoMutation();
+
+  // Owner convenience: if a route post saved without Mapbox data (creation
+  // hiccup), recompute once in the background so the map/tracing works.
+  const refreshedRouteRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = postId ?? null;
+    if (!key || refreshedRouteRef.current === key) return;
+    const missingGeometry =
+      post != null &&
+      post.author_id === userId &&
+      post.origin_lat != null &&
+      post.origin_lng != null &&
+      post.dest_lat != null &&
+      post.dest_lng != null &&
+      (post.route_geometry == null || (post.route_distance_km ?? 0) <= 0);
+    if (!missingGeometry) return;
+    refreshedRouteRef.current = key;
+    updatePostRouteInfo(key).catch(() => {
+      // Non-fatal — map just stays as-is
+    });
+  }, [postId, post, userId, updatePostRouteInfo]);
   const [isBooking, setIsBooking] = useState(false);
   const [actionBookingId, setActionBookingId] = useState<string | null>(null);
 

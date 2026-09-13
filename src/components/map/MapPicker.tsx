@@ -48,6 +48,7 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchIdRef = useRef(0);
   // Key to force MapPickerContent to re-render with new center
   const [mapKey, setMapKey] = useState(0);
 
@@ -61,30 +62,46 @@ export function MapPicker({ visible, onClose, onConfirm, initialCoords, title = 
 
   const searchPlaces = useCallback(async (text: string) => {
     if (text.length < 2) {
+      searchIdRef.current += 1;
       setResults([]);
       setShowResults(false);
+      setSearching(false);
       return;
     }
+    const requestId = ++searchIdRef.current;
     setSearching(true);
     try {
-      const items = await searchGeocode(text, { limit: 6, minChars: 2 });
+      const items = await searchGeocode(text, {
+        limit: 6,
+        minChars: 2,
+        proximity:
+          userLat != null && userLng != null ? { lat: userLat, lng: userLng } : null,
+      });
+      if (requestId !== searchIdRef.current) return; // superseded
       setResults(items);
       setShowResults(items.length > 0);
     } catch {
-      setResults([]);
-      setShowResults(false);
+      if (requestId === searchIdRef.current) {
+        setResults([]);
+        setShowResults(false);
+      }
     } finally {
-      setSearching(false);
+      if (requestId === searchIdRef.current) setSearching(false);
     }
-  }, []);
+  }, [userLat, userLng]);
+
+  const searchPlacesRef = useRef(searchPlaces);
+  useEffect(() => {
+    searchPlacesRef.current = searchPlaces;
+  }, [searchPlaces]);
 
   const handleQueryChange = useCallback(
     (text: string) => {
       setQuery(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => searchPlaces(text), 300);
+      debounceRef.current = setTimeout(() => searchPlacesRef.current(text), 300);
     },
-    [searchPlaces],
+    [],
   );
 
   const handleSelectResult = useCallback((item: SearchResult) => {

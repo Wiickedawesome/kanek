@@ -23,9 +23,9 @@ export interface GeocodeSuggestion {
  */
 export async function searchPlaces(
   query: string,
-  options: { limit?: number; minChars?: number } = {},
+  options: { limit?: number; minChars?: number; proximity?: { lat: number; lng: number } | null } = {},
 ): Promise<GeocodeSuggestion[]> {
-  const { limit = 6, minChars = 2 } = options;
+  const { limit = 6, minChars = 2, proximity = null } = options;
   if (query.length < minChars) return [];
 
   // 1. Instant local results
@@ -45,7 +45,8 @@ export async function searchPlaces(
     const url =
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
       `?access_token=${MAPBOX_ACCESS_TOKEN}&bbox=${bbox}&country=BZ&limit=${limit}` +
-      `&types=place,locality,neighborhood,address,poi`;
+      `&types=place,locality,neighborhood,address,poi,street,postcode` +
+      (proximity ? `&proximity=${proximity.lng},${proximity.lat}` : '');
 
     const res = await fetch(url);
     const data = await res.json();

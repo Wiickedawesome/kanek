@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { BELIZE_CENTER, BELIZE_ZOOM, BELIZE_BOUNDS } from '@/lib/mapbox';
@@ -42,9 +42,21 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
     },
     ref,
   ) => {
-    const centerCoord = center
-      ? [center.longitude, center.latitude]
-      : [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude];
+    // When a parent owns the camera via cameraRef, the declarative Camera
+    // must not re-fly on every parent re-render (it fights imperative
+    // setCamera calls and snaps the view). Only apply center/zoom once,
+    // at mount; afterwards the ref-based owner drives the camera.
+    const centerCoord = useMemo<[number, number]>(
+      () => (center ? [center.longitude, center.latitude] : [BELIZE_CENTER.longitude, BELIZE_CENTER.latitude]),
+      // center only matters at mount when a cameraRef owner exists
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [cameraRef ? null : center],
+    );
+    const zoomLevel = useMemo(
+      () => zoom ?? BELIZE_ZOOM,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [cameraRef ? null : zoom],
+    );
 
     return (
       <View style={[styles.container, style]}>
@@ -62,7 +74,7 @@ export const KanekMap = forwardRef<MapboxGL.MapView, KanekMapProps>(
           <MapboxGL.Camera
             ref={cameraRef}
             centerCoordinate={centerCoord}
-            zoomLevel={zoom ?? BELIZE_ZOOM}
+            zoomLevel={zoomLevel}
             minZoomLevel={6}
             maxZoomLevel={18}
             maxBounds={{ ne: BELIZE_NE, sw: BELIZE_SW }}

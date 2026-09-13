@@ -50,6 +50,8 @@ const FUEL_PRICE_LOOKBACK_DAYS = 30;
 
 /** Cached fuel price to avoid repeated DB calls within a session */
 let _cachedFuelPrice: number | null = null;
+const FUEL_CACHE_TTL_MS = 60 * 60 * 1000; // re-price at most hourly
+let _cachedFuelPriceAt = 0;
 
 /**
  * Fetch the current regular fuel price (BZD per Belize gallon → per litre) from
@@ -58,7 +60,9 @@ let _cachedFuelPrice: number | null = null;
  * no reports exist in that window.
  */
 async function getFuelPricePerLitre(): Promise<number> {
-  if (_cachedFuelPrice !== null) return _cachedFuelPrice;
+  if (_cachedFuelPrice !== null && Date.now() - _cachedFuelPriceAt < FUEL_CACHE_TTL_MS) {
+    return _cachedFuelPrice;
+  }
 
   try {
     const cutoff = new Date();
@@ -89,10 +93,12 @@ async function getFuelPricePerLitre(): Promise<number> {
       if (latest?.regular_cents) {
         // Stored as cents-per-Belize-gallon → convert to BZD/litre
         _cachedFuelPrice = latest.regular_cents / 100 / BELIZE_GALLON_LITRES;
+        _cachedFuelPriceAt = Date.now();
         return _cachedFuelPrice;
       }
       // absolute fallback — should rarely happen
       _cachedFuelPrice = DEFAULT_FUEL_PRICE_PER_LITRE;
+      _cachedFuelPriceAt = Date.now();
       return _cachedFuelPrice;
     }
 
@@ -106,9 +112,11 @@ async function getFuelPricePerLitre(): Promise<number> {
 
     // Convert: cents → dollars, Belize gallon → litres
     _cachedFuelPrice = medianCents / 100 / BELIZE_GALLON_LITRES;
+    _cachedFuelPriceAt = Date.now();
     return _cachedFuelPrice;
   } catch {
     _cachedFuelPrice = DEFAULT_FUEL_PRICE_PER_LITRE; // last-resort fallback
+    _cachedFuelPriceAt = Date.now();
     return _cachedFuelPrice;
   }
 }
@@ -137,7 +145,15 @@ export async function calculateRoute(
   destLat: number,
   destLng: number,
   waypoints: { lat: number; lng: number }[] = [],
+  signal?: AbortSignal,
 ): Promise<RouteInfo> {
+  if (
+    !isInBelize(originLat, originLng) ||
+    !isInBelize(destLat, destLng) ||
+    waypoints.some((w) => !isInBelize(w.lat, w.lng))
+  ) {
+    throw new Error('Route endpoints must be inside Belize');
+  }
   const coords = [
     `${originLng},${originLat}`,
     ...waypoints.map((waypoint) => `${waypoint.lng},${waypoint.lat}`),
@@ -147,7 +163,7 @@ export async function calculateRoute(
     `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}` +
     `?geometries=geojson&overview=full&access_token=${MAPBOX_ACCESS_TOKEN}`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) {
     throw new Error(`Mapbox Directions error: ${res.status}`);
   }
@@ -193,23 +209,32 @@ export function formatDuration(minutes: number): string {
  * falls back to the Mapbox Geocoding API for broader coverage.
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  // Try local POI data first — instant, no network needed
-  const nearbyPoi = findNearestPoi(lat, lng, 100);
+  const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+  // Try local POI data first — instant, no network needed.
+  // 500 m catches place names for pins dropped near a POI but not exactly on it.
+  const nearbyPoi = findNearestPoi(lat, lng, 500);
   if (nearbyPoi) return nearbyPoi.place_name;
 
   const url =
     `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
-    `?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,locality,neighborhood,address,poi&limit=1`;
+    `?access_token=${MAPBOX_ACCESS_TOKEN}&types=address,poi,neighborhood&limit=1`;
 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    const data = await res.json();
-    const feature = data.features?.[0];
-    return feature?.place_name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  } catch {
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  // Retry once — a transient Mapbox failure shouldn't store raw coordinates
+  // as a human-readable address.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const feature = data.features?.[0];
+      if (feature?.place_name) return feature.place_name;
+    } catch {
+      // fall through to next attempt
+    }
   }
+
+  return fallback;
 }
 
 // ── Mapbox Static Map URL builders ───────────────────────────────────

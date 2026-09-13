@@ -62,7 +62,7 @@ export function LiveTrackingMap({
   const safeOrigin = useMemo(() => safeCoord(origin), [origin]);
   const safeDestination = useMemo(() => safeCoord(destination), [destination]);
 
-  // Follow driver position when it updates
+  // Follow driver position when it updates (only while tracking live)
   useEffect(() => {
     if (!driverCoord || !cameraRef.current) return;
     cameraRef.current.setCamera({
@@ -72,6 +72,26 @@ export function LiveTrackingMap({
       animationMode: 'easeTo',
     });
   }, [driverCoord]);
+
+  // Fit the whole route line on screen whenever its shape changes.
+  // Uses Mapbox's own bounds computation via flyTo-less setCamera bounds.
+  useEffect(() => {
+    if (!routeCoordinates || routeCoordinates.length < 2 || !cameraRef.current) return;
+    if (!driverCoord) {
+      // Riders pre-trip and no live driver yet: show the full route.
+      const lats = routeCoordinates.map((p) => p[1]);
+      const lngs = routeCoordinates.map((p) => p[0]);
+      cameraRef.current.setCamera({
+        bounds: {
+          ne: [Math.max(...lngs), Math.max(...lats)],
+          sw: [Math.min(...lngs), Math.min(...lats)],
+        },
+        padding: { paddingTop: 80, paddingBottom: 80, paddingLeft: 60, paddingRight: 60 },
+        animationDuration: 800,
+        animationMode: 'easeTo',
+      });
+    }
+  }, [routeCoordinates, driverCoord]);
 
   // Compute initial center — driver position, origin, destination, or
   // Belize fallback. Reactive to current props (not mount-only) so the
@@ -102,12 +122,14 @@ export function LiveTrackingMap({
   // need their own ETA back to the passenger. Quantized to ~250 m so the
   // feed of Mapbox calls stays sane while the position ticks every few s.
   const [pickupEtaMin, setPickupEtaMin] = useState<number | null>(null);
+  const [stationaryTick, setStationaryTick] = useState(0);
   const etaDriverPos = useMemo(() => {
     if (!driverLocation || isDriver) return null;
-    return {
-      lat: Math.round(driverLocation.latitude * 450) / 250,
-      lng: Math.round(driverLocation.longitude * 250) / 250,
-    };
+    // Quantize both axes to the same ~250 m grid (1° ≈ 111 km → 0.00225°).
+    const lat = Math.round(driverLocation.latitude * 450) / 450;
+    const lng = Math.round(driverLocation.longitude * 450) / 450;
+    if (!isInBelize(lat, lng)) return null;
+    return { lat, lng };
     // Quantizing deps on the primitive fields; driverLocation ref itself stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDriver, driverLocation?.latitude, driverLocation?.longitude]);
@@ -118,7 +140,7 @@ export function LiveTrackingMap({
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     (async () => {
       try {
         const route = await calculateRoute(
@@ -126,16 +148,26 @@ export function LiveTrackingMap({
           etaDriverPos.lng,
           safeOrigin[1],
           safeOrigin[0],
+          [],
+          controller.signal,
         );
-        if (!cancelled) setPickupEtaMin(route.duration_minutes);
+        setPickupEtaMin(route.duration_minutes);
       } catch {
-        if (!cancelled) setPickupEtaMin(null); // Mapbox hiccup — hide ETA
+        if (!controller.signal.aborted) setPickupEtaMin(null); // Mapbox hiccup — hide ETA
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
+  }, [etaDriverPos, safeOrigin, stationaryTick]);
+
+  // Re-run ETA for a stationary driver — drift or traffic changes without
+  // position ticks. Cheap: quantized position dedupes against the last call.
+  useEffect(() => {
+    if (!etaDriverPos || !safeOrigin) return;
+    const interval = setInterval(() => {
+      setStationaryTick((t) => t + 1);
+    }, 60_000);
+    return () => clearInterval(interval);
   }, [etaDriverPos, safeOrigin]);
 
   return (
