@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { showAlert, showConfirm } from '@/lib/alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, usePathname, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { ScreenHeader, ScreenLoader, Card, Avatar, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
@@ -44,6 +44,21 @@ export default function ProfileScreen() {
   const [updateProfile] = useUpdateProfileMutation();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+
+  const profilePathname = usePathname();
+  const profileLeftRoute = useRef<string | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      const left = profileLeftRoute.current;
+      profileLeftRoute.current = null;
+      if (left && left.startsWith('/profile') && left !== '/profile' && left !== '/profile/') {
+        setShowAllReviews(false);
+      }
+      return () => {
+        profileLeftRoute.current = profilePathname;
+      };
+    }, [profilePathname]),
+  );
 
   const {
     data: profile,
@@ -381,8 +396,8 @@ export default function ProfileScreen() {
           <MenuItem
             icon="clipboard-list"
             label="My Documents"
-            badge={docBadge?.label}
-            badgeTone={docBadge?.tone}
+            badge={docBadge?.label === 'Verified' ? undefined : docBadge?.label}
+            badgeTone={docBadge?.label === 'Verified' ? undefined : docBadge?.tone}
             onPress={() => router.push('/(tabs)/profile/documents')}
           />
           <MenuItem

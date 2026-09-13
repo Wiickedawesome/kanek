@@ -11,8 +11,10 @@ interface RouteInfoCardProps {
   distanceKm: number;
   durationMinutes: number;
   fuelCostCents: number;
-  /** Per-seat price shown instead of the fuel-cost stat when provided. */
-  pricePerSeatCents?: number | null;
+  /** Paying price shown instead of the fuel-cost stat when provided. */
+  priceCents?: number | null;
+  /** Label under the price (e.g. "Per seat", "Pay"). Defaults to "Price". */
+  priceLabel?: string;
 }
 
 interface RouteInfoLoadingProps {
@@ -38,7 +40,7 @@ export function RouteInfoCard(props: Props) {
     );
   }
 
-  const { distanceKm, durationMinutes, fuelCostCents, pricePerSeatCents } = props;
+  const { distanceKm, durationMinutes, fuelCostCents, priceCents, priceLabel } = props;
 
   return (
     <View style={styles.card}>
@@ -54,13 +56,13 @@ export function RouteInfoCard(props: Props) {
         <Text variant="caption" tone="muted">Drive time</Text>
       </View>
       <View style={styles.divider} />
-      {pricePerSeatCents != null ? (
+      {priceCents != null ? (
         <View style={styles.stat}>
           <Icon name="seat" size={18} color={colors.accent.green} />
           <Text variant="body" weight="bold" style={styles.priceText}>
-            {formatBZD(pricePerSeatCents)}
+            {formatBZD(priceCents)}
           </Text>
-          <Text variant="caption" tone="muted">Per seat</Text>
+          <Text variant="caption" tone="muted">{priceLabel ?? 'Price'}</Text>
         </View>
       ) : (
         <View style={styles.stat}>

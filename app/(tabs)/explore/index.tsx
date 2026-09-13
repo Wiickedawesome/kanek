@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -13,7 +13,7 @@ import {
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import { router } from 'expo-router';
+import { router, usePathname, useFocusEffect } from 'expo-router';
 import { colors, type, spacing, borderRadius, shadows, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { FilterChip, EmptyState, ScreenHeader, FeedListSkeleton, MapFab, useFloatingTabBarPad } from '@/components/ui';
@@ -57,6 +57,32 @@ export default function ExploreScreen() {
   const [showDistance, setShowDistance] = useState(false);
   const [sort, setSort] = useState<FeedSort>(() => getDefaultSortForFilter(null));
   const [sortOpen, setSortOpen] = useState(false);
+
+  // Reset search/filters when returning to the tab after leaving it.
+  const pathname = usePathname();
+  const leftRoute = useRef<string | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      const left = leftRoute.current;
+      leftRoute.current = null;
+      if (
+        left &&
+        left.startsWith('/explore') &&
+        left !== '/explore' &&
+        left !== '/explore/' &&
+        left !== '/explore/map' &&
+        left !== '/explore/notifications'
+      ) {
+        setSearch('');
+        setTypeFilter(null);
+        setDistanceFilter(null);
+        setSort(getDefaultSortForFilter(null));
+      }
+      return () => {
+        leftRoute.current = pathname;
+      };
+    }, [pathname]),
+  );
 
   const onSelectFilter = useCallback((value: FeedFilter) => {
     setTypeFilter(value);
@@ -194,7 +220,7 @@ export default function ExploreScreen() {
             )}
           </View>
           <Pressable
-            onPress={() => router.navigate('/(tabs)/activity/notifications')}
+            onPress={() => router.push('/(tabs)/explore/notifications')}
             hitSlop={12}
             style={styles.bellButton}
             accessibilityRole="button"

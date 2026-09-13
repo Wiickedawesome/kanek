@@ -243,7 +243,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
   const isErrand = post.type === 'errand' || post.type === 'package';
   const isPostOpen = effectiveStatus === 'open';
   const isRouteOffer = post.type === 'route_offer';
-  const showSeatsInfo = isRouteOffer && post.seats_total != null;
+  const showSeatsInfo = (post.seats_total ?? 0) > 0 && post.seats_total != null;
   const showJobPrice = post.type === 'job' && post.pay_rate_cents != null;
   const jobPriceCents = showJobPrice ? post.pay_rate_cents : null;
   const jobPayType = post.type === 'job' ? post.pay_type : null;
@@ -271,7 +271,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
     const isBusy = actionBookingId === b.id;
 
     const profilePress = b.user?.id
-      ? () => router.push({ pathname: '/modals/user-profile', params: { userId: b.user!.id } })
+      ? () => router.push({ pathname: '/modals/user-profile', params: { userId: b.user!.id, backFallback } })
       : undefined;
 
     return (
@@ -772,7 +772,8 @@ export default function PostDetailScreen({ backFallback }: Props) {
             distanceKm={post.route_distance_km}
             durationMinutes={post.route_duration_min}
             fuelCostCents={post.route_fuel_cost_cents}
-            pricePerSeatCents={isRoute ? post.price_cents : null}
+            priceCents={isRoute || isErrand ? post.price_cents : jobPriceCents}
+            priceLabel={isRoute ? 'Per seat' : isErrand ? 'Price' : jobPayType === 'hourly' ? 'Per hour' : 'Fixed pay'}
           />
         )}
 
@@ -784,23 +785,22 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </View>
         )}
 
-        {/* Price */}
-        {isRoute && post.price_cents != null && (
-          <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={c.textMuted} />
-            <Text style={styles.infoText}>
-              {formatBZD(post.price_cents)}{post.type === 'route_offer' ? '/seat' : ' offered'}
-            </Text>
-          </View>
-        )}
-
-        {/* Seats (route_offer) */}
+        {/* Seats filled */}
         {showSeatsInfo && (
           <View style={styles.infoRow}>
             <Icon name="user" size={18} color={c.textMuted} />
             <Text style={styles.infoText}>
               {post.seats_filled}/{post.seats_total} seats filled
-              {post.min_riders != null ? ` · Min ${post.min_riders} to go` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Spots needed to go */}
+        {post.min_riders != null && (
+          <View style={styles.infoRow}>
+            <Icon name="user" size={18} color={c.textMuted} />
+            <Text style={styles.infoText}>
+              {Math.max(post.min_riders - (post.seats_filled ?? 0))} more to go
             </Text>
           </View>
         )}
@@ -899,15 +899,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           </>
         )}
 
-        {/* Job pay */}
-        {showJobPrice && (
-          <View style={styles.infoRow}>
-            <Icon name="receipt" size={18} color={c.textMuted} />
-            <Text style={styles.infoText}>
-              Pay: {formatBZD(jobPriceCents!)}{jobPayType === 'hourly' ? '/hr' : ' fixed'}
-            </Text>
-          </View>
-        )}
+        {/* Job category */}
         {jobCategory != null && (
           <View style={styles.infoRow}>
             <Icon name="package" size={18} color={c.textMuted} />
@@ -943,7 +935,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             style={styles.authorRow}
             onPress={() => {
               if (post.author_id && !isOwner) {
-                router.push({ pathname: '/modals/user-profile', params: { userId: post.author_id } });
+                router.push({ pathname: '/modals/user-profile', params: { userId: post.author_id, backFallback } });
               }
             }}
             disabled={isOwner}

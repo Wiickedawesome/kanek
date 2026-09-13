@@ -22,7 +22,12 @@ import { Text } from '@/components/ui/Text';
 export default function UserProfileModal() {
   const { c } = useTheme();
   const styles = createStyles(c);
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { userId, backFallback } = useLocalSearchParams<{
+    userId: string;
+    backFallback?: string;
+  }>();
+  const profileFallbackBack =
+    backFallback && backFallback.length > 0 ? backFallback : '/(tabs)/explore/';
 
   const {
     data: profile,
@@ -54,7 +59,7 @@ export default function UserProfileModal() {
       <SafeAreaView style={styles.centered}>
         <Icon name="user" size={48} color={c.textMuted} />
         <Text style={styles.errorText}>User not found</Text>
-        <Pressable onPress={() => safeGoBack('/(tabs)/explore/')}>
+        <Pressable onPress={() => safeGoBack(profileFallbackBack)}>
           <Text style={styles.backLink}>Go back</Text>
         </Pressable>
       </SafeAreaView>
@@ -71,7 +76,7 @@ export default function UserProfileModal() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <ScreenHeader title="Trust Profile" onBack={() => safeGoBack('/(tabs)/explore/')} />
+      <ScreenHeader title="Trust Profile" onBack={() => safeGoBack(profileFallbackBack)} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User identity */}

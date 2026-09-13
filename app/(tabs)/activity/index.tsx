@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, usePathname, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { ScreenHeader, FeedListSkeleton, Card, EmptyState, useFloatingTabBarPad } from '@/components/ui';
 import { Icon } from '@/components/icons';
@@ -52,6 +52,27 @@ export default function ActivityScreen() {
   const initialTab = params.tab === 'history' ? 'history' : 'my_posts';
   const [tab, setTab] = useState<Tab>(initialTab);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
+
+  const activityPathname = usePathname();
+  const activityLeftRoute = useRef<string | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      const left = activityLeftRoute.current;
+      activityLeftRoute.current = null;
+      if (
+        left &&
+        left.startsWith('/activity') &&
+        left !== '/activity' &&
+        left !== '/activity/' &&
+        left !== '/activity/notifications'
+      ) {
+        setTab(initialTab);
+      }
+      return () => {
+        activityLeftRoute.current = activityPathname;
+      };
+    }, [activityPathname, initialTab]),
+  );
 
   const { data: unreadCount = 0 } = useGetUnreadCountQuery(userId ?? '', {
     skip: !userId,

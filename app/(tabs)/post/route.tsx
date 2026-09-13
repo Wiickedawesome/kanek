@@ -477,7 +477,8 @@ export default function RouteFormScreen() {
               distanceKm={routeInfo.distance_km}
               durationMinutes={routeInfo.duration_minutes}
               fuelCostCents={routeInfo.fuel_cost_cents}
-              pricePerSeatCents={isOffer && priceDollars ? Math.round(parseFloat(priceDollars) * 100) : null}
+              priceCents={isOffer && priceDollars ? Math.round(parseFloat(priceDollars) * 100) : null}
+              priceLabel={"Per seat"}
             />
           )}
 
