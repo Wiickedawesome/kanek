@@ -1,8 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
+  Pressable,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector , useDispatch } from 'react-redux';
@@ -10,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/icons';
 import { Button, Card, ScreenHeader, ScreenLoader, useFloatingTabBarPad } from '@/components/ui';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
-import { colors, type, spacing, useTheme } from '@/theme';
+import { colors, type, spacing, borderRadius, useTheme } from '@/theme';
 import type { SemanticColors } from '@/theme/semanticColors';
 import { supabase } from '@/lib/supabase';
 import { safeGoBack } from '@/lib/helpers';
@@ -19,8 +21,11 @@ import { readUploadFile, getSafeUploadExtension } from '@/lib/uploadFile';
 import {
   useGetLatestRiderDocumentQuery,
   useGetMyProfileQuery,
+  useGetDriverDetailsQuery,
   profilesApi,
+  useUpdateTaxiAssociationMutation,
 } from '@/store/api/profilesApi';
+import { BELIZE_TAXI_ASSOCIATIONS } from '@/data/taxiAssociations';
 import {
   useGetDriverDocumentsQuery,
   useUpsertDriverDocumentMutation,
@@ -67,9 +72,53 @@ export default function DocumentsScreen() {
     { skip: !userId },
   );
   const [upsertDriverDoc] = useUpsertDriverDocumentMutation();
+  const [updateTaxiAssociation] = useUpdateTaxiAssociationMutation();
   const [govIdUploading, setGovIdUploading] = useState(false);
+  const { data: driverDetails } = useGetDriverDetailsQuery(userId ?? '', { skip: !userId });
+
+  // Taxi affiliation manager state
+  const [assocExpanded, setAssocExpanded] = useState(false);
+  const [assocSearch, setAssocSearch] = useState('');
+  const [assocMemberId, setAssocMemberId] = useState('');
+  const [assocSaving, setAssocSaving] = useState(false);
 
   const isDriver = profile?.role === 'driver';
+  const currentAssoc = driverDetails?.taxi_association_name ?? null;
+  const assocVerified = driverDetails?.taxi_association_verified ?? false;
+  const existingAssocCard = driverDocs.find((d) => d.document_type === 'taxi_association_card') ?? null;
+
+  const filteredAssociations = useMemo(() => {
+    const q = assocSearch.trim().toLowerCase();
+    if (!q) return BELIZE_TAXI_ASSOCIATIONS;
+    return BELIZE_TAXI_ASSOCIATIONS.filter(
+      (a) => a.name.toLowerCase().includes(q) || a.district.toLowerCase().includes(q),
+    );
+  }, [assocSearch]);
+
+  const handleSaveAssociation = useCallback(async (associationName: string | null, associationId: string | null) => {
+    if (!userId) return;
+    setAssocSaving(true);
+    try {
+      await updateTaxiAssociation({
+        associationName,
+        associationId,
+        memberId: associationName ? assocMemberId.trim() || null : null,
+      }).unwrap();
+      setAssocExpanded(false);
+      setAssocSearch('');
+      setAssocMemberId('');
+      showAlert(
+        'Affiliation Updated',
+        associationName
+          ? `Affiliation set to "${associationName}". Verification was reset — an admin will re-review.`
+          : 'Taxi affiliation removed. Verification badge cleared.',
+      );
+    } catch (err) {
+      showAlert('Update Failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setAssocSaving(false);
+    }
+  }, [assocMemberId, updateTaxiAssociation, userId]);
   const govIdStatus: ReviewStatus | 'not_uploaded' = riderDocument?.review_status ?? 'not_uploaded';
 
   // Summary for drivers
@@ -230,12 +279,113 @@ export default function DocumentsScreen() {
           );
         })}
 
-        {(profile?.taxi_association_name || driverDocs.some((d) => d.document_type === 'taxi_association_card')) && (
+        {/* Taxi Association manager — drivers only */}
+        {isDriver && (
+          <Card style={styles.assocCard}>
+            <View style={styles.assocHeader}>
+              <View style={styles.govIdInfo}>
+                <Icon
+                  name="taxi-verified"
+                  size={20}
+                  color={currentAssoc ? (assocVerified ? '#F59E0B' : colors.warning) : '#6b7264'}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.docName}>Taxi Association</Text>
+                  <Text style={[styles.statusText, { color: currentAssoc ? (assocVerified ? '#F59E0B' : colors.warning) : '#6b7264' }]}>
+                    {!currentAssoc
+                      ? 'Not affiliated — optional'
+                      : assocVerified
+                        ? `${currentAssoc} — Verified`
+                        : `${currentAssoc} — In review`}
+                  </Text>
+                </View>
+              </View>
+              <Button
+                title={currentAssoc ? 'Change / Remove' : 'Add'}
+                variant={currentAssoc ? 'outline' : 'primary'}
+                onPress={() => setAssocExpanded((v) => !v)}
+                style={styles.uploadBtn}
+              />
+            </View>
+
+            {assocExpanded && (
+              <View style={styles.assocEditor}>
+                {currentAssoc && (
+                  <Pressable
+                    style={styles.assocRemoveBtn}
+                    disabled={assocSaving}
+                    onPress={() => handleSaveAssociation(null, null)}
+                  >
+                    <Text style={styles.assocRemoveText}>Remove affiliation (clears badge)</Text>
+                  </Pressable>
+                )}
+                <Text style={styles.assocHint}>Search your association or co-op:</Text>
+                <TextInput
+                  style={styles.assocSearchInput}
+                  placeholder="Search by name or district"
+                  placeholderTextColor="#6b7264"
+                  value={assocSearch}
+                  onChangeText={setAssocSearch}
+                  maxLength={100}
+                />
+                <ScrollView
+                  style={styles.assocList}
+                  nestedScrollEnabled
+                >
+                  {filteredAssociations.map((a) => (
+                    <Pressable
+                      key={a.name}
+                      style={styles.assocRow}
+                      disabled={assocSaving}
+                      onPress={() => handleSaveAssociation(a.name, null)}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.assocRowName}>{a.name}</Text>
+                        <Text style={styles.assocRowDistrict}>{a.district}</Text>
+                      </View>
+                      {currentAssoc === a.name && (
+                        <Icon name="circle-dot" size={14} color={colors.accent.green} />
+                      )}
+                    </Pressable>
+                  ))}
+                  {filteredAssociations.length === 0 && (
+                    <Pressable
+                      style={styles.assocRow}
+                      disabled={assocSaving}
+                      onPress={() =>
+                        handleSaveAssociation(assocSearch.trim(), null)
+                      }
+                    >
+                      <Text style={styles.assocRowName}>
+                        Use custom: &quot;{assocSearch.trim()}&quot;
+                      </Text>
+                    </Pressable>
+                  )}
+                </ScrollView>
+                <TextInput
+                  style={styles.assocSearchInput}
+                  placeholder="Member ID / Permit number (optional)"
+                  placeholderTextColor="#6b7264"
+                  value={assocMemberId}
+                  onChangeText={setAssocMemberId}
+                  maxLength={50}
+                />
+                <Text style={styles.assocHint}>
+                  Changing or removing your affiliation resets verification — an admin will re-review
+                  your taxi card.
+                </Text>
+              </View>
+            )}
+          </Card>
+        )}
+
+        {/* Taxi association card upload — only when affiliated (or already uploaded) */}
+        {(isDriver && currentAssoc) && (
           <DocumentUploadCard
             key="taxi_association_card"
             userId={userId!}
             documentType="taxi_association_card"
-            existingDoc={driverDocs.find((d) => d.document_type === 'taxi_association_card') ?? null}
+            existingDoc={existingAssocCard}
             onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
               await upsertDriverDoc({
                 profileId: userId!,
@@ -277,4 +427,39 @@ const createStyles = (c: SemanticColors) =>
   sectionHeader: { gap: spacing.xs, marginTop: spacing.sm },
   sectionTitle: { ...type.h3.bold, color: c.text },
   sectionSubtitle: { ...type.bodySm.regular, color: c.textMuted },
+
+  assocCard: { padding: spacing.lg, gap: spacing.md },
+  assocHeader: { gap: spacing.md },
+  assocEditor: { gap: spacing.sm },
+  assocRemoveBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  assocRemoveText: { ...type.caption.regular, color: colors.error },
+  assocHint: { ...type.caption.regular, color: c.textMuted },
+  assocSearchInput: {
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...type.body.regular,
+    color: c.text,
+    backgroundColor: c.bg,
+  },
+  assocList: {
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    borderRadius: borderRadius.sm,
+    maxHeight: 220,
+  },
+  assocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  assocRowName: { ...type.body.regular, color: c.text },
+  assocRowDistrict: { ...type.caption.regular, color: c.textMuted },
 });

@@ -345,6 +345,27 @@ export default function ProfileScreen() {
           </Card>
         )}
 
+        {/* Become a Driver — only for riders */}
+        {!isDriver && (
+          <Card style={styles.becomeDriverCard}>
+            <View style={styles.becomeDriverContent}>
+              <Icon name="compass" size={26} color={colors.accent.green} />
+              <View style={styles.becomeDriverTextWrap}>
+                <Text style={styles.becomeDriverTitle}>Start driving with Kanek</Text>
+                <Text style={styles.becomeDriverDesc}>
+                  Upload your license and vehicle info to offer rides, errands, and deliveries.
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              style={styles.becomeDriverBtn}
+              onPress={() => router.push('/(tabs)/profile/documents')}
+            >
+              <Text style={styles.becomeDriverBtnText}>Become a Driver</Text>
+            </Pressable>
+          </Card>
+        )}
+
         {/* Menu items */}
         <View style={styles.menuSection}>
           <MenuItem
@@ -694,6 +715,41 @@ const createStyles = (c: SemanticColors) =>
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.xs,
+  },
+  becomeDriverCard: {
+    backgroundColor: colors.forest[600] + '12',
+    borderColor: colors.accent.green + '44',
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  becomeDriverContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  becomeDriverTextWrap: {
+    flex: 1,
+  },
+  becomeDriverTitle: {
+    ...type.body.bold,
+    color: c.text,
+  },
+  becomeDriverDesc: {
+    ...type.bodySm.regular,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  becomeDriverBtn: {
+    backgroundColor: colors.forest[600],
+    borderRadius: borderRadius.pill,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  becomeDriverBtnText: {
+    ...type.bodySm.bold,
+    color: '#fff',
   },
   rejectionBannerContent: {
     flexDirection: 'row',

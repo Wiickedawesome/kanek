@@ -264,6 +264,24 @@ export const profilesApi = createApi({
       invalidatesTags: (_result, _error, userId) => [{ type: 'Profile', id: userId }],
     }),
 
+    /** Manage taxi affiliation post-onboarding (00030). Verification resets server-side on any change. */
+    updateTaxiAssociation: builder.mutation<null, {
+      associationName: string | null;
+      associationId?: string | null;
+      memberId?: string | null;
+    }>({
+      queryFn: async ({ associationName, associationId, memberId }) => {
+        const { error } = await supabase.rpc('update_taxi_association' as any, {
+          p_association_name: associationName,
+          p_association_id: associationId ?? null,
+          p_member_id: memberId ?? null,
+        });
+        if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: () => ['Profile', 'DriverDetails'],
+    }),
+
     /** Set role during onboarding — no doc checks, just declares intent */
     setInitialRole: builder.mutation<null, 'rider' | 'driver'>({
       queryFn: async (role) => {
@@ -308,6 +326,7 @@ export const {
   useVerifyPhoneChangeMutation,
   useSwitchToDriverMutation,
   useSwitchToRiderMutation,
+  useUpdateTaxiAssociationMutation,
   useSetInitialRoleMutation,
   useDeleteAccountMutation,
   useReactivateAccountMutation,
