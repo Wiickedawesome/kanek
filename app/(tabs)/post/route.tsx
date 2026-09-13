@@ -122,6 +122,8 @@ export default function RouteFormScreen() {
   const [destAddress, setDestAddress] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
+  /** Request-only: ride needed immediately rather than at a scheduled time. */
+  const [asap, setAsap] = useState(false);
   const [priceDollars, setPriceDollars] = useState('');
   const [seatsTotal, setSeatsTotal] = useState('');
   const [minRiders, setMinRiders] = useState('');
@@ -237,8 +239,19 @@ export default function RouteFormScreen() {
     else if (title.trim().length > MAX_TITLE_LENGTH) newErrors.title = `Max ${MAX_TITLE_LENGTH} characters`;
     if (!originAddress.trim()) newErrors.originAddress = 'Origin is required';
     if (!destAddress.trim()) newErrors.destAddress = 'Destination is required';
-    if (!departureDate.trim()) newErrors.departureDate = 'Date is required';
-    if (!departureTime.trim()) newErrors.departureTime = 'Time is required';
+    if (!isOffer && asap) {
+      // ASAP requests don't need a scheduled departure.
+      if (departureDate.trim() && departureTime.trim()) {
+        const dt = parseRouteDateTime(departureDate, departureTime);
+        if (dt && dt <= new Date()) {
+          newErrors.departureDate = 'If scheduling, departure must be in the future';
+        }
+      }
+    } else if (!departureDate.trim()) {
+      newErrors.departureDate = 'Date is required';
+    } else if (!departureTime.trim()) {
+      newErrors.departureTime = 'Time is required';
+    }
 
     // Price validation
     const priceNum = parseFloat(priceDollars);
@@ -331,7 +344,7 @@ export default function RouteFormScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, vehicleDescription, isRoundTrip, returnDate, returnTime, pickupStyle, routeStops, repeatEnabled, repeatDays, repeatUntilDate]);
+  }, [title, originAddress, destAddress, departureDate, departureTime, priceDollars, seatsTotal, minRiders, description, isOffer, asap, vehicleDescription, isRoundTrip, returnDate, returnTime, pickupStyle, routeStops, repeatEnabled, repeatDays, repeatUntilDate]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -345,7 +358,7 @@ export default function RouteFormScreen() {
     const returnAt =
       isOffer && isRoundTrip ? parseRouteDateTime(returnDate, returnTime) : null;
 
-    if (!departureAt) {
+    if (!departureAt && !( !isOffer && asap )) {
       showAlert('Error', 'Enter a valid departure date and time');
       return;
     }
@@ -366,7 +379,8 @@ export default function RouteFormScreen() {
         origin_lng: originCoords?.lng ?? null,
         dest_lat: destCoords?.lat ?? null,
         dest_lng: destCoords?.lng ?? null,
-        departure_at: departureAt.toISOString(),
+        departure_at: departureAt ? departureAt.toISOString() : null,
+        asap: !isOffer && asap ? true : undefined,
         price_cents: priceCents,
         seats_total: isOffer ? parseInt(seatsTotal, 10) : null,
         min_riders: minRiders.trim() ? parseInt(minRiders, 10) : null,
@@ -463,6 +477,7 @@ export default function RouteFormScreen() {
               distanceKm={routeInfo.distance_km}
               durationMinutes={routeInfo.duration_minutes}
               fuelCostCents={routeInfo.fuel_cost_cents}
+              pricePerSeatCents={isOffer && priceDollars ? Math.round(parseFloat(priceDollars) * 100) : null}
             />
           )}
 
@@ -607,6 +622,29 @@ export default function RouteFormScreen() {
               error={errors.departureTime}
             />
           </View>
+
+          {!isOffer && (
+            <View style={styles.pickupSection}>
+              <View style={[styles.row, { gap: spacing.sm }]}>
+                <Pressable
+                  style={[styles.pickupOption, !asap && styles.pickupSelected]}
+                  onPress={() => setAsap(false)}
+                >
+                  <Text style={[styles.pickupText, !asap && styles.pickupTextSelected]}>
+                    Scheduled
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.pickupOption, asap && styles.pickupSelected]}
+                  onPress={() => setAsap(true)}
+                >
+                  <Text style={[styles.pickupText, asap && styles.pickupTextSelected]}>
+                    ASAP
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {isOffer && isRoundTrip && (
             <View style={styles.row}>

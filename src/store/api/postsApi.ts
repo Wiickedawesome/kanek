@@ -1,5 +1,6 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { supabase } from '@/lib/supabase';
+import { invokeFunction } from '@/lib/invokeFunction';
 import type { Database, PostType, PostStatus, BookingStatus } from '@/types/database';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -145,6 +146,7 @@ export const postsApi = createApi({
           'route_fuel_cost_cents',
           'errand_category', 'errand_fee_cents', 'item_cost_cents',
           'job_category', 'job_timeline', 'pay_rate_cents', 'pay_type',
+          'asap',
         ] as const;
         const safePost: Record<string, unknown> = {};
         for (const key of ALLOWED_FIELDS) {
@@ -158,7 +160,15 @@ export const postsApi = createApi({
           .single();
 
         if (error) return { error: { status: 'CUSTOM_ERROR' as const, error: error.message } };
-        return { data: data as PostRow };
+        const created = data as PostRow;
+
+        // Fire-and-forget: ask the backend to notify nearby/verified drivers.
+        // Never fails or blocks the request creation from the rider's POV.
+        if (created.type === 'route_request' && created.asap) {
+          void invokeFunction('notify-asap', { body: { postId: created.id } }).catch(() => {});
+        }
+
+        return { data: created };
       },
       invalidatesTags: [{ type: 'Post', id: 'LIST' }, { type: 'Post', id: 'MY_LIST' }],
     }),

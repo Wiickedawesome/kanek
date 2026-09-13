@@ -11,6 +11,8 @@ interface RouteInfoCardProps {
   distanceKm: number;
   durationMinutes: number;
   fuelCostCents: number;
+  /** Per-seat price shown instead of the fuel-cost stat when provided. */
+  pricePerSeatCents?: number | null;
 }
 
 interface RouteInfoLoadingProps {
@@ -36,7 +38,7 @@ export function RouteInfoCard(props: Props) {
     );
   }
 
-  const { distanceKm, durationMinutes, fuelCostCents } = props;
+  const { distanceKm, durationMinutes, fuelCostCents, pricePerSeatCents } = props;
 
   return (
     <View style={styles.card}>
@@ -52,11 +54,21 @@ export function RouteInfoCard(props: Props) {
         <Text variant="caption" tone="muted">Drive time</Text>
       </View>
       <View style={styles.divider} />
-      <View style={styles.stat}>
-        <Icon name="fuel" size={18} color={colors.accent.green} />
-        <Text variant="body" weight="bold">{formatBZD(fuelCostCents)}</Text>
-        <Text variant="caption" tone="muted">Est. gas</Text>
-      </View>
+      {pricePerSeatCents != null ? (
+        <View style={styles.stat}>
+          <Icon name="seat" size={18} color={colors.accent.green} />
+          <Text variant="body" weight="bold" style={styles.priceText}>
+            {formatBZD(pricePerSeatCents)}
+          </Text>
+          <Text variant="caption" tone="muted">Per seat</Text>
+        </View>
+      ) : (
+        <View style={styles.stat}>
+          <Icon name="fuel" size={18} color={colors.accent.green} />
+          <Text variant="body" weight="bold">{formatBZD(fuelCostCents)}</Text>
+          <Text variant="caption" tone="muted">Est. gas</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -84,5 +96,8 @@ const createStyles = (c: SemanticColors) =>
       width: 1,
       height: 40,
       backgroundColor: c.border,
+    },
+    priceText: {
+      color: colors.accent.neonGreen,
     },
   });

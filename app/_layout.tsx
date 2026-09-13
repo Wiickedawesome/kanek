@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@/store';
 import { useAuthListener } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useDriverPresence } from '@/hooks/useDriverPresence';
 import { InAppToast } from '@/components/ui/InAppToast';
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initMapbox } from '@/lib/mapboxBootstrap';
@@ -23,6 +24,7 @@ function RootLayoutInner() {
   const { c, isDark } = useTheme();
   useAuthListener();
   useNotifications();
+  useDriverPresence();
 
   const [fontsLoaded] = useFonts({
     'WorkSans-Bold': require('../assets/fonts/WorkSans-Bold.ttf'),

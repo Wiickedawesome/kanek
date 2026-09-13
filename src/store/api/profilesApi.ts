@@ -76,6 +76,28 @@ export const profilesApi = createApi({
       providesTags: (_result, _error, id) => [{ type: 'Profile', id }],
     }),
 
+    /** "N drivers active near you" — server-side count via driver-presence fn. */
+    getDriverPresence: builder.query<
+      { count: number | null; basis: 'nearby' | 'district' | null },
+      { lat: number | null; lng: number | null; district: string | null }
+    >({
+      queryFn: async ({ lat, lng, district }) => {
+        try {
+          const res = await invokeFunction<{ count: number | null; basis: 'nearby' | 'district' | null }>(
+            'driver-presence',
+            { body: { lat, lng, district } },
+          );
+          if (res.error || res.data == null) {
+            return { error: { status: 'CUSTOM_ERROR' as const, error: res.error?.message ?? 'driver-presence failed' } };
+          }
+          const { count, basis } = res.data;
+          return { data: { count, basis } };
+        } catch (err) {
+          return { error: { status: 'CUSTOM_ERROR' as const, error: String(err) } };
+        }
+      },
+    }),
+
     updateProfile: builder.mutation<
       ProfileRow,
       { id: string; updates: Database['public']['Tables']['profiles']['Update'] }
@@ -278,6 +300,7 @@ export const profilesApi = createApi({
 export const {
   useGetMyProfileQuery,
   useGetPublicProfileQuery,
+  useGetDriverPresenceQuery,
   useUpdateProfileMutation,
   useGetDriverDetailsQuery,
   useGetLatestRiderDocumentQuery,

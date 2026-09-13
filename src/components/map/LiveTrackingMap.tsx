@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { KanekMap } from './KanekMap';
@@ -6,7 +6,7 @@ import { DriverPin } from './DriverPin';
 import { RouteOverlay } from './RouteOverlay';
 import { Icon } from '@/components/icons';
 import { colors, type, spacing, borderRadius, shadows } from '@/theme';
-import { BELIZE_CENTER } from '@/lib/mapbox';
+import { BELIZE_CENTER, calculateRoute } from '@/lib/mapbox';
 import { isInBelize } from '@/lib/helpers';
 import type { DriverLocationUpdate } from '@/store/slices/locationSlice';
 import { Text } from '@/components/ui/Text';
@@ -97,6 +97,47 @@ export function LiveTrackingMap({
 
   const initialZoom = driverCoord ? 14 : safeOrigin || safeDestination ? 11 : 7;
 
+  // Rider ETA: driving time from the driver's live position to the pickup
+  // point. Fetched on each position update; riders only — drivers don't
+  // need their own ETA back to the passenger. Quantized to ~250 m so the
+  // feed of Mapbox calls stays sane while the position ticks every few s.
+  const [pickupEtaMin, setPickupEtaMin] = useState<number | null>(null);
+  const etaDriverPos = useMemo(() => {
+    if (!driverLocation || isDriver) return null;
+    return {
+      lat: Math.round(driverLocation.latitude * 450) / 250,
+      lng: Math.round(driverLocation.longitude * 250) / 250,
+    };
+    // Quantizing deps on the primitive fields; driverLocation ref itself stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDriver, driverLocation?.latitude, driverLocation?.longitude]);
+
+  useEffect(() => {
+    if (!etaDriverPos || !safeOrigin) {
+      setPickupEtaMin(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const route = await calculateRoute(
+          etaDriverPos.lat,
+          etaDriverPos.lng,
+          safeOrigin[1],
+          safeOrigin[0],
+        );
+        if (!cancelled) setPickupEtaMin(route.duration_minutes);
+      } catch {
+        if (!cancelled) setPickupEtaMin(null); // Mapbox hiccup — hide ETA
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [etaDriverPos, safeOrigin]);
+
   return (
     <View style={[styles.container, style]}>
       <KanekMap
@@ -144,6 +185,9 @@ export function LiveTrackingMap({
           <Text style={styles.infoText}>
             {isDriver ? 'Broadcasting your location' : 'Tracking driver'}
           </Text>
+          {!isDriver && pickupEtaMin != null && (
+            <Text style={styles.etaText}>~{pickupEtaMin} min to pickup</Text>
+          )}
           {driverLocation.speed != null && driverLocation.speed > 0 && (
             <Text style={styles.speedText}>
               {Math.round(driverLocation.speed * 3.6)} km/h
@@ -205,6 +249,11 @@ const styles = StyleSheet.create({
   speedText: {
     ...type.caption.regular,
     color: colors.accent.green,
+    fontWeight: '700',
+  },
+  etaText: {
+    ...type.caption.regular,
+    color: colors.accent.neonGreen,
     fontWeight: '700',
   },
 

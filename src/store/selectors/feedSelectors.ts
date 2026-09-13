@@ -174,17 +174,17 @@ export const selectFeedItems = createSelector(
     const hasGPS = userLat != null && userLng != null;
 
     if (isReportsFilter) {
-      const items: FeedItem[] = (gasPrices ?? []).map((g) => ({ kind: 'gas_price', data: g } as FeedItem));
-      items.sort((a, b) => compareForSort(sort, a, b, userLat, userLng, userDistrict));
+      const items: FeedItem[] = (gasPrices ?? []).map((g: GasPriceRow) => ({ kind: 'gas_price', data: g } as FeedItem));
+      items.sort((a: FeedItem, b: FeedItem) => compareForSort(sort, a, b, userLat, userLng, userDistrict));
       return items;
     }
 
     let filteredPosts = (posts ?? []).filter(
-      (post) => !isEffectivelyExpiredPost(post.status, post.departure_at),
+      (post: PostWithAuthor) => !isEffectivelyExpiredPost(post.status, post.departure_at),
     );
 
     if (distanceFilter && hasGPS) {
-      filteredPosts = filteredPosts.filter((p) => {
+      filteredPosts = filteredPosts.filter((p: PostWithAuthor) => {
         if (p.origin_lat == null || p.origin_lng == null) return false;
         return getDistanceKm(
           { lat: userLat!, lng: userLng! },
@@ -194,13 +194,13 @@ export const selectFeedItems = createSelector(
     }
 
     const items: FeedItem[] = [];
-    filteredPosts.forEach((p) => items.push({ kind: 'post', data: p }));
+    filteredPosts.forEach((p: PostWithAuthor) => items.push({ kind: 'post', data: p }));
 
     if (typeFilter === null) {
-      (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g) => items.push({ kind: 'gas_price', data: g }));
+      (gasPrices ?? []).slice(0, GAS_PRICES_LIMIT).forEach((g: GasPriceRow) => items.push({ kind: 'gas_price', data: g }));
     }
 
-    items.sort((a, b) => compareForSort(sort, a, b, userLat, userLng, userDistrict));
+    items.sort((a: FeedItem, b: FeedItem) => compareForSort(sort, a, b, userLat, userLng, userDistrict));
     return items;
   },
 );
@@ -222,10 +222,10 @@ export const selectTopRoutes = createSelector(
   (posts, typeFilter, userDistrict) => {
     if (typeFilter !== null) return [];
     const routes = (posts ?? []).filter(
-      (p) => p.type === 'route_offer' && !isEffectivelyExpiredPost(p.status, p.departure_at),
+      (p: PostWithAuthor) => p.type === 'route_offer' && !isEffectivelyExpiredPost(p.status, p.departure_at),
     );
     if (userDistrict) {
-      routes.sort((a, b) => {
+      routes.sort((a: PostWithAuthor, b: PostWithAuthor) => {
         const aMatch = postMatchesDistrict(a, userDistrict) ? 0 : 1;
         const bMatch = postMatchesDistrict(b, userDistrict) ? 0 : 1;
         return aMatch - bMatch;

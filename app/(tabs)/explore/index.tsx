@@ -20,7 +20,7 @@ import { FilterChip, EmptyState, ScreenHeader, FeedListSkeleton, MapFab, useFloa
 import { Icon } from '@/components/icons';
 import { RouteOfferCard, RouteRequestCard, ErrandCard, JobCard, GasPriceCard, TopRoutesSection } from '@/components/cards';
 import { useGetPostsQuery } from '@/store/api/postsApi';
-import { useGetMyProfileQuery } from '@/store/api/profilesApi';
+import { useGetMyProfileQuery, useGetDriverPresenceQuery } from '@/store/api/profilesApi';
 import { useGetGasPricesQuery } from '@/store/api/reportsApi';
 import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
 import type { RootState } from '@/store';
@@ -74,12 +74,23 @@ export default function ExploreScreen() {
   const hasGPS = userLat != null && userLng != null;
 
   const { data: profile } = useGetMyProfileQuery(userId ?? '', { skip: !userId });
+  const userDistrict = profile?.district ?? null;
+
+  const { data: presence } = useGetDriverPresenceQuery(
+    { lat: userLat, lng: userLng, district: userDistrict },
+    { skip: !userId || (userLat == null && !userDistrict) },
+  );
   const { data: unreadCount = 0 } = useGetUnreadCountQuery(userId ?? '', {
     skip: !userId,
     pollingInterval: 60_000,
   });
   const firstName = profile?.first_name ?? '';
-  const userDistrict = profile?.district ?? null;
+
+  const presenceLabel = presence?.count != null
+    ? presence.basis === 'nearby'
+      ? `${presence.count} driver${presence.count === 1 ? '' : 's'} active within 25 mi`
+      : `${presence.count} driver${presence.count === 1 ? '' : 's'} active in your district`
+    : null;
 
   const isReportsFilter = typeFilter === 'reports';
   const postTypeFilter = isReportsFilter ? null : typeFilter;
@@ -174,9 +185,14 @@ export default function ExploreScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader style={styles.header}>
         <View style={styles.headerTopRow}>
-          <Text style={styles.greeting}>
-            {getGreeting()}{firstName ? `, ${firstName}` : ''}
-          </Text>
+          <View>
+            <Text style={styles.greeting}>
+              {getGreeting()}{firstName ? `, ${firstName}` : ''}
+            </Text>
+            {presenceLabel && (
+              <Text style={styles.presenceLabel}>{presenceLabel}</Text>
+            )}
+          </View>
           <Pressable
             onPress={() => router.navigate('/(tabs)/activity/notifications')}
             hitSlop={12}
@@ -398,6 +414,11 @@ const createStyles = (c: SemanticColors) =>
   greeting: {
     ...type.h2.bold,
     color: c.text,
+  },
+  presenceLabel: {
+    ...type.caption.regular,
+    color: c.textMuted,
+    marginTop: 2,
   },
   searchRow: {
     flexDirection: 'row',

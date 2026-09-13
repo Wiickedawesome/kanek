@@ -15,6 +15,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "bz.kanek.app",
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
+      },
       "associatedDomains": [
         "applinks:kanek.bz"
       ],

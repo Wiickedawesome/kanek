@@ -214,12 +214,17 @@ export default function ContractDetailScreen() {
     if (!contractId || !userId) return;
     try {
       await createEvent({ contractId, actorId: userId, eventType }).unwrap();
+      // Marking en_route implies the rider needs live location — start
+      // broadcasting automatically instead of relying on a manual toggle.
+      if (eventType === 'en_route' && !isDriverTracking) {
+        startTracking(contractId);
+      }
       showAlert('Updated', getEventLabel(eventType));
     } catch (err: any) {
       const msg = err?.data ?? err?.error ?? 'Could not update trip status.';
       showAlert('Error', typeof msg === 'string' ? msg : 'Could not update trip status.');
     }
-  }, [contractId, userId, createEvent]);
+  }, [contractId, userId, createEvent, isDriverTracking, startTracking]);
 
   if (isLoading) {
     return (

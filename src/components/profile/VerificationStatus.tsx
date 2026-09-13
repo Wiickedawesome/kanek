@@ -46,9 +46,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: 2,
     borderRadius: borderRadius.pill,
-    minHeight: 28,
   },
   text: { ...type.caption.regular, fontWeight: '600' },
 });

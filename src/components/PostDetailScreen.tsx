@@ -772,6 +772,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
             distanceKm={post.route_distance_km}
             durationMinutes={post.route_duration_min}
             fuelCostCents={post.route_fuel_cost_cents}
+            pricePerSeatCents={isRoute ? post.price_cents : null}
           />
         )}
 

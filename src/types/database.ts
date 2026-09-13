@@ -420,7 +420,7 @@ export type Database = {
           taxi_association_id: string | null
           taxi_association_member_id: string | null
           taxi_association_name: string | null
-          taxi_association_verified: boolean | null
+          taxi_association_verified: boolean
           taxi_association_verified_at: string | null
           taxi_association_verified_by: string | null
           vehicle_color: string | null
@@ -442,7 +442,7 @@ export type Database = {
           taxi_association_id?: string | null
           taxi_association_member_id?: string | null
           taxi_association_name?: string | null
-          taxi_association_verified?: boolean | null
+          taxi_association_verified?: boolean
           taxi_association_verified_at?: string | null
           taxi_association_verified_by?: string | null
           vehicle_color?: string | null
@@ -464,7 +464,7 @@ export type Database = {
           taxi_association_id?: string | null
           taxi_association_member_id?: string | null
           taxi_association_name?: string | null
-          taxi_association_verified?: boolean | null
+          taxi_association_verified?: boolean
           taxi_association_verified_at?: string | null
           taxi_association_verified_by?: string | null
           vehicle_color?: string | null
@@ -503,6 +503,27 @@ export type Database = {
             columns: ["taxi_association_id"]
             isOneToOne: false
             referencedRelation: "taxi_associations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_details_taxi_association_verified_by_fkey"
+            columns: ["taxi_association_verified_by"]
+            isOneToOne: false
+            referencedRelation: "admin_flag_detail"
+            referencedColumns: ["target_post_author_id"]
+          },
+          {
+            foreignKeyName: "driver_details_taxi_association_verified_by_fkey"
+            columns: ["taxi_association_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_details_taxi_association_verified_by_fkey"
+            columns: ["taxi_association_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
           {
@@ -1034,6 +1055,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          asap: boolean
           author_id: string
           created_at: string
           departure_at: string | null
@@ -1076,6 +1098,7 @@ export type Database = {
           vehicle_description: string | null
         }
         Insert: {
+          asap?: boolean
           author_id: string
           created_at?: string
           departure_at?: string | null
@@ -1120,6 +1143,7 @@ export type Database = {
           vehicle_description?: string | null
         }
         Update: {
+          asap?: boolean
           author_id?: string
           created_at?: string
           departure_at?: string | null
@@ -1201,6 +1225,8 @@ export type Database = {
           first_name: string | null
           id: string
           last_active_at: string | null
+          last_lat: number | null
+          last_lng: number | null
           last_name: string | null
           notification_preferences: Json
           phone: string | null
@@ -1212,7 +1238,7 @@ export type Database = {
           strikes_hard: number | null
           strikes_soft: number | null
           taxi_association_name: string | null
-          taxi_association_verified: boolean | null
+          taxi_association_verified: boolean
           updated_at: string
         }
         Insert: {
@@ -1228,6 +1254,8 @@ export type Database = {
           first_name?: string | null
           id: string
           last_active_at?: string | null
+          last_lat?: number | null
+          last_lng?: number | null
           last_name?: string | null
           notification_preferences?: Json
           phone?: string | null
@@ -1239,7 +1267,7 @@ export type Database = {
           strikes_hard?: number | null
           strikes_soft?: number | null
           taxi_association_name?: string | null
-          taxi_association_verified?: boolean | null
+          taxi_association_verified?: boolean
           updated_at?: string
         }
         Update: {
@@ -1255,6 +1283,8 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_active_at?: string | null
+          last_lat?: number | null
+          last_lng?: number | null
           last_name?: string | null
           notification_preferences?: Json
           phone?: string | null
@@ -1266,7 +1296,7 @@ export type Database = {
           strikes_hard?: number | null
           strikes_soft?: number | null
           taxi_association_name?: string | null
-          taxi_association_verified?: boolean | null
+          taxi_association_verified?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1989,6 +2019,7 @@ export type Database = {
         | "dismiss_flag"
         | "issue_strike"
         | "invite_admin"
+        | "mark_flag_action_taken"
       belize_district:
         | "belize"
         | "cayo"
@@ -2213,6 +2244,7 @@ export const Constants = {
         "dismiss_flag",
         "issue_strike",
         "invite_admin",
+        "mark_flag_action_taken",
       ],
       belize_district: [
         "belize",

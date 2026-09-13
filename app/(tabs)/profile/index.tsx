@@ -368,6 +368,7 @@ export default function ProfileScreen() {
             icon="receipt"
             label="E-Kyash Wallet"
             badge="Coming Soon"
+            badgeTone="warning"
             onPress={() => {
               if (!ENABLE_EKYASH) {
                 showAlert('Coming Soon', EKYASH_COMING_SOON_MESSAGE);
