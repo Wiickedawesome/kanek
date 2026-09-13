@@ -44,7 +44,16 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!captchaRef.current?.isConfigured()) {
+      showAlert('Captcha unavailable', 'Email sign-in is blocked until the hCaptcha key is configured.');
+      return;
+    }
+
     const captchaToken = captchaRef.current?.getToken() || undefined;
+    if (!captchaToken) {
+      showAlert('Captcha required', 'Please complete the captcha before requesting a sign-in code.');
+      return;
+    }
 
     setPendingAction('email');
     try {

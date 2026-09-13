@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
+import { supabase } from '@/lib/supabase';
+import { useGetDriverDocumentsQuery } from '@/store/api/driverDocumentsApi';
 import { useGetDriverDetailsQuery, useGetLatestRiderDocumentQuery, useGetMyProfileQuery , useReactivateAccountMutation } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
 
@@ -25,6 +27,23 @@ export function useOnboardingStatus() {
   }, [profile?.account_status, reactivateAccount]);
 
   const needsRoleSelection = !!userId && !!profile && (!profile.first_name || !profile.last_name);
+
+  const { data: driverDocs = [], isLoading: driverDocsLoading } = useGetDriverDocumentsQuery(userId ?? '', {
+    skip: !userId || !profile || profileLoading || needsRoleSelection,
+  });
+
+  const expiredDriverDocDetected = (driverDocs ?? []).some((doc) =>
+    doc.expiration_date && doc.expiration_date < new Date().toISOString().slice(0, 10),
+  );
+
+  const accountStatusBlocked = profile?.account_status === 'restricted'
+    || profile?.account_status === 'suspended'
+    || profile?.account_status === 'suspended_pending_deletion';
+
+  useEffect(() => {
+    if (!userId || !profile || !expiredDriverDocDetected || profile.account_status === 'restricted') return;
+    void supabase.from('profiles').update({ account_status: 'restricted' }).eq('id', userId);
+  }, [userId, profile, expiredDriverDocDetected]);
 
   const { data: riderDocument, isLoading: riderDocumentLoading } = useGetLatestRiderDocumentQuery(
     userId ?? '',
@@ -59,17 +78,20 @@ export function useOnboardingStatus() {
     (!!userId &&
       (profileLoading ||
         (!needsRoleSelection && riderDocumentLoading) ||
+        (!needsRoleSelection && driverDocsLoading) ||
         (profile?.role === 'driver' && !needsRoleSelection && !needsIdUpload && driverDetailsLoading)));
 
   const nextAuthRoute = !userId || isLoading
     ? null
-    : needsRoleSelection
-      ? '/(auth)/role-select'
-      : needsIdUpload
-        ? '/(auth)/id-upload'
-        : needsDriverDocs
-          ? '/(auth)/driver-docs'
-          : null;
+    : accountStatusBlocked
+      ? '/(auth)/welcome'
+      : needsRoleSelection
+        ? '/(auth)/role-select'
+        : needsIdUpload
+          ? '/(auth)/id-upload'
+          : needsDriverDocs
+            ? '/(auth)/driver-docs'
+            : null;
 
   const isIdRejected = riderDocument?.review_status === 'rejected';
   const isIdPending = riderDocument?.review_status === 'pending';

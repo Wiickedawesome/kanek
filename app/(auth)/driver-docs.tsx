@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useDispatch, useSelector } from 'react-redux';
-import { profilesApi } from '@/store/api/profilesApi';
+import { profilesApi, useGetMyProfileQuery } from '@/store/api/profilesApi';
 import { Icon } from '@/components/icons';
 import { DocumentUploadCard } from '@/components/forms/DocumentUploadCard';
 import { ScreenHeader, Button } from '@/components/ui';
@@ -43,6 +43,7 @@ export default function DriverDocsScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const { signOut } = useAuth();
+  const { data: profile } = useGetMyProfileQuery(user?.id ?? '', { skip: !user?.id });
   const { data: driverDocs = [] } = useGetDriverDocumentsQuery(
     user?.id ?? '',
     { skip: !user?.id },
@@ -80,6 +81,9 @@ export default function DriverDocsScreen() {
   const hasUploadedAssocCard = driverDocs.some(
     (d) => d.document_type === 'taxi_association_card' && !!d.document_url
   );
+
+  const hasRequestedPoliceRecord = Boolean(profile?.police_record_requested)
+    || driverDocs.some((d) => d.document_type === 'police_record');
 
   const isAssocValid =
     !belongsToAssociation ||
@@ -231,6 +235,25 @@ export default function DriverDocsScreen() {
             </View>
           );
         })}
+
+        {user && hasRequestedPoliceRecord && (
+          <View style={styles.cardWrapper}>
+            <DocumentUploadCard
+              userId={user.id}
+              documentType="police_record"
+              existingDoc={driverDocs.find((d) => d.document_type === 'police_record') ?? null}
+              onUpsert={async ({ documentUrl, documentNumber, expirationDate }) => {
+                await upsertDriverDoc({
+                  profileId: user.id,
+                  documentType: 'police_record',
+                  documentUrl,
+                  documentNumber,
+                  expirationDate,
+                }).unwrap();
+              }}
+            />
+          </View>
+        )}
 
         {/* Vehicle info */}
         <Text style={styles.sectionLabel}>Vehicle Information</Text>

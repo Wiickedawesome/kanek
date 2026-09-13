@@ -1231,6 +1231,9 @@ export type Database = {
           notification_preferences: Json
           phone: string | null
           phone_changed_at: string | null
+          police_record_requested: boolean
+          police_record_requested_at: string | null
+          police_record_requested_by: string | null
           punctuality_pct: number | null
           push_token: string | null
           rating_avg: number | null
@@ -1260,6 +1263,9 @@ export type Database = {
           notification_preferences?: Json
           phone?: string | null
           phone_changed_at?: string | null
+          police_record_requested?: boolean
+          police_record_requested_at?: string | null
+          police_record_requested_by?: string | null
           punctuality_pct?: number | null
           push_token?: string | null
           rating_avg?: number | null
@@ -1289,6 +1295,9 @@ export type Database = {
           notification_preferences?: Json
           phone?: string | null
           phone_changed_at?: string | null
+          police_record_requested?: boolean
+          police_record_requested_at?: string | null
+          police_record_requested_by?: string | null
           punctuality_pct?: number | null
           push_token?: string | null
           rating_avg?: number | null

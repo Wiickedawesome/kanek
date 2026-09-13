@@ -19,6 +19,7 @@ const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 export interface HCaptchaHandle {
   getToken: () => string;
   resetCaptcha: () => void;
+  isConfigured: () => boolean;
 }
 
 /**
@@ -37,6 +38,7 @@ export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
       tokenRef.current = '';
       setVerified(false);
     },
+    isConfigured: () => Boolean(SITE_KEY),
   }));
 
   const onMessage = useCallback((event: any) => {
@@ -51,7 +53,13 @@ export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
     }
   }, []);
 
-  if (!SITE_KEY) return null;
+  if (!SITE_KEY) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.verifyText}>Captcha is not configured. Email sign-in is unavailable until the hCaptcha key is set.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
