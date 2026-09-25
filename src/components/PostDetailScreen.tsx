@@ -86,6 +86,19 @@ function formatRepeatUntil(value: string | null | undefined): string | null {
 
 interface Props {
   backFallback: string;
+  /**
+   * Tab root used for pushing the driver trip screen, which is owned by both
+   * tabs (see app/(tabs)/explore/trip/[postId].tsx and the Activity sibling).
+   * Defaults to Activity so the Activity wrapper's behaviour is unchanged.
+   *
+   * NOTE: the messages and contract-detail routes are still hard-coded to
+   * `/(tabs)/activity/...` on purpose — those screens exist only under Activity
+   * today. Making them tab-aware requires extracting
+   * app/(tabs)/activity/messages/[contractId].tsx (306 lines) and
+   * app/(tabs)/activity/[contractId].tsx (717 lines) into shared components
+   * first, otherwise the push would resolve to a route that does not exist.
+   */
+  tabBase?: string;
 }
 
 interface StoredPickupStop {
@@ -106,7 +119,7 @@ function parsePickupStops(raw: string | null | undefined): StoredPickupStop[] {
   }
 }
 
-export default function PostDetailScreen({ backFallback }: Props) {
+export default function PostDetailScreen({ backFallback, tabBase = '/(tabs)/activity' }: Props) {
   const { c } = useTheme();
   const styles = createStyles(c);
   const tabBarPad = useFloatingTabBarPad();
@@ -448,7 +461,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
               if (!ok) return;
               try {
                 await proceedRoute(post.id).unwrap();
-                router.push(`/(tabs)/activity/trip/${post.id}`);
+                router.push(`${tabBase}/trip/${post.id}`);
               } catch (e: any) {
                 const msg = e?.data?.error ?? e?.error ?? e?.message ?? 'Failed to start trip.';
                 showAlert('Error', msg);
@@ -462,7 +475,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           <Button
             title="Manage Trip"
             variant="outline"
-            onPress={() => router.push(`/(tabs)/activity/trip/${post.id}`)}
+            onPress={() => router.push(`${tabBase}/trip/${post.id}`)}
             size="lg"
             style={styles.actionButtonBelow}
           />
@@ -650,7 +663,7 @@ export default function PostDetailScreen({ backFallback }: Props) {
           title={isRouteOffer ? 'Manage Trip' : 'View Contract'}
           onPress={() => {
             if (isRouteOffer) {
-              router.push(`/(tabs)/activity/trip/${post.id}`);
+              router.push(`${tabBase}/trip/${post.id}`);
             } else {
               router.push(`/(tabs)/activity/${ownerContractId}`);
             }

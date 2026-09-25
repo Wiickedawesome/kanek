@@ -23,11 +23,9 @@ export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
   }));
 
   if (!SITE_KEY) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12, marginBottom: 12, color: '#d32f2f' }}>
-        Captcha is not configured. Email sign-in is unavailable until the hCaptcha key is set.
-      </div>
-    );
+    // No site key → the challenge cannot render. Render nothing so email sign-in
+    // can proceed without a captcha token; see app/(auth)/login.tsx.
+    return null;
   }
 
   return (

@@ -54,11 +54,9 @@ export const HCaptcha = forwardRef<HCaptchaHandle>((_props, ref) => {
   }, []);
 
   if (!SITE_KEY) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.verifyText}>Captcha is not configured. Email sign-in is unavailable until the hCaptcha key is set.</Text>
-      </View>
-    );
+    // No site key → the challenge cannot render. Render nothing so email sign-in
+    // can proceed without a captcha token; see app/(auth)/login.tsx.
+    return null;
   }
 
   return (

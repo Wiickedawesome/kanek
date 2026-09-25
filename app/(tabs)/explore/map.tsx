@@ -1,10 +1,11 @@
 import React, { useMemo, useCallback, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, TextInput, FlatList, Keyboard, Alert, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, TextInput, FlatList, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { Icon } from '@/components/icons';
 import { safeGoBack, getTimeAgo, isInBelize } from '@/lib/helpers';
+import { showOptions, type AlertOption } from '@/lib/alert';
 import { reverseGeocode } from '@/lib/mapbox';
 import { ScreenHeader, useFloatingTabBarPad } from '@/components/ui';
 import { ExploreMapContent } from '@/components/map/ExploreMapContent';
@@ -186,29 +187,15 @@ export default function ExploreMapScreen() {
       goNew();
     };
 
-    if (Platform.OS === 'web') {
-      // Web: sequential confirm dialogs
-      if (isOwner) {
-        const editFirst = window.confirm(`${g.station_name}\n\n${body}\n\nEdit this report? (Cancel = Verify instead)`);
-        if (editFirst) { goEdit(); return; }
-        if (window.confirm('Verify this price?')) { doVerify(); return; }
-        goNew();
-      } else {
-        if (window.confirm(`${g.station_name}\n\n${body}\n\nVerify this price?`)) { doVerify(); return; }
-        goNew();
-      }
-      return;
-    }
-
-    const buttons: Parameters<typeof Alert.alert>[2] = [
+    const options: AlertOption[] = [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Add New Report', onPress: goNew },
       { text: 'Verify', onPress: doVerify },
     ];
     if (isOwner) {
-      buttons.splice(2, 0, { text: 'Edit', onPress: goEdit });
+      options.splice(2, 0, { text: 'Edit', onPress: goEdit });
     }
-    Alert.alert(g.station_name, body, buttons, { cancelable: true });
+    showOptions(g.station_name, options, body);
   };
 
   const [headerHeight, setHeaderHeight] = useState(64);

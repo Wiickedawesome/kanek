@@ -44,13 +44,16 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!captchaRef.current?.isConfigured()) {
-      showAlert('Captcha unavailable', 'Email sign-in is blocked until the hCaptcha key is configured.');
-      return;
-    }
+    // hCaptcha is only enforced when a site key is configured. Without a key the
+    // challenge cannot render, so demanding a token here would block email sign-in
+    // completely. If CAPTCHA is switched on in the Supabase project, the auth
+    // server rejects the request and its error is surfaced by the caller below.
+    const captchaConfigured = captchaRef.current?.isConfigured() ?? false;
+    const captchaToken = captchaConfigured
+      ? captchaRef.current?.getToken() || undefined
+      : undefined;
 
-    const captchaToken = captchaRef.current?.getToken() || undefined;
-    if (!captchaToken) {
+    if (captchaConfigured && !captchaToken) {
       showAlert('Captcha required', 'Please complete the captcha before requesting a sign-in code.');
       return;
     }
