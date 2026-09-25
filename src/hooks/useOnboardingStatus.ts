@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { supabase } from '@/lib/supabase';
 import { useGetDriverDocumentsQuery } from '@/store/api/driverDocumentsApi';
 import { useGetDriverDetailsQuery, useGetLatestRiderDocumentQuery, useGetMyProfileQuery , useReactivateAccountMutation } from '@/store/api/profilesApi';
 import type { RootState } from '@/store';
@@ -28,22 +27,21 @@ export function useOnboardingStatus() {
 
   const needsRoleSelection = !!userId && !!profile && (!profile.first_name || !profile.last_name);
 
-  const { data: driverDocs = [], isLoading: driverDocsLoading } = useGetDriverDocumentsQuery(userId ?? '', {
+  const { isLoading: driverDocsLoading } = useGetDriverDocumentsQuery(userId ?? '', {
     skip: !userId || !profile || profileLoading || needsRoleSelection,
   });
-
-  const expiredDriverDocDetected = (driverDocs ?? []).some((doc) =>
-    doc.expiration_date && doc.expiration_date < new Date().toISOString().slice(0, 10),
-  );
 
   const accountStatusBlocked = profile?.account_status === 'restricted'
     || profile?.account_status === 'suspended'
     || profile?.account_status === 'suspended_pending_deletion';
 
-  useEffect(() => {
-    if (!userId || !profile || !expiredDriverDocDetected || profile.account_status === 'restricted') return;
-    void supabase.from('profiles').update({ account_status: 'restricted' }).eq('id', userId);
-  }, [userId, profile, expiredDriverDocDetected]);
+  // Expired driver documents are enforced server-side: migration 00033's
+  // public.enforce_expired_driver_documents() runs on the expire-posts cron and
+  // is authoritative. The client previously tried to write account_status here,
+  // but that column is protected by enforce_protected_profile_columns, so the
+  // write was rejected (SQLSTATE 42501) and discarded. Removed rather than left
+  // as a silent no-op; the resulting 'restricted' status is picked up below via
+  // accountStatusBlocked.
 
   const { data: riderDocument, isLoading: riderDocumentLoading } = useGetLatestRiderDocumentQuery(
     userId ?? '',

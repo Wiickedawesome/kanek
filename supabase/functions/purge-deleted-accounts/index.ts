@@ -1,10 +1,13 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
+import { timingSafeEqual } from 'https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts';
+
 import {
   createServiceClient,
   getCorsHeaders,
   jsonResponse,
   errorResponse,
+  verifyAuthOrInternal,
 } from '../_shared/supabase.ts';
 
 /**
@@ -15,6 +18,23 @@ import {
  *
  * Schedule via Supabase cron or external scheduler (daily recommended).
  */
+
+/** Validate the shared cron secret (same contract as expire-posts / process-strikes). */
+function hasValidCronSecret(req: Request): boolean {
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const authHeader = req.headers.get('Authorization');
+
+  if (!cronSecret || !authHeader?.startsWith('Bearer ')) {
+    return false;
+  }
+
+  const token = authHeader.slice(7);
+  const tokenBytes = new TextEncoder().encode(token);
+  const secretBytes = new TextEncoder().encode(cronSecret);
+
+  return tokenBytes.length === secretBytes.length && timingSafeEqual(tokenBytes, secretBytes);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -23,6 +43,17 @@ Deno.serve(async (req) => {
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
       },
     });
+  }
+
+  // Internal-only: this endpoint irreversibly deletes accounts, so it must never
+  // be reachable by an app user. Only the cron scheduler (CRON_SECRET) or a
+  // service-role edge-function-to-edge-function call (userId === null) may run it.
+  const authResult = hasValidCronSecret(req)
+    ? { userId: null as string | null }
+    : await verifyAuthOrInternal(req);
+  if ('error' in authResult) return authResult.error;
+  if (authResult.userId !== null) {
+    return errorResponse('Forbidden: internal-only endpoint', 403);
   }
 
   const supabase = createServiceClient();

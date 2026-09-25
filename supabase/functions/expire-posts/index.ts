@@ -605,12 +605,31 @@ Deno.serve(async (req) => {
 
     await Promise.allSettled(notifications);
 
+    // Expired driver documents cannot be caught by the row trigger once a
+    // document simply ages past its date, so sweep them on every cron pass.
+    // Requires the service-role client used above so the protected-column
+    // guard (enforce_protected_profile_columns) lets the status change through.
+    let restrictedExpiredDriverDocs = 0;
+    try {
+      const { data: restricted, error: restrictError } = await supabase.rpc(
+        'enforce_expired_driver_documents',
+      );
+      if (restrictError) {
+        console.error('enforce_expired_driver_documents failed', restrictError.message);
+      } else if (typeof restricted === 'number') {
+        restrictedExpiredDriverDocs = restricted;
+      }
+    } catch (error) {
+      console.error('enforce_expired_driver_documents request failed', error);
+    }
+
     return jsonResponse({
       expiredPosts: expiredIds.length,
       cancelledPosts: cancelledIds.length,
       advancedRecurringPosts: advancedIds.length,
       recurringKeepalivePosts: recurringKeepalivePosts.length,
       remindedPosts: reminderPostsResult.data?.length ?? 0,
+      restrictedExpiredDriverDocs,
     });
   } catch (error) {
     return errorResponse(
