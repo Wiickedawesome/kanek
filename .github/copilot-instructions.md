@@ -98,7 +98,7 @@ Verified from `package.json` on 2026-04-28.
 
 | Layer | Package | Version |
 |---|---|---|
-| Mobile runtime | `expo` | `^55.0.17` |
+| Mobile runtime | `expo` | `~55.0.19` |
 | Mobile runtime | `react` | `^19.2.0` |
 | Mobile runtime | `react-native` | `0.83.6` |
 | Routing | `expo-router` | `~55.0.13` |
@@ -107,16 +107,14 @@ Verified from `package.json` on 2026-04-28.
 | Backend SDK | `@supabase/supabase-js` | `^2.49.4` |
 | Maps (native) | `@rnmapbox/maps` | `^10.3.0` |
 | Crash reporting | `@sentry/react-native` | `~7.11.0` |
-| Push | `expo-notifications` | `~55.0.20` |
+| Push | `expo-notifications` | `~55.0.22` |
 | Captcha | `@hcaptcha/react-native-hcaptcha` | (see `package.json`) |
 | Captcha (web) | `@hcaptcha/react-hcaptcha` | (see `package.json`) |
 | Storage | `@react-native-async-storage/async-storage` | (see `package.json`) |
 
 Node version: **v24 LTS** (declared in `.nvmrc`, EAS reads it during build).
 
-Doctor warnings (non-fatal as of 2026-04-28):
-- `expo` is `^55.0.17`; doctor expects `~55.0.18`
-- `expo-notifications` is `~55.0.20`; doctor expects `~55.0.21`
+Doctor warnings (non-fatal as of 2026-09-25): see §37.
 
 These warnings do **not** block builds.
 
@@ -212,7 +210,7 @@ kanek/
 ├── supabase/
 │   ├── config.toml
 │   ├── migrations/                    # 23 SQL files (verified)
-│   ├── functions/                     # 16 Deno edge functions
+│   ├── functions/                     # 18 Deno edge functions
 │   └── templates/                     # email templates
 ├── android/                           # native Android (managed by Expo prebuild)
 ├── assets/                            # fonts, icons, splash
@@ -376,7 +374,7 @@ auth: {
 
 ### Schema migrations (verified 2026-09-11)
 
-There are **23 migration files** under `supabase/migrations/`. Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
+There are **31 migration files** under `supabase/migrations/` (`00001`–`00031`, all applied on the linked project as of 2026-09-25). Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
 
 | # | File | Purpose (from filename + brief) |
 |---|---|---|
@@ -429,7 +427,7 @@ The `documents` bucket is private — the admin frontend in the sibling repo get
 
 ## 7. Edge functions — inventory, contracts, deployment
 
-There are **16 Deno edge functions** in `supabase/functions/`, plus a `_shared/` folder with utilities (`supabase.ts`, `ekyash.ts`).
+There are **18 Deno edge functions** in `supabase/functions/`, plus a `_shared/` folder with utilities (`supabase.ts`, `ekyash.ts`). All 18 are deployed and `ACTIVE` on the linked project as of 2026-09-25.
 
 | Function | Auth | Purpose | Source |
 |---|---|---|---|
@@ -441,7 +439,7 @@ There are **16 Deno edge functions** in `supabase/functions/`, plus a `_shared/`
 | `ekyash-refund` | user JWT | Issue full or partial refund | `supabase/functions/ekyash-refund/index.ts` |
 | `send-push` | user JWT or internal | Push via Expo Push API | `supabase/functions/send-push/index.ts` |
 | `send-email-receipt` | user JWT | Receipt via Resend | `supabase/functions/send-email-receipt/index.ts` |
-| `send-sms-sos` | user JWT | SOS SMS with GPS location | `supabase/functions/send-sms-sos/index.ts` |
+| `send-sms-sos` | user JWT | SOS alert to emergency contact **by email via Resend** (despite the name — no SMS provider is configured) | `supabase/functions/send-sms-sos/index.ts` |
 | `expire-posts` | **internal-only** (cron) | Expire overdue posts, advance recurring routes | `supabase/functions/expire-posts/index.ts` |
 | `process-strikes` | **internal-only** (cron) | Apply soft/hard strikes | `supabase/functions/process-strikes/index.ts` |
 | `check-route-activation` | **internal-only** (cron) | Activate routes when min_riders met | `supabase/functions/check-route-activation/index.ts` |
@@ -449,11 +447,20 @@ There are **16 Deno edge functions** in `supabase/functions/`, plus a `_shared/`
 | `notify-user` | user JWT or internal | Targeted notification | `supabase/functions/notify-user/index.ts` |
 | `delete-account` | user JWT | Soft-delete + anonymise | `supabase/functions/delete-account/index.ts` |
 | `purge-deleted-accounts` | **internal-only** (cron) | Permanent purge after retention | `supabase/functions/purge-deleted-accounts/index.ts` |
+| `driver-presence` | user JWT | "N drivers active nearby" readout from stored positions | `supabase/functions/driver-presence/index.ts` |
+| `notify-asap` | user JWT | Fan-out push for a new ASAP ride request (district + radius targeting) | `supabase/functions/notify-asap/index.ts` |
 
 > **Internal-only** functions verify the request is **not** from a user via
-> `verifyAuthOrInternal` — if `authResult.userId !== null`, they return `403`.
-> This means user-facing JWTs can never trigger them; only the cron scheduler
-> with the service-role token can.
+> `hasValidCronSecret()` or `verifyAuthOrInternal` — if `authResult.userId !== null`,
+> they return `403`. This means user-facing JWTs can never trigger them; only the
+> cron scheduler with `CRON_SECRET`/the service-role token can.
+>
+> The four internal-only functions are `expire-posts`, `process-strikes`,
+> `check-route-activation` and `purge-deleted-accounts`. **Verify this guard is
+> present before deploying any of them** — `purge-deleted-accounts` shipped
+> without it (fixed 2026-09-25), and because every function here sets
+> `verify_jwt = false` in `supabase/config.toml`, a missing app-level guard means
+> the endpoint is reachable by any caller.
 
 ### Sibling-repo edge function
 
@@ -1544,10 +1551,15 @@ failed task, and quote the exact failing command. Do not paraphrase.
 
 ## 37. Known issues & deferred work
 
-### Captcha is currently bypassed
+### Captcha is NOT configured — bot protection is off
 
-`src/components/HCaptcha.tsx` and `HCaptcha.web.tsx` early-return `null` when
-`SITE_KEY` is empty:
+`EXPO_PUBLIC_HCAPTCHA_SITE_KEY` is **not set in any EAS environment**
+(`production`, `preview`, `development`) and is **empty** in `.env.local`.
+Verified 2026-09-25 against the live EAS env. Result: bot protection is **off**.
+
+`src/components/HCaptcha.tsx` and `HCaptcha.web.tsx` return `null` when
+`SITE_KEY` is empty, and `app/(auth)/login.tsx` therefore sends the OTP request
+**without a captcha token** rather than blocking the user:
 
 ```typescript
 const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
@@ -1555,11 +1567,14 @@ const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? '';
 if (!SITE_KEY) return null;
 ```
 
-`EXPO_PUBLIC_HCAPTCHA_SITE_KEY` is **not set** in any EAS environment
-(currently the active build profiles use `production` and `preview`). Result:
-bot protection is **off** in all shipped builds.
+> **Correction (2026-09-25).** This section previously described the empty key as
+> a harmless "captcha bypass". It was not: `login.tsx` hard-blocked the request
+> whenever `isConfigured()` was false, so with `EXPO_PUBLIC_ENABLE_EMAIL_AUTH=true`
+> **email sign-in failed in every environment** — a complete outage of the primary
+> onboarding path, not a silent security tradeoff. The hard block has been removed.
+> Bot protection is still off until the key is set; do not describe that as benign.
 
-To restore:
+To turn bot protection on:
 
 1. Generate a site key at https://hcaptcha.com (free tier is sufficient for launch).
 2. Set the EAS env on the active build environments:
@@ -1568,10 +1583,11 @@ To restore:
      npx eas-cli env:create --environment $env \
        --name EXPO_PUBLIC_HCAPTCHA_SITE_KEY --value "<site-key>" \
        --visibility plaintext --type string --non-interactive --force
-   done
-   ```
+  done
+  ```
 3. Set the matching **secret** in the Supabase dashboard under Auth → Settings → CAPTCHA so the server-side verification accepts the token.
-4. Verify in `app/(auth)/login.tsx` that the captcha now renders before OTP is requested.
+4. Verify in `app/(auth)/login.tsx` that the captcha renders and that a token is
+   required again before OTP is requested.
 5. Smoke-test: send OTP without solving captcha and confirm Supabase rejects the request.
 
 ### Schema deferred items
@@ -1582,10 +1598,10 @@ To restore:
 
 ### Tooling warnings
 
-- `expo` version is `^55.0.17`; doctor expects `~55.0.18`.
-- `expo-notifications` is `~55.0.20`; doctor expects `~55.0.21`.
+- `expo` is `~55.0.19`; `expo-notifications` is `~55.0.22` — re-run
+  `npx expo-doctor` before a release build if either has moved.
 
-Both are non-fatal and the most recent successful production build shipped with
+These are non-fatal and the most recent successful production build shipped with
 these versions.
 
 ### E-Kyash gating

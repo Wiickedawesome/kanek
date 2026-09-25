@@ -319,7 +319,7 @@ Before you assert any of the following, run the matching verification step.
 | "Tests pass" | `npm test` |
 | "The migration is applied" | `supabase migration list --linked` |
 | "The edge function is deployed" | `supabase functions list` |
-| "Sentry will receive symbols" | `SENTRY_AUTH_TOKEN=<token> npx @sentry/cli releases list --org kanekbz --project react-native` |
+| "Sentry will receive symbols" | `SENTRY_AUTH_TOKEN=<token> npx @sentry/cli releases list --org kanekbz --project kanek` |
 | "The Apple JWT is valid" | Decode the live JWT's `exp` claim |
 | "DNS for kanek.bz is correct" | `dig +short kanek.bz` (apex `199.36.158.100`); `dig +short www.kanek.bz` (CNAME `kanek-bz.web.app`) |
 | "The migration applies cleanly locally" | `supabase db reset` against the local linked DB |
