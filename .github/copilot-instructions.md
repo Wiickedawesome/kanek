@@ -209,7 +209,7 @@ kanek/
 │       └── helpers.test.ts
 ├── supabase/
 │   ├── config.toml
-│   ├── migrations/                    # 23 SQL files (verified)
+│   ├── migrations/                    # 33 SQL files (verified)
 │   ├── functions/                     # 18 Deno edge functions
 │   └── templates/                     # email templates
 ├── android/                           # native Android (managed by Expo prebuild)
@@ -372,9 +372,9 @@ auth: {
 - **OAuth callback:** `kanek://auth/callback` — handled by `app/auth/callback.tsx` which calls `consumeAuthRedirectUrl(url)` from `src/lib/authRedirect.ts`. The consumer is **idempotent** — it dedupes redirects via a `handledRedirects` Map and exchanges the code via `supabase.auth.exchangeCodeForSession(authCode)`.
 - **SMTP:** Resend (`smtp.resend.com:465`), sender `support@belizechain.org`. Configured in Supabase dashboard, not in code.
 
-### Schema migrations (verified 2026-09-11)
+### Schema migrations (verified 2026-09-28)
 
-There are **31 migration files** under `supabase/migrations/` (`00001`–`00031`, all applied on the linked project as of 2026-09-25). Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
+There are **33 migration files** under `supabase/migrations/` (`00001`–`00033`, all applied on the linked project as of 2026-09-28). Each is run sequentially. **Never modify a migration that is already deployed** — create a new one.
 
 | # | File | Purpose (from filename + brief) |
 |---|---|---|
@@ -401,6 +401,16 @@ There are **31 migration files** under `supabase/migrations/` (`00001`–`00031`
 | 00021 | `00021_drop_road_reports_and_waitlist.sql` | Drop road_reports and waitlist tables |
 | 00022 | `00022_taxi_associations.sql` | Belize taxi associations directory (26 records), driver affiliations, and sync trigger |
 | 00023 | `00023_optimize_rls_initplan_and_security.sql` | RLS (select auth.uid()) InitPlan optimization, consolidated policies, and function hardening |
+| 00024 | `00024_security_advisor_hardening.sql` | Security-advisor hardening |
+| 00025 | `00025_fix_profiles_update_recursion.sql` | Fix profiles UPDATE recursion |
+| 00026 | `00026_fix_set_initial_role_blocked_by_trigger.sql` | Fix `set_initial_role` blocked by trigger |
+| 00027 | `00027_unblock_service_role_profile_guard.sql` | Unblock service-role writes through the profile guard |
+| 00028 | `00028_fix_protected_columns_service_role_detection.sql` | Fix protected-column service-role detection |
+| 00029 | `00029_asap_ride_request.sql` | ASAP ride requests |
+| 00030 | `00030_taxi_affiliation_management.sql` | Taxi affiliation management |
+| 00031 | `00031_driver_doc_Expiry_and_police_record_requests.sql` | Driver-document expiry trigger and police-record requests |
+| 00032 | `00032_restore_profiles_public_reads.sql` | Restore cross-user reads on `profiles_public` (reverses 00019's `security_invoker = true`) |
+| 00033 | `00033_enforce_expired_driver_documents.sql` | `enforce_expired_driver_documents()` sweep; make the 00031 row trigger non-fatal |
 
 For the full table catalogue see `docs/database-schema.md`. The most-touched tables are listed in §25.
 
@@ -1238,7 +1248,7 @@ For the full catalogue see `docs/database-schema.md`. The most-touched tables:
 | `messages` | DM threads | 24 h cutoff (migration 00010) |
 | `driver_documents` | license, insurance, vehicle photos | |
 | `ekyash_txns` | payment transactions | |
-| `email_receipts` | sent receipts log | both `contract_id` and `ekyash_txn_id` nullable (deferred CHECK §37) |
+| `email_receipts` | sent receipts log | CHECK requires `contract_id` or `ekyash_txn_id`; `ekyash_txn_id` FK is ON DELETE CASCADE |
 | `donation_totals` | optional community donations | |
 
 All prices are **integers in cents**. Use `formatBZD(cents)` from
@@ -1590,11 +1600,20 @@ To turn bot protection on:
    required again before OTP is requested.
 5. Smoke-test: send OTP without solving captcha and confirm Supabase rejects the request.
 
-### Schema deferred items
+### Schema notes (re-verified against the live database 2026-09-28)
 
-- `flags.target_id` has no FK constraint (polymorphic across `posts`, `users`, `messages`).
-- `email_receipts` allows both `contract_id` and `ekyash_txn_id` to be `NULL` (needs CHECK to require one).
-- `email_receipts.ekyash_txn_id` FK defaults to RESTRICT (consider CASCADE).
+- `flags.target_id` has no FK constraint, and **cannot** have one: it is
+  polymorphic across the `flag_target` enum, whose values are `post`, `user`,
+  `booking` — **not** `messages` as this file previously claimed. Admin read
+  paths `LEFT JOIN` on it, so a dangling reference renders as `NULL` rather than
+  breaking. The table is empty. **No migration is warranted — do not "fix" this.**
+- ~~`email_receipts` allows both `contract_id` and `ekyash_txn_id` to be `NULL`~~
+  — **already correct.** `email_receipts_has_reference` CHECK requires at least
+  one of the two, and `email_receipts_ekyash_txn_id_fkey` is already
+  `ON DELETE CASCADE`.
+- `email_receipts_contract_id_fkey` → `contracts(id)` carries no `ON DELETE`
+  clause, so it behaves as `RESTRICT` — asymmetric with the `ekyash_txn_id` FK
+  directly above it. Low impact: receipts are an append-only audit log.
 
 ### Tooling warnings
 
@@ -1659,6 +1678,7 @@ relevant doc before answering:
 |---|---|
 | 2026-04-28 | Rewritten from scratch: factual repo guide only, behavioral rules moved to `AGENTS.md`. Verified package versions, migration count (14), edge function inventory (16), EAS profile distribution settings, ASC App ID, hCaptcha bypass status, E-Kyash gating, sibling repo facts. |
 | 2026-05-09 | Sentry project renamed `react-native` → `kanek`; `EXPO_PUBLIC_SENTRY_DSN` added to all EAS envs and to env tables; `app.json` plugin config updated; verification commands updated. Back-button bug fixed in `app/(tabs)/activity/[contractId].tsx` (was hard-coded `router.navigate` to activity root, now uses `safeGoBack`). Google OAuth consent branding configured (App name `Kanek`, authorized domains `kanek.bz` + Supabase host, home/privacy/terms URLs). |
+| 2026-09-28 | Corrected §6 migration inventory: 33 files (`00001`–`00033`), table completed through 00033. §25 `email_receipts` row corrected. §37 schema section rewritten: `email_receipts` CHECK and the `ekyash_txn_id` CASCADE already existed, and the `flags.target_id` "issue" is unfixable-by-design and harmless (enum is `post`/`user`/`booking`, table empty) — the old text named a wrong enum value and prescribed a migration that should not be written. |
 
 ---
 
